@@ -1,34 +1,40 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
-import { CalendarClock, ShoppingCart, UserPlus, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Camera, ChevronRight, ShoppingCart, Users, X } from "lucide-react";
+import { ACCENTS } from "@/lib/apps-config";
 
 const ITEMS = [
   {
     id: "booking",
-    label: "New booking",
-    description: "Start a booking for a shoot",
+    title: "New booking",
+    description: "Start an inquiry or quote",
     href: "/booking/list",
-    icon: CalendarClock,
+    icon: Camera,
+    accent: ACCENTS.orange,
   },
   {
     id: "account",
-    label: "New account",
-    description: "Add a client or corporate account",
+    title: "New account",
+    description: "Corporate or consumer",
     href: "/crm/accounts",
-    icon: UserPlus,
+    icon: Users,
+    accent: ACCENTS.indigo,
   },
   {
     id: "sale",
-    label: "New sale",
-    description: "Ring up a POS sale",
+    title: "New sale",
+    description: "Open the point of sale",
     href: "/pos/sale",
     icon: ShoppingCart,
+    accent: ACCENTS.orange,
   },
 ];
 
 export function QuickCreateSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const router = useRouter();
+
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -42,44 +48,49 @@ export function QuickCreateSheet({ open, onClose }: { open: boolean; onClose: ()
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      <div
-        className="absolute inset-0 bg-[rgba(10,10,10,0.4)]"
-        onClick={onClose}
-        aria-hidden
-      />
-      <div className="relative flex h-full w-full max-w-sm flex-col bg-[var(--color-surface)] shadow-[var(--shadow-dialog)]">
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4">
-          <h2 className="font-display text-base font-semibold text-[var(--color-text-primary)]">
+      <div className="absolute inset-0 bg-[rgba(20,20,20,0.35)]" onClick={onClose} aria-hidden />
+      <div className="relative flex h-full w-full max-w-[440px] flex-col bg-[var(--color-surface)] shadow-[-20px_0_60px_-20px_rgba(10,10,10,0.4)]">
+        <div className="flex items-center justify-between border-b border-[var(--color-ink-100)] px-6 py-[22px]">
+          <h2 className="font-display text-xl font-semibold text-[var(--color-text-primary)]">
             Quick create
           </h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-control text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-control border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex flex-col gap-1 p-3">
+        <div className="flex flex-col gap-3 p-4">
           {ITEMS.map((item) => (
-            <Link
+            <button
               key={item.id}
-              href={item.href}
-              onClick={onClose}
-              className="flex items-start gap-3 rounded-card px-3 py-3 hover:bg-[var(--color-surface-muted)]"
+              onClick={() => {
+                router.push(item.href);
+                onClose();
+              }}
+              className="flex items-center gap-4 rounded-card border border-[var(--color-border)] p-[18px] text-left hover:bg-[var(--color-canvas)]"
+              style={{ "--tile-accent": item.accent.base } as React.CSSProperties}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = item.accent.base)}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "")}
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-control bg-[var(--color-kahel-100)] text-[var(--color-kahel-700)]">
-                <item.icon className="h-4.5 w-4.5" strokeWidth={1.75} />
-              </div>
+              <span
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control"
+                style={{ background: item.accent.tint, color: item.accent.text }}
+              >
+                <item.icon className="h-[22px] w-[22px]" strokeWidth={1.75} />
+              </span>
               <div>
-                <div className="font-display text-sm font-semibold text-[var(--color-text-primary)]">
-                  {item.label}
+                <div className="font-display text-base font-semibold text-[var(--color-text-primary)]">
+                  {item.title}
                 </div>
-                <div className="text-[13px] text-[var(--color-text-secondary)]">
+                <div className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">
                   {item.description}
                 </div>
               </div>
-            </Link>
+              <ChevronRight className="ml-auto h-4 w-4 text-[var(--color-ink-300)]" />
+            </button>
           ))}
         </div>
       </div>

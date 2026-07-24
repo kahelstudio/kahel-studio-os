@@ -46,6 +46,9 @@
   --color-attention-bg: var(--color-kahel-100);
   --color-attention-text: var(--color-kahel-700);
 
+  --color-warning-bg: #fdf0d5;
+  --color-warning-text: #8a6d00;
+
   --color-surface: #ffffff;
   --color-canvas: var(--color-ink-50);
   --color-surface-muted: #f7f5f2;
@@ -132,6 +135,8 @@
   --color-info-text: var(--color-info-text);
   --color-attention-bg: var(--color-attention-bg);
   --color-attention-text: var(--color-attention-text);
+  --color-warning-bg: var(--color-warning-bg);
+  --color-warning-text: var(--color-warning-text);
 
   --color-surface: var(--color-surface);
   --color-canvas: var(--color-canvas);

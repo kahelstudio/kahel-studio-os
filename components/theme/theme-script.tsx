@@ -1,3 +1,5 @@
+import Script from "next/script";
+
 const THEME_SCRIPT = `
 (function () {
   try {
@@ -13,5 +15,13 @@ const THEME_SCRIPT = `
 `;
 
 export function ThemeScript() {
-  return <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />;
+  return (
+    // This lint rule predates the App Router, where rendering a beforeInteractive
+    // Script from the root layout (not pages/_document.js) is the documented,
+    // supported way to block a theme flash before paint.
+    // eslint-disable-next-line @next/next/no-before-interactive-script-outside-document
+    <Script id="ks-theme-init" strategy="beforeInteractive">
+      {THEME_SCRIPT}
+    </Script>
+  );
 }

@@ -1,12 +1,13 @@
 import { cn } from "@/lib/utils";
 
-export type StatusTone = "neutral" | "info" | "success" | "attention" | "danger";
+export type StatusTone = "neutral" | "info" | "success" | "attention" | "warning" | "danger";
 
 const TONE_STYLES: Record<StatusTone, string> = {
   neutral: "bg-[var(--color-ink-100)] text-[var(--color-ink-600)]",
   info: "bg-[var(--color-info-bg)] text-[var(--color-info-text)]",
   success: "bg-[var(--color-success-bg)] text-[var(--color-success-text)]",
   attention: "bg-[var(--color-attention-bg)] text-[var(--color-attention-text)]",
+  warning: "bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]",
   danger: "bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]",
 };
 

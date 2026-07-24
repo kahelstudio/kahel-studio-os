@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Topbar } from "@/components/shell/topbar";
+import { LauncherTopbar } from "@/components/launcher/launcher-topbar";
 import { CommandPalette } from "@/components/shell/command-palette";
 import { LauncherGrid } from "@/components/launcher/launcher-grid";
 
@@ -20,11 +20,11 @@ export default function LauncherPage() {
   }, []);
 
   return (
-    <div className="flex h-dvh flex-col">
-      <Topbar onOpenCommandPalette={() => setPaletteOpen(true)} />
-      <main className="flex-1 overflow-y-auto bg-[var(--color-canvas)]">
+    <div className="h-dvh overflow-y-auto">
+      <div className="mx-auto flex min-h-full w-full max-w-[1512px] flex-col">
+        <LauncherTopbar onOpenCommandPalette={() => setPaletteOpen(true)} />
         <LauncherGrid />
-      </main>
+      </div>
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
