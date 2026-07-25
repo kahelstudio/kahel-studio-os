@@ -610,3 +610,118 @@ export const FINANCE_PAYMENTS = [
   stColor: r.st === "cleared" ? "#005430" : "#8A6D00",
   stLabel: r.st === "cleared" ? "Cleared" : "Pending",
 }));
+
+// ── Quotation ────────────────────────────────────────────────────────
+const QUOTE_ST: Record<string, { bg: string; c: string; l: string }> = {
+  draft: { bg: "#ECEAE7", c: "#4A453F", l: "Draft" },
+  sent: { bg: "#E3EDFF", c: "#053799", l: "Sent" },
+  accepted: { bg: "#E0F7EC", c: "#005430", l: "Accepted" },
+  expired: { bg: "#FDE4EA", c: "#8A0625", l: "Expired" },
+};
+
+export const QUOTATIONS = [
+  { ref: "QT-2026-0074", client: "Bianca & Marco Deveza", type: "Wedding — Full Day", total: "₱185,000", valid: "Valid to 09 Aug", st: "sent" },
+  { ref: "QT-2026-0073", client: "Ayala Land Premier", type: "Corporate Headshots", total: "₱96,000", valid: "Valid to 30 Jul", st: "accepted" },
+  { ref: "QT-2026-0072", client: "Reyes Family", type: "Birthday / Christening", total: "₱28,000", valid: "Valid to 26 Jul", st: "sent" },
+  { ref: "QT-2026-0071", client: "Aria & Josh Lim", type: "Prenup / Engagement", total: "₱42,000", valid: "Expired 18 Jul", st: "expired" },
+  { ref: "QT-2026-0070", client: "Globe Telecom", type: "Product — Half Day", total: "₱54,000", valid: "Not sent", st: "draft" },
+  { ref: "QT-2026-0069", client: "Santos Wedding", type: "Wedding — Half Day", total: "₱120,000", valid: "Not sent", st: "draft" },
+].map((q) => ({ ...q, stBg: QUOTE_ST[q.st].bg, stColor: QUOTE_ST[q.st].c, stL: QUOTE_ST[q.st].l }));
+
+// ── Maintenance & repair ─────────────────────────────────────────────
+const MAINT_ST: Record<string, { bg: string; c: string; l: string }> = {
+  reported: { bg: "#FDE4EA", c: "#8A0625", l: "Reported" },
+  inspect: { bg: "#FDF0D5", c: "#8A6D00", l: "Inspection required" },
+  scheduled: { bg: "#E3EDFF", c: "#053799", l: "Scheduled" },
+  inrepair: { bg: "#FFE3D4", c: "#B33800", l: "In repair" },
+  awaiting: { bg: "#FDF0D5", c: "#8A6D00", l: "Awaiting parts" },
+  completed: { bg: "#E0F7EC", c: "#005430", l: "Completed" },
+  unrepairable: { bg: "#ECEAE7", c: "#4A453F", l: "Unrepairable" },
+};
+
+const MAINT_TASK_RAISED = ["reported", "inspect", "scheduled", "inrepair", "awaiting"];
+
+export const MAINTENANCE_ITEMS = [
+  { task: "Air-conditioner cleaning", asset: "FAC-AC-01", mtype: "Preventive", issue: "Quarterly filter & coil clean", who: "Ivy S.", next: "24 Jul 2026", recur: "Every 3 months", est: "₱2,500", warranty: "N/A", st: "scheduled" },
+  { task: "Signage cleaning", asset: "FAC-SIG-01", mtype: "Cleaning", issue: "Exterior storefront signage", who: "Ivy S.", next: "02 Sep 2026", recur: "Quarterly", est: "₱800", warranty: "N/A", st: "reported" },
+  { task: "Camera & lens servicing", asset: "CAM-R5-02", mtype: "Repair", issue: "Autofocus intermittent on R5 body", who: "Canon Service Center", next: "26 Jul 2026", recur: "As needed", est: "₱6,000", warranty: "In warranty", st: "inrepair" },
+  { task: "Printer maintenance", asset: "IT-PR-01", mtype: "Repair", issue: "Paper feed jams, roller worn", who: "Epson Vendor", next: "—", recur: "As needed", est: "₱3,200", warranty: "Expired", st: "awaiting" },
+  { task: "Lighting & electrical inspection", asset: "EQ-LT-04", mtype: "Preventive", issue: "Monthly safety inspection", who: "Rafa T.", next: "19 Jul 2026", recur: "Monthly", est: "₱0", warranty: "N/A", st: "inspect" },
+  { task: "Computer & storage maintenance", asset: "IT-WS-03", mtype: "Preventive", issue: "Disk health check & backup verify", who: "Danilo C.", next: "10 Aug 2026", recur: "Monthly", est: "₱0", warranty: "N/A", st: "completed" },
+  { task: "Studio deep cleaning", asset: "FAC-STU-01", mtype: "Cleaning", issue: "Full-day cyclorama & floor clean", who: "Ivy S.", next: "12 Jul 2026", recur: "Monthly", est: "₱1,500", warranty: "N/A", st: "completed" },
+].map((m) => ({
+  ...m,
+  stBg: MAINT_ST[m.st].bg,
+  stColor: MAINT_ST[m.st].c,
+  stL: MAINT_ST[m.st].l,
+  taskRaised: MAINT_TASK_RAISED.includes(m.st),
+}));
+
+// ── Projects ─────────────────────────────────────────────────────────
+const PROJ_STAGE_META: Record<string, { label: string; bg: string; c: string }> = {
+  culling: { label: "Culling", bg: "#F1EFEC", c: "#6E6963" },
+  editing: { label: "Editing", bg: "#FFE3D4", c: "#B33800" },
+  review: { label: "Client review", bg: "#E3EDFF", c: "#053799" },
+  delivered: { label: "Delivered", bg: "#E0F7EC", c: "#005430" },
+};
+
+export const PROJECT_GROUPS = [
+  {
+    stage: "editing",
+    items: [
+      { ref: "PRJ-2026-0142", title: "Bianca & Marco — Wedding", meta: "1,240 frames · due 02 Aug", editor: "EB", booking: "From booking KS-2026-0142" },
+      { ref: "PRJ-2026-0138", title: "Ayala Land — Headshots", meta: "480 frames · due 25 Jul", editor: "EB", booking: "From booking KS-2026-0138" },
+    ],
+  },
+  {
+    stage: "review",
+    items: [
+      { ref: "PRJ-2026-0131", title: "Solaire — Event coverage", meta: "Gallery sent · awaiting picks", editor: "JR", booking: "From booking KS-2026-0131" },
+    ],
+  },
+  {
+    stage: "culling",
+    items: [
+      { ref: "PRJ-2026-0151", title: "Reyes Family — Birthday", meta: "820 frames · unstarted", editor: "—", booking: "From booking KS-2026-0151" },
+    ],
+  },
+  {
+    stage: "delivered",
+    items: [
+      { ref: "PRJ-2025-0088", title: "Deveza — Prenup", meta: "Delivered 14 Mar · expires in 12d", editor: "EB", booking: "From booking KS-2025-0088" },
+    ],
+  },
+].map((g) => ({
+  label: PROJ_STAGE_META[g.stage].label,
+  count: g.items.length,
+  bg: PROJ_STAGE_META[g.stage].bg,
+  color: PROJ_STAGE_META[g.stage].c,
+  items: g.items,
+}));
+
+// ── Glitches ─────────────────────────────────────────────────────────
+const GLITCH_ST: Record<string, { bg: string; c: string; l: string }> = {
+  open: { bg: "#FDE4EA", c: "#8A0625", l: "Open" },
+  progress: { bg: "#FDF0D5", c: "#8A6D00", l: "Investigating" },
+  fixed: { bg: "#E0F7EC", c: "#005430", l: "Fixed" },
+  closed: { bg: "#ECEAE7", c: "#4A453F", l: "Closed" },
+};
+
+const SEV_COLOR: Record<string, string> = { High: "#8A0625", Medium: "#8A6D00", Low: "#6E6963" };
+
+export const GLITCHES = [
+  { ref: "GL-0042", title: "Gallery link expired 3 days early", area: "Website · delivery", by: "Mika R.", sev: "High", when: "22 Jul · 2:14 PM", st: "progress", group: "open" },
+  { ref: "GL-0041", title: "Payslip PDF fails to generate for interns", area: "Payroll · payslips", by: "Eusebio D.", sev: "High", when: "21 Jul · 9:02 AM", st: "open", group: "open" },
+  { ref: "GL-0040", title: "Softbox stand snapped mid-shoot", area: "Equipment · lighting", by: "Rafa T.", sev: "Medium", when: "20 Jul · 4:47 PM", st: "progress", group: "open" },
+  { ref: "GL-0037", title: "Client says delivered album missing 40 photos", area: "Complaint · delivery", by: "Front desk", sev: "High", when: "16 Jul · 11:20 AM", st: "open", group: "open" },
+  { ref: "GL-0039", title: "POS serial field accepts letters", area: "POS · checkout", by: "Jules M.", sev: "Medium", when: "19 Jul · 3:35 PM", st: "fixed", group: "closed" },
+  { ref: "GL-0038", title: "Cracked lens filter on 50mm kit", area: "Equipment · lenses", by: "Rafa T.", sev: "Low", when: "17 Jul · 10:08 AM", st: "fixed", group: "closed" },
+  { ref: "GL-0036", title: "Client complaint: late arrival at venue", area: "Complaint · booking", by: "Front desk", sev: "High", when: "14 Jul · 5:52 PM", st: "closed", group: "closed" },
+  { ref: "GL-0035", title: "Feedback form rejects long comments", area: "Feedback · report", by: "Mika R.", sev: "Low", when: "11 Jul · 1:30 PM", st: "closed", group: "closed" },
+].map((g) => ({
+  ...g,
+  stBg: GLITCH_ST[g.st].bg,
+  stColor: GLITCH_ST[g.st].c,
+  stL: GLITCH_ST[g.st].l,
+  sevColor: SEV_COLOR[g.sev],
+}));

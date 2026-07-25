@@ -1,5 +1,5 @@
-import { ComingSoon } from "@/components/ui/coming-soon";
+import { MaintenanceTable } from "@/components/maintenance/maintenance-table";
 
 export default function Page() {
-  return <ComingSoon screen="Schedule" />;
+  return <MaintenanceTable historyOnly={false} />;
 }

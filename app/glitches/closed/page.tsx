@@ -1,5 +1,5 @@
-import { ComingSoon } from "@/components/ui/coming-soon";
+import { GlitchesTable } from "@/components/glitches/glitches-table";
 
 export default function Page() {
-  return <ComingSoon screen="Closed" />;
+  return <GlitchesTable group="closed" />;
 }

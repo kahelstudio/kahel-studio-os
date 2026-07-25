@@ -1,5 +1,5 @@
-import { ComingSoon } from "@/components/ui/coming-soon";
+import { QuotationTable } from "@/components/quotation/quotation-table";
 
 export default function Page() {
-  return <ComingSoon screen="List" />;
+  return <QuotationTable draftsOnly={false} />;
 }
