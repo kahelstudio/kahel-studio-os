@@ -1,5 +1,5 @@
-import { ComingSoon } from "@/components/ui/coming-soon";
+import { CatalogView } from "@/components/pos/catalog-view";
 
 export default function Page() {
-  return <ComingSoon screen="Cat Rentals" />;
+  return <CatalogView catalogKey="cat-rentals" />;
 }
