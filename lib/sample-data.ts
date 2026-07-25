@@ -1119,3 +1119,359 @@ export const FEEDBACK_REPORTS = [
   { kind: "Problem", kc: "#8A0625", kb: "#FDE4EA", summary: "POS cart clears if I switch tabs", iid: "#236", app: "POS", status: "Shipped", sc: "#00A15C" },
   { kind: "Idea", kc: "#053799", kb: "#E3EDFF", summary: "Show referral source on account cards", iid: "#229", app: "CRM", status: "Submitted", sc: "#9B9691" },
 ];
+
+// ── Settings ─────────────────────────────────────────────────────────
+export const SETTINGS_GENERAL = [
+  { label: "Workspace name", value: "Kahel Studio", mono: false },
+  { label: "Domain", value: "app.kahelstudio.com", mono: true },
+  { label: "Timezone", value: "Asia/Manila (GMT+8)", mono: false },
+  { label: "Currency", value: "PHP · ₱ · centavos", mono: false },
+  { label: "Date format", value: "21 Jul 2026", mono: true },
+  { label: "Booking reference", value: "KS-YYYY-XXXX", mono: true },
+];
+
+export const SETTINGS_TOGGLES = [
+  { label: "Email receipts to clients", sub: "Send a copy on every completed sale", on: true },
+  { label: "Deposit reminders", sub: "Nudge accounts 3 days before balance due", on: true },
+  { label: "Low-stock alerts", sub: "Warn when a product drops below threshold", on: true },
+  { label: "Weekly digest", sub: "Monday summary of the week ahead", on: false },
+];
+
+export const SETTINGS_LOGS = [
+  { ev: "Signed in", actor: "Eusebio Barrun", when: "22 Jul 2026 · 08:41", type: "auth", tL: "Auth" },
+  { ev: "Payroll released · PAY-2026-07-A", actor: "Eusebio Barrun", when: "15 Jul 2026 · 16:02", type: "ok", tL: "Action" },
+  { ev: "Gallery delivered · Reyes", actor: "Danilo Cruz", when: "14 Jul 2026 · 11:20", type: "data", tL: "Data" },
+  { ev: "Failed login attempt", actor: "Unknown · 112.198.x.x", when: "12 Jul 2026 · 02:14", type: "warn", tL: "Security" },
+  { ev: "BIR serial recorded · KS-000-1046", actor: "Marisol Reyes", when: "18 Jul 2026 · 09:33", type: "data", tL: "Data" },
+  { ev: "Team member invited", actor: "Eusebio Barrun", when: "10 Jul 2026 · 15:07", type: "auth", tL: "Auth" },
+].map((r) => {
+  const tone: Record<string, { bg: string; c: string }> = {
+    auth: { bg: "#EDEAFD", c: "#2A1F87" },
+    data: { bg: "#E3EDFF", c: "#053799" },
+    warn: { bg: "#FDF0D5", c: "#8A6D00" },
+    ok: { bg: "#E0F7EC", c: "#005430" },
+  };
+  return { ...r, tBg: tone[r.type].bg, tColor: tone[r.type].c };
+});
+
+export const USAGE_KPIS = [
+  { label: "Storage used", value: "312 GB" },
+  { label: "Galleries delivered", value: "48" },
+  { label: "Team seats", value: "6 of 10" },
+  { label: "Emails sent (Jul)", value: "1,284" },
+];
+
+export const USAGE_BARS = [
+  { label: "Cloud storage", sub: "312 GB of 500 GB", pct: 62, bar: "#00A5AD" },
+  { label: "Bandwidth (July)", sub: "184 GB of 400 GB", pct: 46, bar: "#4F3DD9" },
+  { label: "Team seats", sub: "6 of 10 used", pct: 60, bar: "#FF5300" },
+  { label: "Email quota (July)", sub: "1,284 of 5,000", pct: 26, bar: "#00A15C" },
+];
+
+export const BILLING_ROWS = [
+  { label: "Active booklet ATP", value: "ATP-0AU-2026-0142" },
+  { label: "Serial range", value: "KS-000-1042 → 1100" },
+  { label: "Current serial", value: "KS-000-1046" },
+];
+
+// ── My Profile ───────────────────────────────────────────────────────
+export const PROFILE_INFO = [
+  { label: "Full name", value: "Eusebio Barrun" },
+  { label: "Preferred name", value: "Sebi" },
+  { label: "Email", value: "eusebio@kahelstudio.com" },
+  { label: "Mobile", value: "+63 917 555 0142" },
+];
+
+export const PROFILE_META = [
+  { label: "Role", value: "Owner · Lead photographer" },
+  { label: "Member since", value: "March 2021" },
+  { label: "User ID", value: "KS-USR-0001" },
+];
+
+export const PROFILE_GOV = [
+  { label: "SSS number", value: "34-•••••••-8", audit: "Verified by M. Reyes · 12 Mar 2024" },
+  { label: "TIN", value: "•••-•••-•••-000", audit: "Verified by M. Reyes · 12 Mar 2024" },
+  { label: "PhilHealth number", value: "••-•••••••-4", audit: "Verified by M. Reyes · 12 Mar 2024" },
+  { label: "Pag-IBIG MID number", value: "••••-••••-2201", audit: "Verified by M. Reyes · 12 Mar 2024" },
+  { label: "Employee ID", value: "EMP-001", audit: "System-assigned · 01 Mar 2021" },
+];
+
+export const PROFILE_SIZES = [
+  { label: "T-shirt size", value: "L" },
+  { label: "Pants waist", value: "34 in" },
+  { label: "Pants length / inseam", value: "31 in" },
+  { label: "Shoe size", value: "10 (PH/US)" },
+  { label: "Fit / sizing notes", value: "Prefers relaxed fit tees" },
+  { label: "Last updated", value: "18 Jun 2026" },
+];
+
+export const PROFILE_STATS = [
+  { label: "Shoots delivered", value: "23" },
+  { label: "Active bookings", value: "6" },
+  { label: "Avg rating", value: "4.9" },
+  { label: "On time", value: "96%" },
+];
+
+export const EMERGENCY_CONTACTS = [
+  {
+    name: "Marisol Barrun",
+    rel: "Spouse",
+    primary: true,
+    phone: "+63 918 220 4471",
+    alt: "+63 2 8555 0110",
+    email: "marisol.b@gmail.com",
+    address: "24 Maginhawa St, Sikatuna Village, Quezon City, 1101",
+    notes: "Prefers Tagalog · best reached after 6 PM",
+    verified: "Verified 02 Jun 2026",
+  },
+  {
+    name: "Rafael Barrun",
+    rel: "Sibling",
+    primary: false,
+    phone: "+63 917 441 2280",
+    alt: "—",
+    email: "rafa.barrun@gmail.com",
+    address: "8 Times St, West Triangle, Quezon City, 1104",
+    notes: "English or Tagalog · daytime only",
+    verified: "Verified 02 Jun 2026",
+  },
+].map((c) => ({
+  ...c,
+  badgeL: c.primary ? "Primary" : "Secondary",
+  badgeBg: c.primary ? "#FFF4EE" : "#F1EFEC",
+  badgeColor: c.primary ? "#B33800" : "#6E6963",
+}));
+
+export const SECURITY_ITEMS = [
+  { label: "Password", sub: "Last changed 22 Apr 2026", action: "Change" },
+  { label: "Two-factor authentication", sub: "Authenticator app · enabled", action: "Manage" },
+  { label: "Recovery email", sub: "sebi.personal@gmail.com", action: "Edit" },
+];
+
+export const SECURITY_SESSIONS = [
+  { device: "MacBook Pro · Chrome", meta: "Quezon City · this device", current: true },
+  { device: "iPhone 15 · Kahel app", meta: "Quezon City · 2 hours ago", current: false },
+  { device: "iPad · Safari", meta: "Tagaytay · 3 days ago", current: false },
+];
+
+// ── Preferences ──────────────────────────────────────────────────────
+export const PREFERENCES_GENERAL = [
+  { label: "Display language", value: "English (PH)" },
+  { label: "Timezone", value: "GMT+8 · Manila" },
+  { label: "Date format", value: "DD MMM YYYY" },
+  { label: "Start of week", value: "Monday" },
+  { label: "Landing app on login", value: "Dashboard" },
+];
+
+export const PREFERENCES_THEMES = [
+  { k: "light", label: "Light", sub: "Warm paper", bg: "#FAF9F7", dot: "#242424" },
+  { k: "dark", label: "Dark", sub: "Low light", bg: "#242424", dot: "#FAF9F7" },
+  { k: "system", label: "System", sub: "Match device", bg: "linear-gradient(90deg,#FAF9F7 50%,#242424 50%)", dot: "#FF5300" },
+];
+
+export const PREFERENCES_DENSITY = [
+  { k: "comfortable", label: "Comfortable" },
+  { k: "compact", label: "Compact" },
+];
+
+export const PREFERENCES_NOTIFY = [
+  { label: "Follow-up queue nudges", sub: "When an account has no next action set", on: true },
+  { label: "Booking status changes", sub: "When a booking moves stage", on: true },
+  { label: "New feedback replies", sub: "When your reports get a reply on GitLab", on: false },
+  { label: "Daily brief", sub: "Your schedule and dues at 7:00 AM", on: true },
+  { label: "Sound", sub: "Play a chime for in-app alerts", on: false },
+];
+
+// ── Company Policies ─────────────────────────────────────────────────
+export type PolicyBlock =
+  | { type: "heading"; text: string }
+  | { type: "text"; text: string }
+  | { type: "list"; items: string[] };
+
+export interface PolicySection {
+  n: string;
+  title: string;
+  blocks: PolicyBlock[];
+}
+
+export const POLICY_META = {
+  ver: "Version 1.0",
+  eff: "Effective 22 Jul 2026",
+  owner: "Kahel Studio Management",
+  applies: "All employees unless a policy states otherwise",
+};
+
+export const POLICY_NOTE =
+  "This handbook should be reviewed by a Philippine HR or labour-law professional before formal adoption. Statutory benefits, wage rates and government contribution rules follow the latest applicable requirements.";
+
+export const POLICY_ACK_STATEMENT =
+  "I confirm that I have received access to the Kahel Studio Company Policies. I understand that I am responsible for reading and following the policies applicable to my role, that policies may be updated with material changes communicated through an authorised channel, and that this acknowledgement does not remove any rights provided by law or replace my employment agreement.";
+
+export const POLICY_SECTIONS: PolicySection[] = [
+  { n: "01", title: "Purpose and values", blocks: [
+    { type: "text", text: "Kahel Studio creates professional photography, video and visual experiences for individuals, businesses and organisations." },
+    { type: "text", text: "Every team member is expected to uphold these values:" },
+    { type: "list", items: ["Creativity — thoughtful, original and purposeful work.", "Professionalism — be reliable, prepared and respectful.", "Quality — meet the studio's technical and creative standards.", "Integrity — be honest, accountable and transparent.", "Collaboration — communicate clearly and support the team.", "Client care — protect the client's experience, privacy and trust.", "Continuous improvement — learn from feedback and improve our systems."] },
+    { type: "text", text: "Management may issue procedures, guidelines and SOPs supporting these policies." },
+  ]},
+  { n: "02", title: "Equal opportunity and respectful workplace", blocks: [
+    { type: "text", text: "Kahel Studio provides a professional workplace where people are treated fairly and respectfully. Discrimination, harassment, bullying, intimidation, retaliation and humiliating conduct are prohibited — involving employees, freelancers, interns, applicants, clients, suppliers and visitors." },
+    { type: "text", text: "Prohibited conduct includes:" },
+    { type: "list", items: ["Offensive comments or jokes", "Unwanted physical contact", "Sexual harassment or inappropriate advances", "Repeated insults, threats or public humiliation", "Discrimination based on protected characteristics", "Sharing offensive or inappropriate materials", "Retaliating against someone who reports a concern in good faith"] },
+    { type: "text", text: "Concerns may be reported privately to the Admin, Super Admin or another designated person. Reports are reviewed promptly and as confidentially as reasonably possible." },
+  ]},
+  { n: "03", title: "Employment classifications", blocks: [
+    { type: "text", text: "Team members may be classified as full-time, part-time, freelancer/independent contractor, intern/trainee, or probationary where applicable. The employment agreement determines classification, compensation, schedule, benefits and other terms." },
+    { type: "text", text: "Freelancers are not automatically entitled to employee benefits, but must comply with confidentiality, safety, client-service, equipment and data-protection rules while working for the studio. A person's classification must reflect the actual working relationship and must not be used to avoid legal obligations." },
+  ]},
+  { n: "04", title: "Working schedule and attendance", blocks: [
+    { type: "heading", text: "Standard schedule" },
+    { type: "list", items: ["Five working days per week", "Eight working hours per day", "Scheduled meal and rest periods", "Schedules published through the Staff Hub or another authorised channel"] },
+    { type: "text", text: "Normal working hours must comply with applicable Philippine labour requirements (generally not exceeding eight hours per day for covered employees)." },
+    { type: "heading", text: "Attendance" },
+    { type: "list", items: ["Report on time and ready to work", "Record attendance accurately and clock in/out personally", "Record approved breaks, fieldwork and assignments correctly", "Review records and promptly report discrepancies", "Never clock in/out or alter records for another person"] },
+    { type: "text", text: "Falsifying attendance records is considered serious misconduct." },
+    { type: "heading", text: "Absence and lateness" },
+    { type: "text", text: "Inform your supervisor as soon as reasonably possible, preferably before the shift begins — with the reason, expected return, any urgent work to reassign, and supporting documentation when reasonably required. Repeated lateness or unauthorised absence may lead to corrective action; genuine emergencies are considered fairly." },
+  ]},
+  { n: "05", title: "Overtime, schedule extensions and rest days", blocks: [
+    { type: "text", text: "Kahel Studio promotes a sustainable five-day workweek and does not encourage routine overtime. Overtime or schedule extensions must:" },
+    { type: "list", items: ["Be necessary for an approved project, event or operational requirement", "Receive prior approval from an authorised supervisor", "Be accurately recorded", "Be reviewed before being included in payroll"] },
+    { type: "text", text: "Do not work beyond your approved schedule without authorisation, except to address an immediate safety or security concern. Unauthorised overtime may result in corrective action, but time actually worked is still reviewed and handled per law. Managers must not knowingly permit off-the-clock work. Rest-day and holiday work must be approved and processed under current rules." },
+  ]},
+  { n: "06", title: "Leave and time-off", blocks: [
+    { type: "text", text: "Submit leave requests through the Staff Hub within the required notice period whenever possible. A request should contain leave type, start and end dates, reason or supporting information, current commitments, and a practical work-handover plan." },
+    { type: "text", text: "Approval depends on eligibility, balance, business requirements and team schedules. Emergencies and illness are handled per circumstances. You will not be required to disclose unnecessary medical details; medical information is confidential." },
+    { type: "text", text: "Statutory leave entitlements follow applicable law. Covered employees with at least one year of service may qualify for five days of service incentive leave, subject to legal conditions and exemptions. Management may provide additional leave via contract or a separate benefit policy." },
+  ]},
+  { n: "07", title: "Payroll and compensation", blocks: [
+    { type: "text", text: "Employee payroll is normally processed semi-monthly — first payout on the 15th, second on the last calendar day. When a pay date falls on a holiday, weekend or banking interruption, the confirmed schedule is communicated through an authorised channel." },
+    { type: "text", text: "Payroll may include:" },
+    { type: "list", items: ["Basic salary or wages", "Approved overtime and premium pay", "Allowances, commissions or incentives", "Approved reimbursements", "Statutory contributions and withholding", "Authorised deductions", "Approved adjustments"] },
+    { type: "text", text: "Review your payslips and report discrepancies through the private payroll-discrepancy process — not in public or group channels. No disputed equipment, damage or cash-accountability amount is automatically deducted without proper review, documentation and any authorisation required by law. Salary information is confidential. 13th-month pay is administered per applicable requirements." },
+  ]},
+  { n: "08", title: "Performance and quality standards", blocks: [
+    { type: "text", text: "Employees are expected to understand briefs, prepare equipment and files before production, follow approved workflows and naming conventions, meet deadlines, check work before submission, communicate risks early, respond professionally to feedback, record progress accurately, and protect client files and studio assets." },
+    { type: "text", text: "Performance may be assessed using work quality and accuracy, reliability and attendance, timeliness, client service, communication, equipment care, compliance with procedures, and initiative. Feedback should be specific, documented and focused on improvement." },
+  ]},
+  { n: "09", title: "Client service and professional conduct", blocks: [
+    { type: "text", text: "Employees represent Kahel Studio in every interaction with clients, guests, suppliers or partners. Team members must:" },
+    { type: "list", items: ["Be courteous, calm and helpful", "Confirm client instructions before production", "Avoid promises outside their authority", "Protect client privacy", "Escalate complaints promptly", "Maintain appropriate language and appearance", "Avoid arguments with clients", "Never request personal payments, tips or side arrangements without authorisation"] },
+    { type: "text", text: "Client complaints must be documented objectively. Do not delete, conceal or manipulate complaint records." },
+  ]},
+  { n: "10", title: "Confidentiality and intellectual property", blocks: [
+    { type: "text", text: "Confidential information includes client contacts, unreleased photos and videos, pricing, proposals and contracts, payroll and employee information, passwords, business and financial records, editing presets and internal workflows, and project files and source materials." },
+    { type: "text", text: "It may only be accessed or shared for authorised work. Employees must not:" },
+    { type: "list", items: ["Copy files for personal use", "Upload confidential work to unauthorised platforms", "Share passwords", "Publish unreleased client work", "Use client information to solicit private work", "Retain business files after access is withdrawn"] },
+    { type: "text", text: "Work created within scope is owned or licensed per the applicable agreement or client contract. Portfolio use requires approval and must respect client consent and release dates. Confidentiality obligations continue after employment or engagement ends." },
+  ]},
+  { n: "11", title: "Data privacy and system security", blocks: [
+    { type: "text", text: "Kahel Studio processes employee and client information only for legitimate, disclosed purposes with reasonable safeguards. Team members must:" },
+    { type: "list", items: ["Use only authorised accounts and devices", "Use strong, unique passwords and enable MFA when available", "Lock devices when unattended", "Store files only in approved locations", "Report suspected data loss or unauthorised access immediately", "Avoid sending sensitive files through public links", "Verify recipients before sharing information", "Never expose service credentials, access tokens or recovery codes"] },
+    { type: "text", text: "Access is granted by role and business need. Do not access another person's files, payroll records or private communications without authorisation. Monitoring, where used, follows transparency, legitimate purpose and proportionality. Personal information is protected under the Data Privacy Act." },
+  ]},
+  { n: "12", title: "Studio equipment and asset care", blocks: [
+    { type: "text", text: "Equipment may be used only for authorised work unless written permission is granted. Before use, verify the assignment, inspect condition, confirm batteries/media/accessories, use protective cases, and follow ingress/egress checklists." },
+    { type: "text", text: "After use, return equipment to its assigned location, report damage or loss immediately, transfer and verify project files, remove batteries when required, clean per procedures, and complete the return/handover record." },
+    { type: "text", text: "Do not conceal damage or attempt unauthorised repairs. Loss or damage is investigated fairly — financial accountability is not imposed automatically or deducted from payroll without evidence, due process and legal review." },
+  ]},
+  { n: "13", title: "Acceptable use of technology", blocks: [
+    { type: "text", text: "Studio computers, internet, email, software and storage are primarily for authorised business use. Prohibited activities include:" },
+    { type: "list", items: ["Installing unlicensed or unauthorised software", "Circumventing security controls", "Accessing illegal or harmful material", "Using pirated media or software", "Mining cryptocurrency", "Sharing accounts or licence credentials", "Connecting unknown storage devices without approval", "Uploading confidential material to unapproved AI services", "Using company systems for harassment, fraud or unlawful activity"] },
+    { type: "text", text: "Limited personal use may be permitted when it does not affect productivity, security, cost or operations." },
+  ]},
+  { n: "14", title: "Social media and public communication", blocks: [
+    { type: "text", text: "Only authorised representatives may issue official statements or publish through Kahel Studio's official accounts. Employees must not:" },
+    { type: "list", items: ["Present personal opinions as official company statements", "Publish confidential or unreleased material", "Post client images without required approval", "Disclose internal disputes or private employee information", "Use Kahel Studio branding for unauthorised activities", "Respond publicly to complaints unless assigned to do so"] },
+    { type: "text", text: "You may identify your workplace truthfully but should make clear when personal opinions are your own." },
+  ]},
+  { n: "15", title: "Outside work and conflicts of interest", blocks: [
+    { type: "text", text: "Disclose outside work, relationships or financial interests that may conflict with your duties. Examples include:" },
+    { type: "list", items: ["Privately accepting a Kahel Studio client's project", "Redirecting studio inquiries to a personal business", "Using studio equipment for unauthorised commercial work", "Accepting supplier benefits that could influence a decision", "Approving transactions involving a close relative or personal business", "Using confidential pricing or client information for personal gain"] },
+    { type: "text", text: "A disclosed conflict is not automatically prohibited — management assesses whether it can be appropriately managed." },
+  ]},
+  { n: "16", title: "Workplace safety", blocks: [
+    { type: "text", text: "Everyone is responsible for a safe studio and production environment. Employees must:" },
+    { type: "list", items: ["Follow safety instructions and location rules", "Keep exits, walkways and working areas clear", "Secure stands, lights, cables and suspended equipment", "Use sandbags and other safety equipment when required", "Handle electrical equipment properly", "Stop work when an immediate serious danger is identified", "Report injuries, near misses and unsafe conditions", "Avoid working while impaired"] },
+    { type: "text", text: "Photography equipment, lights, stands and electrical systems are operated only by trained or authorised personnel. Safety procedures follow applicable occupational safety and health requirements." },
+  ]},
+  { n: "17", title: "Substance-free workplace", blocks: [
+    { type: "text", text: "Employees must not work while impaired by alcohol or illegal drugs; possess, distribute or sell illegal drugs at work; consume alcohol during working time unless authorised for a legitimate business event; or operate vehicles or equipment while impaired." },
+    { type: "text", text: "If medication may affect safe performance, privately notify an authorised supervisor when an accommodation or task adjustment may be needed. Unnecessary medical details will not be requested." },
+  ]},
+  { n: "18", title: "Company funds and financial integrity", blocks: [
+    { type: "text", text: "Only authorised personnel may collect payments, issue refunds, approve expenses or access financial systems. All transactions must be recorded promptly, use the approved channel, have supporting evidence, be matched to the correct client/booking/project, and follow the required approval process." },
+    { type: "text", text: "Employees must not:" },
+    { type: "list", items: ["Borrow company or client funds", "Change financial records to conceal a shortage or error", "Process unauthorised refunds or discounts", "Ask clients to pay a personal account", "Create false receipts, expenses or supplier records", "Split purchases to avoid approval limits"] },
+    { type: "text", text: "Report errors immediately — good-faith reporting is encouraged and distinguished from deliberate misconduct." },
+  ]},
+  { n: "19", title: "Corrective action and due process", blocks: [
+    { type: "text", text: "Kahel Studio corrects problems fairly and consistently. Depending on circumstances, corrective action may include coaching or documented guidance, written notice, a Notice to Explain, an administrative meeting or investigation, a written decision, and an improvement plan, warning or another proportionate action." },
+    { type: "text", text: "You will be informed of the concern and given a reasonable opportunity to respond before a disciplinary decision, except for immediate protective measures during an investigation. Seriousness, frequency, intent, impact and prior record may be considered. Serious matters may include theft or fraud, violence or credible threats, serious harassment, deliberate disclosure of confidential information, falsification of records, serious safety violations, unauthorised removal of assets, deliberate destruction of files, gross insubordination, or repeated misconduct." },
+    { type: "text", text: "No disciplinary action is imposed merely because an employee made a good-faith complaint, reported a safety concern or exercised a lawful right." },
+  ]},
+  { n: "20", title: "Complaints, grievances and non-retaliation", blocks: [
+    { type: "text", text: "Raise workplace concerns early. A grievance should contain a clear description, relevant dates and people, supporting records if available, previous steps taken, and the resolution requested. Complaints may be submitted privately through the Staff Hub or directly to an authorised manager." },
+    { type: "text", text: "Retaliation against a person who raises a concern, participates in an investigation or refuses unlawful instructions is prohibited. Deliberately false or malicious allegations may be addressed separately." },
+  ]},
+  { n: "21", title: "Resignation, clearance and offboarding", blocks: [
+    { type: "text", text: "Employees who resign should provide the notice required by their contract and applicable law. Before separation, the employee must:" },
+    { type: "list", items: ["Complete project and client handovers", "Return company equipment, keys and documents", "Transfer business files to authorised storage", "Settle properly documented accountabilities", "Remove personal data from company devices with approval", "Stop using company accounts and systems", "Complete the clearance process"] },
+    { type: "text", text: "Access is disabled based on the last working day or earlier when necessary to protect clients, employees or systems. Final pay, certificates and separation records are processed per applicable requirements. Disputed charges are not silently deducted." },
+  ]},
+  { n: "22", title: "Policy administration", blocks: [
+    { type: "text", text: "These policies are published in the Staff Hub, assigned an owner and approver, given a version number and effective date, reviewed at least annually, updated when laws or operations change, preserved in version history, and communicated to affected personnel." },
+    { type: "text", text: "When this handbook conflicts with applicable law, the law applies. When an employment agreement grants a more favourable valid benefit, the agreement generally governs that benefit." },
+  ]},
+  { n: "23", title: "Remote and hybrid work", blocks: [
+    { type: "text", text: "Some roles may be performed remotely or on a hybrid basis with prior approval. Remote arrangements are a privilege tied to role, performance and business need, and may be adjusted or withdrawn with reasonable notice." },
+    { type: "text", text: "When working remotely, team members must:" },
+    { type: "list", items: ["Be reachable and responsive during agreed working hours", "Maintain a secure, private workspace for confidential work", "Use approved, protected networks and devices — never public Wi-Fi for sensitive files", "Keep the same attendance, availability and deliverable standards as on-site", "Safeguard equipment taken off-site and report loss or damage promptly"] },
+    { type: "text", text: "Client shoots, equipment handling and production work generally require on-site or on-location presence." },
+  ]},
+  { n: "24", title: "Training and professional development", blocks: [
+    { type: "text", text: "Kahel Studio invests in the growth of its team. Employees are expected to complete assigned onboarding, safety and compliance training within the given timeframe and to keep required certifications current." },
+    { type: "list", items: ["Attend scheduled training, briefings and skills sessions", "Apply learned workflows, standards and safety practices", "Share knowledge and mentor newer team members when asked", "Request development opportunities through a supervisor or the Staff Hub"] },
+    { type: "text", text: "Approved training time and reasonable materials may be supported at management's discretion. Certifications funded by the studio may be subject to a documented service or reimbursement agreement." },
+  ]},
+  { n: "25", title: "Anti-bribery, gifts and entertainment", blocks: [
+    { type: "text", text: "Team members must not offer, solicit or accept bribes, kickbacks or improper payments in connection with studio work. Business must be won and delivered on merit." },
+    { type: "text", text: "Regarding gifts and hospitality:" },
+    { type: "list", items: ["Modest, occasional gifts of nominal value from clients or suppliers may be acceptable", "Cash or cash-equivalent gifts must never be accepted", "Anything that could influence — or appear to influence — a decision must be declined or disclosed", "Gifts to government officials require prior approval and must follow applicable law", "Disclose offers you are unsure about to the Admin or Super Admin"] },
+    { type: "text", text: "When in doubt, decline politely and report it." },
+  ]},
+  { n: "26", title: "Emergency response and business continuity", blocks: [
+    { type: "text", text: "The safety of people always comes before equipment, files or schedules. In an emergency, stop work, move to safety and follow the instructions of authorised personnel or venue staff." },
+    { type: "list", items: ["Know the exits and assembly points at the studio and at each shoot location", "Report fire, injury, threat or hazard immediately to a supervisor and emergency services when needed", "Do not re-enter an unsafe area to retrieve equipment", "Follow backup and file-recovery procedures so client work can be restored", "Cooperate with headcounts and incident reporting after an event"] },
+    { type: "text", text: "Critical bookings affected by an emergency will be rescheduled or reassigned through an authorised channel and communicated to clients promptly." },
+  ]},
+  { n: "27", title: "Whistleblower protection", blocks: [
+    { type: "text", text: "Team members are encouraged to report suspected illegal conduct, fraud, safety violations, harassment or serious policy breaches in good faith." },
+    { type: "list", items: ["Reports may be made privately to the Admin, Super Admin or another designated person", "Reports are handled discreetly and shared only with those who need to know", "A good-faith reporter is protected from retaliation, demotion or dismissal for reporting", "Investigations are conducted fairly and documented", "Knowingly false or malicious reports may be addressed separately"] },
+    { type: "text", text: "Raising a concern responsibly is treated as protecting the studio, its clients and its people." },
+  ]},
+  { n: "28", title: "Sustainability and community responsibility", blocks: [
+    { type: "text", text: "Kahel Studio aims to operate responsibly toward its community and environment. Team members are encouraged to:" },
+    { type: "list", items: ["Reduce waste — reuse packaging, minimise printing and manage storage efficiently", "Power down lights, equipment and workstations when not in use", "Handle batteries, electronics and consumables per proper disposal guidance", "Treat shoot locations, venues and neighbours with respect and leave spaces as found", "Represent the studio positively in the community"] },
+    { type: "text", text: "Suggestions that improve sustainability or community impact are welcome through the Staff Hub." },
+  ]},
+];
+
+export const IT_POLICY_SECTIONS: PolicySection[] = [
+  { n: "01", title: "Accounts and access", blocks: [
+    { type: "text", text: "This policy governs the responsible use of Kahel Studio's IT systems — devices, networks, accounts, software, storage and studio hardware. It works alongside the Data privacy, Acceptable use and Confidentiality policies." },
+    { type: "list", items: ["Use only accounts assigned to you; never share logins or credentials", "Enable multi-factor authentication on every account that supports it", "Use strong, unique passwords stored in an approved password manager", "Access is granted by role and least privilege — request changes through IT/Admin", "Report lost devices, suspected compromise or phishing immediately"] },
+  ]},
+  { n: "02", title: "Devices and endpoints", blocks: [
+    { type: "list", items: ["Keep operating systems, apps and security tools updated", "Encrypt laptops and mobile devices used for studio work where available", "Lock screens when away and never leave devices unattended in public", "Personal devices used for work must meet minimum security requirements and may be de-provisioned on separation", "Do not disable antivirus, firewalls or device-management tools"] },
+  ]},
+  { n: "03", title: "Software and data", blocks: [
+    { type: "list", items: ["Install only licensed, approved software — no pirated or unauthorised tools", "Store client and business files only in approved, backed-up locations", "Do not upload confidential material to unapproved cloud or AI services", "Follow the 3-2-1 backup practice for critical project files", "Delete or return data per retention rules when a project or engagement ends"] },
+  ]},
+  { n: "04", title: "Network and studio systems", blocks: [
+    { type: "list", items: ["Use secured networks; avoid public Wi-Fi for sensitive work", "Do not connect unknown drives or hardware without approval", "Studio NAS, capture stations and licence servers are for authorised work only", "Changes to shared systems, cabling or configurations require IT/Admin approval"] },
+  ]},
+  { n: "05", title: "Support and incidents", blocks: [
+    { type: "text", text: "Log IT requests and incidents through the Staff Hub or the designated IT contact. Suspected security incidents must be reported within the same working day. IT may access, monitor or recover company systems for legitimate, declared purposes following transparency and proportionality; personal privacy is respected within legal limits." },
+  ]},
+];
