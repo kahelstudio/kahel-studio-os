@@ -1475,3 +1475,256 @@ export const IT_POLICY_SECTIONS: PolicySection[] = [
     { type: "text", text: "Log IT requests and incidents through the Staff Hub or the designated IT contact. Suspected security incidents must be reported within the same working day. IT may access, monitor or recover company systems for legitimate, declared purposes following transparency and proportionality; personal privacy is respected within legal limits." },
   ]},
 ];
+
+// ── Payroll ──────────────────────────────────────────────────────────
+function pmoney(n: number) {
+  return "₱" + n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+export const PAYROLL_PRIMARY_KPIS = [
+  { label: "Estimated gross pay", value: pmoney(55420), tag: "Estimated" },
+  { label: "Total deductions", value: pmoney(7865.5), tag: "Estimated" },
+  { label: "Estimated net pay", value: pmoney(47554.5), tag: "Estimated" },
+  { label: "Employees included", value: "5", tag: "This run" },
+];
+
+export const PAYROLL_SEC_STATS = [
+  { label: "Attendance exceptions", value: "3", sub: "2 blocking · 1 non-blocking", accent: "#8A6D00" },
+  { label: "Pending approvals", value: "1", sub: "Awaiting super admin", accent: "#8A6D00" },
+  { label: "Employer contributions", value: pmoney(6142), sub: "SSS · PhilHealth · Pag-IBIG", accent: "#00575C" },
+  { label: "Upcoming payment", value: "31 Jul 2026", sub: "Second cutoff", accent: "#2A1F87" },
+];
+
+export const PAYROLL_ATTENTION = [
+  { emp: "Ivy Santos", issue: "Missing attendance", detail: "No timesheet for 28–29 Jul", sev: "block", date: "29 Jul", action: "Import timesheet", who: "M. Reyes" },
+  { emp: "Danilo Cruz", issue: "Unapproved overtime", detail: "2.0 hrs pending manager approval", sev: "block", date: "27 Jul", action: "Request approval", who: "E. Barrun" },
+  { emp: "Josefa Lim", issue: "Duplicate adjustment", detail: "Incentive entered twice", sev: "warn", date: "26 Jul", action: "Review adjustments", who: "M. Reyes" },
+].map((a) => ({
+  ...a,
+  sevBg: a.sev === "block" ? "#FDE4EA" : "#FDF0D5",
+  sevColor: a.sev === "block" ? "#8A0625" : "#8A6D00",
+  sevLabel: a.sev === "block" ? "Blocking" : "Non-blocking",
+  dot: a.sev === "block" ? "#D3163C" : "#C99400",
+}));
+
+const PAYROLL_STATUS: Record<string, { bg: string; c: string; label: string }> = {
+  draft: { bg: "#F1EFEC", c: "#6E6963", label: "Draft" },
+  attreview: { bg: "#FDF0D5", c: "#8A6D00", label: "Attendance review" },
+  paid: { bg: "#E0F7EC", c: "#005430", label: "Paid" },
+  completed: { bg: "#E0F7EC", c: "#005430", label: "Completed" },
+};
+
+export const PAYROLL_RUNS = [
+  { ref: "PAY-2026-07-B", period: "16–31 Jul 2026", pay: "31 Jul 2026", emps: "5", gross: pmoney(55420), ded: pmoney(7865.5), net: pmoney(47554.5), st: "attreview", by: "M. Reyes" },
+  { ref: "PAY-2026-07-A", period: "1–15 Jul 2026", pay: "15 Jul 2026", emps: "5", gross: pmoney(54980), ded: pmoney(7790), net: pmoney(47190), st: "paid", by: "M. Reyes" },
+  { ref: "PAY-2026-06-B", period: "16–30 Jun 2026", pay: "30 Jun 2026", emps: "5", gross: pmoney(54200), ded: pmoney(7710), net: pmoney(46490), st: "completed", by: "M. Reyes" },
+  { ref: "PAY-2026-06-OC1", period: "Off-cycle · Jun", pay: "20 Jun 2026", emps: "1", gross: pmoney(3200), ded: pmoney(0), net: pmoney(3200), st: "completed", by: "M. Reyes" },
+  { ref: "PAY-2026-06-A", period: "1–15 Jun 2026", pay: "15 Jun 2026", emps: "5", gross: pmoney(53900), ded: pmoney(7680), net: pmoney(46220), st: "completed", by: "M. Reyes" },
+].map((r) => ({ ...r, stBg: PAYROLL_STATUS[r.st].bg, stColor: PAYROLL_STATUS[r.st].c, stLabel: PAYROLL_STATUS[r.st].label }));
+
+const EMP_TYPE_TINT: Record<string, { bg: string; c: string }> = {
+  "Full time": { bg: "#EDEAFD", c: "#2A1F87" },
+  "Part time": { bg: "#E0F7F8", c: "#00575C" },
+  Intern: { bg: "#F1EFEC", c: "#6E6963" },
+  Freelancer: { bg: "#FFF4EE", c: "#B33800" },
+};
+
+export const PAYROLL_EMPLOYEES = [
+  { ini: "MR", name: "Marisol Reyes", id: "EMP-002", role: "Studio manager", type: "Full time", basis: "Monthly", rate: "₱35,000/mo", method: "BPI ••4021", ready: true },
+  { ini: "DC", name: "Danilo Cruz", id: "EMP-004", role: "Senior editor", type: "Full time", basis: "Monthly", rate: "₱30,000/mo", method: "BDO ••7788", ready: true },
+  { ini: "IS", name: "Ivy Santos", id: "EMP-007", role: "Junior photographer", type: "Full time", basis: "Monthly", rate: "₱22,000/mo", method: "GCash ••7712", ready: true },
+  { ini: "JL", name: "Josefa Lim", id: "EMP-009", role: "Retouch assistant", type: "Part time", basis: "Hourly", rate: "₱180/hr", method: "Maya ••1150", ready: true },
+  { ini: "KT", name: "Kevin Tan", id: "EMP-011", role: "Production intern", type: "Intern", basis: "Allowance", rate: "₱8,000/mo", method: "GCash ••3390", ready: true },
+  { ini: "MP", name: "Miguel Padua", id: "FRL-003", role: "Videographer", type: "Freelancer", basis: "Per project", rate: "By statement", method: "Bank ••9921", ready: false },
+].map((e) => ({
+  ...e,
+  tBg: EMP_TYPE_TINT[e.type].bg,
+  tColor: EMP_TYPE_TINT[e.type].c,
+  readyBg: e.ready ? "#E0F7EC" : "#FDF0D5",
+  readyColor: e.ready ? "#005430" : "#8A6D00",
+  readyLabel: e.ready ? "Ready" : "Needs setup",
+}));
+
+export const PAYROLL_EMPLOYEE_PROFILE = {
+  name: "Marisol Reyes",
+  id: "EMP-002",
+  role: "Studio manager",
+  team: "Operations",
+  type: "Full time",
+  schedule: "Semi-monthly · 5 days/week · 8 hrs",
+  rate: "₱35,000.00 / month",
+  semi: "₱17,500.00 / cutoff",
+  bank: "BPI •••• 4021",
+  sss: "34-•••••••-8",
+  ph: "12-••••••••-4",
+  pag: "1210-••••-••21",
+  tin: "284-•••-•••-000",
+  earnings: [
+    { label: "Basic salary", value: "₱17,500.00 / cutoff" },
+    { label: "Communication allowance", value: "₱1,000.00 / cutoff" },
+  ],
+  deductions: [
+    { label: "SSS (EE share)", value: "₱787.50" },
+    { label: "PhilHealth (EE share)", value: "₱437.50" },
+    { label: "Pag-IBIG (EE share)", value: "₱100.00" },
+    { label: "Company loan", value: "₱500.00 · 4 of 10" },
+  ],
+  history: [
+    { prev: "₱30,000.00", next: "₱35,000.00", date: "1 Jan 2026", reason: "Promotion to studio manager" },
+    { prev: "₱26,000.00", next: "₱30,000.00", date: "1 Jul 2025", reason: "Annual merit increase" },
+  ],
+  payslips: [
+    { ref: "PS-2026-07-A-002", period: "1–15 Jul 2026", net: "₱15,590.00" },
+    { ref: "PS-2026-06-B-002", period: "16–30 Jun 2026", net: "₱15,475.00" },
+    { ref: "PS-2026-06-A-002", period: "1–15 Jun 2026", net: "₱15,410.00" },
+  ],
+};
+
+const ADJ_STATUS: Record<string, { bg: string; c: string }> = {
+  applied: { bg: "#E0F7EC", c: "#005430" },
+  approved: { bg: "#E0F7EC", c: "#005430" },
+  awaiting: { bg: "#FDF0D5", c: "#8A6D00" },
+  rejected: { bg: "#FDE4EA", c: "#8A0625" },
+  reversed: { bg: "#EDEAFD", c: "#2A1F87" },
+};
+
+export const PAYROLL_ADJUSTMENTS = [
+  { ref: "ADJ-0142", emp: "Marisol Reyes", kind: "Company loan", dir: "Deduction", amt: "−₱500.00", run: "PAY-2026-07-B", st: "applied", stL: "Applied" },
+  { ref: "ADJ-0141", emp: "Danilo Cruz", kind: "Salary advance", dir: "Deduction", amt: "−₱1,000.00", run: "PAY-2026-07-B", st: "applied", stL: "Applied" },
+  { ref: "ADJ-0140", emp: "Ivy Santos", kind: "Holiday pay", dir: "Earning", amt: "+₱500.00", run: "PAY-2026-07-B", st: "approved", stL: "Approved" },
+  { ref: "ADJ-0139", emp: "Josefa Lim", kind: "Incentive", dir: "Earning", amt: "+₱500.00", run: "PAY-2026-07-B", st: "awaiting", stL: "Awaiting approval" },
+  { ref: "ADJ-0138", emp: "Josefa Lim", kind: "Incentive (duplicate)", dir: "Earning", amt: "+₱500.00", run: "PAY-2026-07-B", st: "rejected", stL: "Rejected" },
+  { ref: "ADJ-0137", emp: "Danilo Cruz", kind: "Retro pay correction", dir: "Earning", amt: "+₱1,200.00", run: "PAY-2026-06-B", st: "reversed", stL: "Reversed" },
+].map((a) => ({ ...a, dirColor: a.dir === "Earning" ? "#005430" : "#8A0625", stBg: ADJ_STATUS[a.st].bg, stColor: ADJ_STATUS[a.st].c }));
+
+const PS_STATUS: Record<string, { bg: string; c: string }> = {
+  generated: { bg: "#E3EDFF", c: "#053799" },
+  published: { bg: "#E0F7EC", c: "#005430" },
+  viewed: { bg: "#E0F7EC", c: "#005430" },
+  downloaded: { bg: "#E0F7EC", c: "#005430" },
+};
+
+export const PAYROLL_PAYSLIPS = [
+  { ref: "PS-2026-07-A-002", emp: "Marisol Reyes", period: "1–15 Jul 2026", net: "₱15,590.00", st: "downloaded", stL: "Downloaded" },
+  { ref: "PS-2026-07-A-004", emp: "Danilo Cruz", period: "1–15 Jul 2026", net: "₱13,020.00", st: "viewed", stL: "Viewed" },
+  { ref: "PS-2026-07-A-007", emp: "Ivy Santos", period: "1–15 Jul 2026", net: "₱10,410.00", st: "published", stL: "Published" },
+  { ref: "PS-2026-07-A-009", emp: "Josefa Lim", period: "1–15 Jul 2026", net: "₱4,760.00", st: "generated", stL: "Generated" },
+  { ref: "PS-2026-07-A-011", emp: "Kevin Tan", period: "1–15 Jul 2026", net: "₱4,000.00", st: "published", stL: "Published" },
+].map((p) => ({ ...p, stBg: PS_STATUS[p.st].bg, stColor: PS_STATUS[p.st].c }));
+
+const CONT_STATUS: Record<string, { bg: string; c: string; l: string }> = {
+  ready: { bg: "#E3EDFF", c: "#053799", l: "Ready for review" },
+  due: { bg: "#FDF0D5", c: "#8A6D00", l: "Due" },
+  scheduled: { bg: "#E3EDFF", c: "#053799", l: "Scheduled" },
+  remitted: { bg: "#E0F7EC", c: "#005430", l: "Remitted" },
+};
+
+export const PAYROLL_CONTRIB_TABS = [
+  { k: "sss", label: "SSS" },
+  { k: "philhealth", label: "PhilHealth" },
+  { k: "pagibig", label: "Pag-IBIG" },
+  { k: "tax", label: "Withholding tax" },
+] as const;
+
+export const PAYROLL_CONTRIB_DATA: Record<string, { period: string; ee: string; er: string; total: string; emps: string; due: string; st: string; ref: string }[]> = {
+  sss: [
+    { period: "Jul 2026", ee: "₱2,182.50", er: "₱4,057.50", total: "₱6,240.00", emps: "4", due: "31 Aug 2026", st: "due", ref: "—" },
+    { period: "Jun 2026", ee: "₱2,182.50", er: "₱4,057.50", total: "₱6,240.00", emps: "4", due: "31 Jul 2026", st: "remitted", ref: "SSS-0626-118" },
+  ],
+  philhealth: [
+    { period: "Jul 2026", ee: "₱1,212.50", er: "₱1,212.50", total: "₱2,425.00", emps: "4", due: "20 Aug 2026", st: "ready", ref: "—" },
+    { period: "Jun 2026", ee: "₱1,212.50", er: "₱1,212.50", total: "₱2,425.00", emps: "4", due: "20 Jul 2026", st: "remitted", ref: "PH-0626-771" },
+  ],
+  pagibig: [
+    { period: "Jul 2026", ee: "₱400.00", er: "₱400.00", total: "₱800.00", emps: "4", due: "10 Aug 2026", st: "scheduled", ref: "PI-SCHED-08" },
+    { period: "Jun 2026", ee: "₱400.00", er: "₱400.00", total: "₱800.00", emps: "4", due: "10 Jul 2026", st: "remitted", ref: "PI-0626-410" },
+  ],
+  tax: [
+    { period: "Jul 2026", ee: "₱2,450.00", er: "—", total: "₱2,450.00", emps: "3", due: "10 Aug 2026", st: "ready", ref: "—" },
+    { period: "Jun 2026", ee: "₱2,450.00", er: "—", total: "₱2,450.00", emps: "3", due: "10 Jul 2026", st: "remitted", ref: "BIR-0626-902" },
+  ],
+};
+
+export function contribStyle(st: string) {
+  return CONT_STATUS[st];
+}
+
+export const PAYROLL_13TH = [
+  { name: "Marisol Reyes", basis: "₱210,000.00", earned: "₱17,500.00", paid: "₱0.00", bal: "₱17,500.00", st: "ready", stL: "Ready" },
+  { name: "Danilo Cruz", basis: "₱180,000.00", earned: "₱15,000.00", paid: "₱0.00", bal: "₱15,000.00", st: "ready", stL: "Ready" },
+  { name: "Ivy Santos", basis: "₱132,000.00", earned: "₱11,000.00", paid: "₱0.00", bal: "₱11,000.00", st: "ready", stL: "Ready" },
+  { name: "Josefa Lim", basis: "₱54,000.00", earned: "₱4,500.00", paid: "₱0.00", bal: "₱4,500.00", st: "review", stL: "Needs review" },
+  { name: "Kevin Tan", basis: "—", earned: "—", paid: "—", bal: "—", st: "excluded", stL: "Not eligible" },
+].map((r) => {
+  const m: Record<string, { bg: string; c: string }> = {
+    ready: { bg: "#E3EDFF", c: "#053799" },
+    review: { bg: "#FDF0D5", c: "#8A6D00" },
+    excluded: { bg: "#F1EFEC", c: "#9B9691" },
+  };
+  return { ...r, stBg: m[r.st].bg, stColor: m[r.st].c };
+});
+
+export const PAYROLL_13TH_TOTALS = { eligible: "4", earned: "₱48,000.00", paid: "₱0.00", bal: "₱48,000.00" };
+
+export const PAYROLL_REPORTS = [
+  { group: "Payroll", items: ["Payroll register", "Gross-to-net summary", "Earnings summary", "Deduction summary", "Payroll variance"] },
+  { group: "Statutory", items: ["Contribution summary", "13th-month pay", "Year-to-date payroll", "Withholding tax"] },
+  { group: "Operations", items: ["Payment status", "Attendance-to-payroll", "Overtime", "Leave deductions", "Salary changes"] },
+  { group: "People & cost", items: ["Payroll cost by team", "Freelancer payments", "Final pay", "Payroll adjustments", "Payroll audit report"] },
+];
+
+export const PAYROLL_SETTINGS_GROUPS = [
+  { title: "Schedule & cutoffs", items: [{ l: "Payroll schedule", v: "Semi-monthly" }, { l: "First cutoff / payout", v: "1–15 · paid 15th" }, { l: "Second cutoff / payout", v: "16–EOM · paid last day" }, { l: "Standard work", v: "5 days/week · 8 hrs" }] },
+  { title: "Calculation rules", items: [{ l: "Proration", v: "Calendar days" }, { l: "Rounding", v: "2 decimal places" }, { l: "Overtime", v: "Requires prior approval" }, { l: "Late & undertime", v: "Per-minute deduction" }] },
+  { title: "Tables & versions", items: [{ l: "SSS table", v: "2025 · v2 (verify)" }, { l: "PhilHealth", v: "2025 · 5.0% (verify)" }, { l: "Pag-IBIG", v: "2% capped (verify)" }, { l: "Withholding tax", v: "TRAIN 2023 (verify)" }] },
+  { title: "Controls", items: [{ l: "Approval chain", v: "Admin → Super admin" }, { l: "Separation of duties", v: "On" }, { l: "Payroll lock date", v: "On approval" }, { l: "Sensitive exports", v: "Super admin only" }] },
+];
+
+export const PAYROLL_AUDIT = [
+  { ev: "Attendance imported", actor: "Marisol Reyes", ref: "PAY-2026-07-B", prev: "—", next: "5 timesheets", reason: "Cutoff close", when: "22 Jul 2026 · 14:20", dot: "#053799" },
+  { ev: "Adjustment rejected", actor: "Marisol Reyes", ref: "ADJ-0138", prev: "Awaiting", next: "Rejected", reason: "Duplicate incentive", when: "22 Jul 2026 · 11:05", dot: "#8A0625" },
+  { ev: "Salary change approved", actor: "Eusebio Barrun", ref: "EMP-002", prev: "₱30,000.00", next: "₱35,000.00", reason: "Promotion", when: "1 Jan 2026 · 09:00", dot: "#005430" },
+  { ev: "Payroll released", actor: "Eusebio Barrun", ref: "PAY-2026-07-A", prev: "Approved", next: "Paid", reason: "Payment confirmed", when: "15 Jul 2026 · 16:02", dot: "#005430" },
+  { ev: "Sensitive export", actor: "Eusebio Barrun", ref: "RPT · Gross-to-net", prev: "—", next: "XLSX", reason: "Accountant request", when: "15 Jul 2026 · 16:40", dot: "#2A1F87" },
+];
+
+const STATE_TONE: Record<string, { bg: string; c: string }> = {
+  blue: { bg: "#E3EDFF", c: "#053799" },
+  red: { bg: "#FDE4EA", c: "#8A0625" },
+  amber: { bg: "#FDF0D5", c: "#8A6D00" },
+  grey: { bg: "#F1EFEC", c: "#6E6963" },
+};
+
+export const PAYROLL_STATES = [
+  { tone: "blue", title: "Calculating…", what: "Computing pay for 5 employees. This usually takes under a minute.", action: "Calculation runs automatically" },
+  { tone: "red", title: "Calculation failed", what: "A salary rate is missing for Ivy Santos, so the run could not finish. Nothing was saved.", action: "Fix salary & recalculate" },
+  { tone: "amber", title: "Needs review", what: "3 results differ notably from the previous cutoff. Confirm the figures before approval.", action: "Open payroll register" },
+  { tone: "blue", title: "Processing payment", what: "Transfers for 5 employees are being submitted to the payout provider.", action: "View payment status" },
+  { tone: "amber", title: "Partial payment", what: "4 of 5 paid. Ivy Santos is on hold pending a valid payment method.", action: "Resolve held payment" },
+  { tone: "red", title: "Payment failed", what: "A GCash transfer was returned — the number could not be verified.", action: "Retry payment" },
+  { tone: "red", title: "Contribution overdue", what: "The June SSS remittance is past its due date. File soon to avoid penalties.", action: "Record remittance" },
+  { tone: "grey", title: "Payroll locked", what: "PAY-2026-06-B is completed and immutable. Corrections require a reversal.", action: "Create a correction" },
+  { tone: "grey", title: "Permission denied", what: "Your role can view attendance but not salaries, deductions or net pay.", action: "Request payroll access" },
+  { tone: "amber", title: "Editing conflict", what: "Marisol Reyes changed this run while you were working. Reload to get the latest.", action: "Reload pay run" },
+  { tone: "grey", title: "Connection lost", what: "You are offline. Changes are saved locally and will sync when you reconnect.", action: "Retry now" },
+  { tone: "red", title: "Export failed", what: "The gross-to-net export could not be generated. No sensitive data left the system.", action: "Try export again" },
+].map((s) => ({
+  ...s,
+  bg: STATE_TONE[s.tone].bg,
+  c: STATE_TONE[s.tone].c,
+  sev: { red: "Blocking", amber: "Attention", blue: "In progress", grey: "Info" }[s.tone],
+}));
+
+export const PAYROLL_STATUS_CHIPS = [
+  { label: "Draft", bg: "#F1EFEC", c: "#6E6963" },
+  { label: "Attendance review", bg: "#FDF0D5", c: "#8A6D00" },
+  { label: "Ready to calculate", bg: "#E3EDFF", c: "#053799" },
+  { label: "Needs review", bg: "#FDF0D5", c: "#8A6D00" },
+  { label: "Awaiting approval", bg: "#FDF0D5", c: "#8A6D00" },
+  { label: "Approved", bg: "#E0F7EC", c: "#005430" },
+  { label: "Scheduled", bg: "#E3EDFF", c: "#053799" },
+  { label: "Partially paid", bg: "#FDF0D5", c: "#8A6D00" },
+  { label: "Paid", bg: "#E0F7EC", c: "#005430" },
+  { label: "Rejected", bg: "#FDE4EA", c: "#8A0625" },
+  { label: "Cancelled", bg: "#F1EFEC", c: "#9B9691" },
+];
