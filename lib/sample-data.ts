@@ -1111,3 +1111,11 @@ export const COMPLIANCE_SUMMARY = [
   { label: "Estimated fees due", value: "₱18,500", tone: "#141414", sub: "Planning estimate" },
   { label: "Actual fees paid (YTD)", value: "₱21,900", tone: "#141414", sub: "2026 to date" },
 ];
+
+// ── Feedback ─────────────────────────────────────────────────────────
+export const FEEDBACK_REPORTS = [
+  { kind: "Problem", kc: "#8A0625", kb: "#FDE4EA", summary: "Balance on Reyes booking doesn't match deposit", iid: "#248", app: "Booking", status: "In progress", sc: "#0B5FFF" },
+  { kind: "Idea", kc: "#053799", kb: "#E3EDFF", summary: "Add a \"duplicate booking\" action", iid: "#241", app: "Booking", status: "Triaged", sc: "#6E6963" },
+  { kind: "Problem", kc: "#8A0625", kb: "#FDE4EA", summary: "POS cart clears if I switch tabs", iid: "#236", app: "POS", status: "Shipped", sc: "#00A15C" },
+  { kind: "Idea", kc: "#053799", kb: "#E3EDFF", summary: "Show referral source on account cards", iid: "#229", app: "CRM", status: "Submitted", sc: "#9B9691" },
+];
