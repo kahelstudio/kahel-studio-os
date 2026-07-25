@@ -725,3 +725,389 @@ export const GLITCHES = [
   stL: GLITCH_ST[g.st].l,
   sevColor: SEV_COLOR[g.sev],
 }));
+
+// ── Website ──────────────────────────────────────────────────────────
+const WEB_STATUS: Record<string, { bg: string; c: string; label: string }> = {
+  published: { bg: "#E0F7EC", c: "#005430", label: "Published" },
+  draft: { bg: "#F1EFEC", c: "#6E6963", label: "Draft" },
+};
+
+export const WEBSITE_PORTFOLIO = [
+  { slot: "pf1", title: "Deveza Wedding", cat: "Weddings", consent: "CR-2026-014", st: "published" },
+  { slot: "pf2", title: "Solaire Gala Night", cat: "Corporate", consent: "CR-2026-011", st: "published" },
+  { slot: "pf3", title: "Lim Prenup — Batanes", cat: "Engagement", consent: "CR-2026-018", st: "draft" },
+  { slot: "pf4", title: "Ayala Land Portraits", cat: "Corporate", consent: "CR-2026-009", st: "published" },
+  { slot: "pf5", title: "Reyes Christening", cat: "Family", consent: "pending", st: "draft" },
+  { slot: "pf6", title: "Studio Product Series", cat: "Commercial", consent: "CR-2026-021", st: "published" },
+].map((p) => ({
+  ...p,
+  stBg: WEB_STATUS[p.st].bg,
+  stColor: WEB_STATUS[p.st].c,
+  stLabel: WEB_STATUS[p.st].label,
+  consentMono: p.consent === "pending" ? "consent pending" : p.consent,
+}));
+
+export const WEBSITE_PAGES = [
+  { path: "/", title: "Home", st: "published" },
+  { path: "/portfolio", title: "Portfolio", st: "published" },
+  { path: "/services", title: "Services & packages", st: "published" },
+  { path: "/about", title: "About the studio", st: "draft" },
+].map((p) => ({ ...p, stBg: WEB_STATUS[p.st].bg, stColor: WEB_STATUS[p.st].c, stLabel: WEB_STATUS[p.st].label }));
+
+// ── Inventory ────────────────────────────────────────────────────────
+const INV_STATUS: Record<string, { bg: string; c: string; label: string }> = {
+  available: { bg: "#E0F7EC", c: "#005430", label: "Available" },
+  out: { bg: "#FFE3D4", c: "#B33800", label: "Checked out" },
+  maint: { bg: "#FDE4EA", c: "#8A0625", label: "Maintenance" },
+};
+
+export const INVENTORY_EQUIPMENT = [
+  { serial: "CAM-R5-01", name: "Canon EOS R5", cat: "Camera body", st: "out", note: "Ayala shoot · back 23 Jul" },
+  { serial: "CAM-R5-02", name: "Canon EOS R5", cat: "Camera body", st: "available", note: "Studio cabinet" },
+  { serial: "LNS-2470-01", name: "RF 24–70mm f/2.8", cat: "Lens", st: "out", note: "Ayala shoot · back 23 Jul" },
+  { serial: "LNS-85-01", name: "RF 85mm f/1.2", cat: "Lens", st: "available", note: "Studio cabinet" },
+  { serial: "LGT-AD600-01", name: "Godox AD600 Pro", cat: "Lighting", st: "maint", note: "Modelling lamp fault" },
+  { serial: "GMB-RS3-01", name: "DJI RS 3 Gimbal", cat: "Support", st: "available", note: "Studio cabinet" },
+].map((e) => ({
+  ...e,
+  stBg: INV_STATUS[e.st].bg,
+  stColor: INV_STATUS[e.st].c,
+  stLabel: INV_STATUS[e.st].label,
+  noteColor: e.st === "maint" ? "#8A0625" : "#6E6963",
+}));
+
+// ── Marketing ────────────────────────────────────────────────────────
+const MKT_STATUS: Record<string, { bg: string; c: string; label: string }> = {
+  live: { bg: "#E0F7EC", c: "#005430", label: "Live" },
+  scheduled: { bg: "#E3EDFF", c: "#053799", label: "Scheduled" },
+  ended: { bg: "#F1EFEC", c: "#6E6963", label: "Ended" },
+};
+
+export const MARKETING_KPIS = [
+  { label: "Attributed revenue", value: "₱186,400" },
+  { label: "Bookings from campaigns", value: "9" },
+  { label: "Cost per booking", value: "₱642" },
+];
+
+export const MARKETING_CAMPAIGNS = [
+  { name: "Wedding season — Meta", channel: "Facebook · Instagram", spend: "₱24,000", bookings: "5", st: "live" },
+  { name: "Corporate headshots — LinkedIn", channel: "LinkedIn Ads", spend: "₱12,500", bookings: "2", st: "live" },
+  { name: "Graduation portraits", channel: "Instagram · TikTok", spend: "₱8,000", bookings: "2", st: "scheduled" },
+  { name: "Valentine prenup promo", channel: "Facebook", spend: "₱15,000", bookings: "6", st: "ended" },
+].map((c) => ({ ...c, stBg: MKT_STATUS[c.st].bg, stColor: MKT_STATUS[c.st].c, stLabel: MKT_STATUS[c.st].label }));
+
+export const MARKETING_SOURCES = [
+  { label: "Instagram", pct: 38, val: "₱70,800" },
+  { label: "Referral", pct: 27, val: "₱50,300" },
+  { label: "Facebook", pct: 21, val: "₱39,100" },
+  { label: "Website", pct: 14, val: "₱26,200" },
+].map((s, i) => ({ ...s, color: i === 0 ? "#FF5300" : "#C7C3BE", labelColor: i === 0 ? "#B33800" : "#6E6963" }));
+
+// ── Attendance ───────────────────────────────────────────────────────
+const ATT_STATUS: Record<string, { bg: string; c: string; label: string }> = {
+  in: { bg: "#E0F7EC", c: "#005430", label: "On shoot" },
+  done: { bg: "#F1EFEC", c: "#6E6963", label: "Logged" },
+  pending: { bg: "#FFE3D4", c: "#B33800", label: "Unsubmitted" },
+};
+
+export const ATTENDANCE_ROWS = [
+  { ini: "EB", name: "Eusebio Barrun", role: "Owner · Lead", hours: "6.5h", engagement: "Ayala Land — Headshots", st: "in" },
+  { ini: "JR", name: "Jasmine Reyes", role: "Second shooter", hours: "8.0h", engagement: "Solaire — Event", st: "done" },
+  { ini: "MP", name: "Miguel Padua", role: "Freelance video", hours: "5.0h", engagement: "Deveza — Wedding prep", st: "pending" },
+  { ini: "CL", name: "Carla Lim", role: "Retoucher", hours: "7.0h", engagement: "Post — editing pool", st: "done" },
+].map((r) => ({ ...r, stBg: ATT_STATUS[r.st].bg, stColor: ATT_STATUS[r.st].c, stLabel: ATT_STATUS[r.st].label }));
+
+export const ATTENDANCE_KPIS = [
+  { label: "Logged this week", value: "132.5h" },
+  { label: "Active engagements", value: "4" },
+  { label: "Unsubmitted", value: "1" },
+];
+
+// ── Recruitment ──────────────────────────────────────────────────────
+const REC_STAGES: Record<string, { label: string; bg: string; c: string }> = {
+  applied: { label: "Applied", bg: "#F1EFEC", c: "#6E6963" },
+  screening: { label: "Screening", bg: "#E3EDFF", c: "#053799" },
+  interview: { label: "Interview", bg: "#FFE3D4", c: "#B33800" },
+  offer: { label: "Offer", bg: "#E0F7EC", c: "#005430" },
+};
+
+export const RECRUITMENT_CANDIDATES = [
+  { ini: "JD", name: "Jonas Dela Cruz", role: "Second shooter", meta: "Portfolio · 4 yrs weddings", st: "interview" },
+  { ini: "RA", name: "Rhea Ang", role: "Retoucher", meta: "Referral · Carla Lim", st: "offer" },
+  { ini: "MB", name: "Marco Bautista", role: "Videographer", meta: "Applied via website", st: "screening" },
+  { ini: "TS", name: "Trina Salazar", role: "Second shooter", meta: "Instagram outreach", st: "applied" },
+].map((c) => ({ ...c, stBg: REC_STAGES[c.st].bg, stColor: REC_STAGES[c.st].c, stLabel: REC_STAGES[c.st].label }));
+
+export const RECRUITMENT_ROLES = [
+  { title: "Second shooter (weddings)", type: "Freelance · project", applicants: "6 applicants", open: true },
+  { title: "Retoucher", type: "Freelance · retainer", applicants: "3 applicants", open: true },
+  { title: "Studio coordinator", type: "Part-time", applicants: "Draft — not posted", open: false },
+].map((r) => ({
+  ...r,
+  stBg: r.open ? "#E0F7EC" : "#F1EFEC",
+  stColor: r.open ? "#005430" : "#6E6963",
+  stLabel: r.open ? "Open" : "Draft",
+}));
+
+function progressMeta(done: number, total: number, completeColor: string, activeColor: string) {
+  const pct = Math.round((done / total) * 100);
+  const complete = done === total;
+  return {
+    pct: `${pct}%`,
+    label: `${done} / ${total}`,
+    barColor: complete ? completeColor : activeColor,
+    stBg: complete ? "#E0F7EC" : activeColor === "#4F3DD9" ? "#EDEAFD" : "#FFE3D4",
+    stColor: complete ? "#005430" : activeColor === "#4F3DD9" ? "#2A1F87" : "#B33800",
+    stLabel: complete ? "Complete" : "In progress",
+  };
+}
+
+export const ONBOARDING_HIRES = [
+  { ini: "MP", name: "Miguel Padua", role: "Freelance videographer", done: 4, total: 6 },
+  { ini: "CL", name: "Carla Lim", role: "Retoucher", done: 6, total: 6 },
+  { ini: "AT", name: "Andres Tolentino", role: "Second shooter", done: 1, total: 6 },
+].map((h) => ({ ...h, ...progressMeta(h.done, h.total, "#00A15C", "#4F3DD9") }));
+
+export const ONBOARDING_CHECKLIST = [
+  { label: "Signed contract", done: true },
+  { label: "Copyright assignment", done: true },
+  { label: "Bank / payout details", done: true },
+  { label: "Equipment orientation", done: true },
+  { label: "Style & delivery guide", done: false },
+  { label: "First engagement scheduled", done: false },
+].map((c) => ({
+  label: c.label,
+  done: c.done,
+  tick: c.done ? "#00A15C" : "#C7C3BE",
+  bg: c.done ? "#E0F7EC" : "#F1EFEC",
+  textColor: c.done ? "#242424" : "#9B9691",
+}));
+
+export const OFFBOARDING_DEPARTURES = [
+  { ini: "DL", name: "Danniel Lopez", role: "Retoucher · freelance", done: 3, total: 5 },
+  { ini: "GV", name: "Grace Villar", role: "Second shooter", done: 5, total: 5 },
+].map((h) => ({ ...h, ...progressMeta(h.done, h.total, "#00A15C", "#B33800") }));
+
+export const OFFBOARDING_CHECKLIST = [
+  { label: "Final payout cleared", done: true },
+  { label: "Equipment returned", done: true },
+  { label: "Cloud & gallery access revoked", done: true },
+  { label: "Client handover", done: false },
+  { label: "Portfolio rights confirmed", done: false },
+].map((c) => ({
+  label: c.label,
+  done: c.done,
+  tick: c.done ? "#00A15C" : "#C7C3BE",
+  bg: c.done ? "#E0F7EC" : "#F1EFEC",
+  textColor: c.done ? "#242424" : "#9B9691",
+}));
+
+// ── Performance ──────────────────────────────────────────────────────
+const PF_STATUS: Record<string, { bg: string; c: string; label: string }> = {
+  due: { bg: "#FFE3D4", c: "#B33800", label: "Review due" },
+  scheduled: { bg: "#E3EDFF", c: "#053799", label: "Scheduled" },
+  done: { bg: "#E0F7EC", c: "#005430", label: "Completed" },
+};
+
+export const PERFORMANCE_REVIEWS = [
+  { ini: "JR", name: "Jasmine Reyes", role: "Second shooter", cycle: "H1 2026", rating: "4.6", st: "done" },
+  { ini: "CL", name: "Carla Lim", role: "Retoucher", cycle: "H1 2026", rating: "—", st: "due" },
+  { ini: "MP", name: "Miguel Padua", role: "Freelance video", cycle: "H1 2026", rating: "—", st: "scheduled" },
+].map((r) => ({ ...r, stBg: PF_STATUS[r.st].bg, stColor: PF_STATUS[r.st].c, stLabel: PF_STATUS[r.st].label }));
+
+export const PERFORMANCE_ME_KPIS = [
+  { label: "Shoots delivered", value: "23", delta: "▲ 4 vs H2 2025", positive: true },
+  { label: "Avg delivery time", value: "10.5d", delta: "▼ 1.5d faster", positive: true },
+  { label: "Client rating", value: "4.8", delta: "Across 19 reviews", positive: null },
+  { label: "Revenue owned", value: "₱1.42M", delta: "▲ 22% YoY", positive: true },
+];
+
+export const PERFORMANCE_ME_CYCLES = [
+  { cycle: "H1 2026", rating: "4.8", note: "Fastest delivery half on record" },
+  { cycle: "H2 2025", rating: "4.6", note: "Grew referral share to 24%" },
+  { cycle: "H1 2025", rating: "4.5", note: "Launched corporate headshot line" },
+];
+
+export const PERFORMANCE_GOALS = [
+  { label: "Lift gallery delivery to <10 days", owner: "Studio", pct: 72, val: "12 → 10.5 days" },
+  { label: "Grow referral share to 30%", owner: "Studio", pct: 90, val: "27% of bookings" },
+  { label: "Second-shooter bench of 4", owner: "Hiring", pct: 50, val: "2 of 4 onboarded" },
+];
+
+// ── Tasks ────────────────────────────────────────────────────────────
+const TASK_COL_DEFS = [
+  { key: "todo", label: "To do", c: "#6E6963", bg: "#F1EFEC" },
+  { key: "doing", label: "In progress", c: "#B33800", bg: "#FFE3D4" },
+  { key: "blocked", label: "Blocked", c: "#8A0625", bg: "#FDE4EA" },
+  { key: "done", label: "Done", c: "#005430", bg: "#E0F7EC" },
+];
+
+const TASK_PRIO: Record<string, { bg: string; c: string }> = {
+  High: { bg: "#FDE4EA", c: "#8A0625" },
+  Med: { bg: "#FDF0D5", c: "#8A6D00" },
+  Low: { bg: "#F1EFEC", c: "#6E6963" },
+};
+
+const TASK_ITEMS = [
+  { col: "todo", title: "Create social media content", meta: "Marketing · Marisol", due: "Due 23 Jul", prio: "High", cat: "Content", standalone: true, recur: "Weekly", fromMaint: false },
+  { col: "todo", title: "Clean the studio", meta: "Maintenance · FAC-STU-01", due: "Due 23 Jul", prio: "Med", cat: "Maintenance", standalone: true, recur: "Daily", fromMaint: true },
+  { col: "todo", title: "Charge batteries", meta: "Equipment · Danilo", due: "Due 24 Jul", prio: "High", cat: "Equipment", standalone: true, recur: "Before each shoot", fromMaint: false },
+  { col: "todo", title: "Check inventory", meta: "Inventory · Ivy", due: "Due 26 Jul", prio: "Low", cat: "Inventory", standalone: true, recur: "Weekly", fromMaint: false },
+  { col: "doing", title: "Cull Deveza wedding set", meta: "PRJ-2026-0142 · Danilo", due: "Due 25 Jul", prio: "High", cat: "Production", standalone: false, recur: "", fromMaint: false },
+  { col: "doing", title: "Clean cameras and lenses", meta: "Maintenance · CAM-R5-02", due: "Due 24 Jul", prio: "Med", cat: "Equipment", standalone: true, recur: "Weekly", fromMaint: true },
+  { col: "doing", title: "Prepare equipment", meta: "PRJ-2026-0138 · Rafa", due: "Due 24 Jul", prio: "High", cat: "Production", standalone: false, recur: "", fromMaint: false },
+  { col: "blocked", title: "Back up files", meta: "Maintenance · IT-WS-03", due: "Due 23 Jul", prio: "High", cat: "Maintenance", standalone: true, recur: "Daily", fromMaint: true },
+  { col: "done", title: "Perform routine maintenance", meta: "Equipment · Rafa", due: "20 Jul", prio: "Low", cat: "Maintenance", standalone: true, recur: "Monthly", fromMaint: false },
+  { col: "done", title: "Confirm Deveza booking", meta: "Booking · Marisol", due: "20 Jul", prio: "High", cat: "Admin", standalone: true, recur: "", fromMaint: false },
+];
+
+export const TASKS_BOARD = TASK_COL_DEFS.map((c) => {
+  const items = TASK_ITEMS.filter((t) => t.col === c.key);
+  return {
+    label: c.label,
+    c: c.c,
+    bg: c.bg,
+    count: items.length,
+    items: items.map((t) => ({
+      ...t,
+      pBg: TASK_PRIO[t.prio].bg,
+      pColor: TASK_PRIO[t.prio].c,
+    })),
+  };
+});
+
+const TASK_STATUS: Record<string, { l: string; bg: string; c: string }> = {
+  todo: { l: "To do", bg: "#F1EFEC", c: "#6E6963" },
+  doing: { l: "In progress", bg: "#FFE3D4", c: "#B33800" },
+  blocked: { l: "Blocked", bg: "#FDE4EA", c: "#8A0625" },
+  done: { l: "Done", bg: "#E0F7EC", c: "#005430" },
+};
+
+export const TASKS_MINE = TASK_ITEMS.map((t) => ({
+  title: t.title,
+  meta: t.meta,
+  due: t.due,
+  prio: t.prio,
+  pBg: TASK_PRIO[t.prio].bg,
+  pColor: TASK_PRIO[t.prio].c,
+  stL: TASK_STATUS[t.col].l,
+  stBg: TASK_STATUS[t.col].bg,
+  stColor: TASK_STATUS[t.col].c,
+  ring: t.col === "done" ? "#00A15C" : "#C7C3BE",
+  done: t.col === "done",
+  recur: t.recur,
+  cat: t.cat,
+}));
+
+// ── Shiftboard ───────────────────────────────────────────────────────
+const SHIFT_LOC: Record<string, { bg: string; c: string; label: string }> = {
+  studio: { bg: "#E0F7F8", c: "#00575C", label: "Studio" },
+  location: { bg: "#FFF4EE", c: "#B33800", label: "On location" },
+};
+
+export interface ShiftEntry {
+  id: string;
+  d: number;
+  ini: string;
+  who: string;
+  role: string;
+  time: string;
+  loc: "studio" | "location";
+}
+
+export const SHIFT_DEFAULT: ShiftEntry[] = [
+  { id: "s1", d: 0, ini: "MR", who: "Marisol", role: "Studio open", time: "9:00–18:00", loc: "studio" },
+  { id: "s2", d: 0, ini: "DC", who: "Danilo", role: "Editing", time: "10:00–18:00", loc: "studio" },
+  { id: "s3", d: 1, ini: "EB", who: "Eusebio", role: "Ayala shoot", time: "8:00–14:00", loc: "location" },
+  { id: "s4", d: 1, ini: "IS", who: "Ivy", role: "Studio duty", time: "9:00–18:00", loc: "studio" },
+  { id: "s5", d: 2, ini: "DC", who: "Danilo", role: "Editing", time: "10:00–18:00", loc: "studio" },
+  { id: "s6", d: 2, ini: "JL", who: "Josefa", role: "Retouch", time: "13:00–18:00", loc: "studio" },
+  { id: "s7", d: 3, ini: "EB", who: "Eusebio", role: "Deveza prep", time: "9:00–17:00", loc: "studio" },
+  { id: "s8", d: 3, ini: "MR", who: "Marisol", role: "Studio open", time: "9:00–18:00", loc: "studio" },
+  { id: "s9", d: 4, ini: "IS", who: "Ivy", role: "Headshots", time: "10:00–16:00", loc: "location" },
+  { id: "s10", d: 4, ini: "KT", who: "Kevin", role: "Assist", time: "10:00–16:00", loc: "location" },
+  { id: "s11", d: 5, ini: "EB", who: "Eusebio", role: "Wedding — Deveza", time: "14:00–23:00", loc: "location" },
+  { id: "s12", d: 5, ini: "MR", who: "Marisol", role: "Coordinator", time: "14:00–23:00", loc: "location" },
+];
+
+export const SHIFT_DAY_META: [string, string, boolean][] = [
+  ["Mon", "21", true],
+  ["Tue", "22", false],
+  ["Wed", "23", false],
+  ["Thu", "24", false],
+  ["Fri", "25", false],
+  ["Sat", "26", false],
+];
+
+export function shiftLocStyle(loc: "studio" | "location") {
+  return SHIFT_LOC[loc];
+}
+
+// ── Compliance ───────────────────────────────────────────────────────
+const COMP_ST: Record<string, { bg: string; c: string; l: string; o: number }> = {
+  expired: { bg: "#FDE4EA", c: "#8A0625", l: "Expired", o: 1 },
+  action: { bg: "#FFE3D4", c: "#B33800", l: "Action required", o: 2 },
+  duesoon: { bg: "#FDF0D5", c: "#8A6D00", l: "Due soon", o: 3 },
+  submitted: { bg: "#E3EDFF", c: "#053799", l: "Submitted", o: 6 },
+  review: { bg: "#E3EDFF", c: "#053799", l: "Under review", o: 6 },
+  compliant: { bg: "#E0F7EC", c: "#005430", l: "Compliant", o: 7 },
+  na: { bg: "#ECEAE7", c: "#6E6963", l: "Not applicable", o: 8 },
+};
+
+const COMPLIANCE_DATA_RAW = [
+  { req: "Mayor's / business permit", cat: "Local permit", agency: "Tabaco City BPLU", num: "BP-2025-04821", freq: "Annual", who: "Marisol A.", est: "₱2,000–₱15,000", act: "₱8,400", st: "compliant", expiry: "31 Jan 2027" },
+  { req: "Barangay business clearance", cat: "Local permit", agency: "Barangay Divino Rostro", num: "BRGY-3391", freq: "Annual", who: "Marisol A.", est: "₱300–₱1,000", act: "₱650", st: "compliant", expiry: "31 Jan 2027" },
+  { req: "Fire Safety Inspection Certificate", cat: "Local permit", agency: "Bureau of Fire Protection", num: "FSIC-2025-1180", freq: "Annual", who: "Marisol A.", est: "₱500–₱5,000", act: "—", st: "duesoon", expiry: "15 Aug 2026" },
+  { req: "Sanitary permit", cat: "Local permit", agency: "City Health Office", num: "SP-2025-0774", freq: "Annual", who: "Ivy S.", est: "₱300–₱1,500", act: "—", st: "action", expiry: "30 Jul 2026" },
+  { req: "Community Tax Certificate", cat: "Local tax", agency: "City Treasurer's Office", num: "CTC-2026-2210", freq: "Annual", who: "Marisol A.", est: "₱50–₱500+", act: "₱500", st: "compliant", expiry: "31 Dec 2026" },
+  { req: "Occupational permits", cat: "Local permit", agency: "City Health Office", num: "OP-2025-118", freq: "Annual", who: "Ivy S.", est: "₱100–₱500 / person", act: "₱400", st: "compliant", expiry: "31 Jan 2027" },
+  { req: "DTI business-name registration", cat: "Registration", agency: "DTI", num: "DTI-•••4471", freq: "5-yearly", who: "Eusebio B.", est: "₱200–₱2,000", act: "₱530", st: "compliant", expiry: "12 Apr 2029" },
+  { req: "BIR Certificate of Registration", cat: "BIR", agency: "BIR RDO 067", num: "COR-•••2093", freq: "As needed", who: "Eusebio B.", est: "Assessment-based", act: "—", st: "compliant", expiry: "—" },
+  { req: "Books of accounts", cat: "BIR", agency: "BIR RDO 067", num: "BOA-2026-08", freq: "As required", who: "Danilo C.", est: "₱200–₱1,500", act: "₱380", st: "submitted", expiry: "—" },
+  { req: "Authority to Print / invoicing", cat: "BIR", agency: "BIR RDO 067", num: "ATP-2025-5514", freq: "As needed", who: "Danilo C.", est: "Supplier costs vary", act: "₱1,200", st: "review", expiry: "—" },
+  { req: "Income-tax returns", cat: "Tax filing", agency: "BIR", num: "1701Q / 1701", freq: "Quarterly", who: "Eusebio B.", est: "Tax due + filing", act: "—", st: "duesoon", expiry: "15 Aug 2026" },
+  { req: "Percentage tax / VAT returns", cat: "Tax filing", agency: "BIR", num: "2551Q", freq: "Quarterly", who: "Eusebio B.", est: "Based on sales", act: "—", st: "duesoon", expiry: "25 Jul 2026" },
+  { req: "Withholding-tax returns", cat: "Tax filing", agency: "BIR", num: "1601C / 1604", freq: "Monthly", who: "Danilo C.", est: "Based on withheld", act: "—", st: "action", expiry: "10 Jul 2026" },
+  { req: "SSS remittances", cat: "Statutory", agency: "SSS", num: "ER-•••8820", freq: "Monthly", who: "Danilo C.", est: "Per contribution table", act: "₱6,240", st: "compliant", expiry: "31 Jul 2026" },
+  { req: "PhilHealth remittances", cat: "Statutory", agency: "PhilHealth", num: "ER-•••1177", freq: "Monthly", who: "Danilo C.", est: "Per contribution table", act: "₱2,100", st: "compliant", expiry: "31 Jul 2026" },
+  { req: "Pag-IBIG remittances", cat: "Statutory", agency: "Pag-IBIG (HDMF)", num: "ER-•••4402", freq: "Monthly", who: "Danilo C.", est: "Per contribution table", act: "₱1,200", st: "compliant", expiry: "31 Jul 2026" },
+  { req: "DOLE & OSH requirements", cat: "Labor", agency: "DOLE", num: "—", freq: "As required", who: "Marisol A.", est: "Training costs vary", act: "—", st: "action", expiry: "—" },
+  { req: "Data Privacy Act compliance", cat: "Privacy", agency: "NPC", num: "NPC-•••pending", freq: "Ongoing", who: "Eusebio B.", est: "Assessment-based", act: "—", st: "review", expiry: "—" },
+  { req: "Building / occupancy permits", cat: "Local permit", agency: "City Engineering Office", num: "OCC-2019-334", freq: "As required", who: "Marisol A.", est: "Assessment-based", act: "—", st: "na", expiry: "—" },
+  { req: "Signage permit", cat: "Local permit", agency: "Tabaco City BPLU", num: "SGN-2024-091", freq: "Annual", who: "Marisol A.", est: "₱300–₱2,000", act: "—", st: "expired", expiry: "31 May 2026" },
+];
+
+export const COMPLIANCE_REGISTER = COMPLIANCE_DATA_RAW.map((c) => {
+  const m = COMP_ST[c.st];
+  return { ...c, stBg: m.bg, stColor: m.c, stL: m.l, ord: m.o };
+}).sort((a, b) => a.ord - b.ord);
+
+function complianceCount(st: string) {
+  return COMPLIANCE_DATA_RAW.filter((c) => c.st === st).length;
+}
+
+const complianceActionNeeded = complianceCount("expired") + complianceCount("action") > 0;
+
+export const COMPLIANCE_SUMMARY = [
+  {
+    label: "Overall status",
+    value: complianceActionNeeded ? "Action needed" : "On track",
+    tone: complianceActionNeeded ? "#B33800" : "#005430",
+    sub: `${COMPLIANCE_DATA_RAW.length} requirements tracked`,
+  },
+  { label: "Expired", value: String(complianceCount("expired")), tone: "#8A0625", sub: "Renew immediately" },
+  {
+    label: "Due within 30 days",
+    value: String(complianceCount("duesoon") + complianceCount("action")),
+    tone: "#8A6D00",
+    sub: "Action required soon",
+  },
+  {
+    label: "Pending applications",
+    value: String(complianceCount("submitted") + complianceCount("review")),
+    tone: "#053799",
+    sub: "Submitted / under review",
+  },
+  { label: "Estimated fees due", value: "₱18,500", tone: "#141414", sub: "Planning estimate" },
+  { label: "Actual fees paid (YTD)", value: "₱21,900", tone: "#141414", sub: "2026 to date" },
+];
