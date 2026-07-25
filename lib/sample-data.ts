@@ -487,3 +487,37 @@ export const SALES_MONTHS = [
   { label: "June 2026", total: 275000 },
   { label: "July 2026", total: 71000 },
 ];
+
+export const DASHBOARD_KPIS = [
+  { label: "Revenue MTD", value: "₱412,500", delta: "▲ 18% vs Jun", positive: true },
+  { label: "Gross profit", value: "₱268,100", delta: "65% margin", positive: true },
+  { label: "Avg booking value", value: "₱34,375", delta: "▲ ₱2,100 vs Jun", positive: true },
+  { label: "Outstanding", value: "₱71,000", delta: "3 balances due", positive: false },
+];
+
+export const REVENUE_CHART = [
+  { month: "FEB", value: 238 },
+  { month: "MAR", value: 296 },
+  { month: "APR", value: 271 },
+  { month: "MAY", value: 344 },
+  { month: "JUN", value: 349 },
+  { month: "JUL", value: 412 },
+];
+
+export const DASHBOARD_SCHEDULE = [
+  { time: "10:00 AM", title: "Corporate Headshots — Ayala Land", sub: "Studio B · 24 subjects" },
+  { time: "2:00 PM", title: "Client call — Reyes Family", sub: "Confirm birthday details" },
+  { time: "4:30 PM", title: "Album review — Bianca & Marco", sub: "Final proof approval" },
+];
+
+export const DASHBOARD_BALANCES = [
+  { name: "Bianca & Marco", ref: "KS-2026-0142", amount: "₱92,500" },
+  { name: "Aria & Josh Lim", ref: "KS-2026-0149", amount: "₱21,000" },
+  { name: "Reyes Family", ref: "KS-2026-0151", amount: "₱14,000" },
+];
+
+export const DASHBOARD_INQUIRIES = [
+  { ini: "GL", name: "Globe Telecom", sub: "Product shoot · 30 Jul", when: "3d ago" },
+  { ini: "CT", name: "Carla Tan", sub: "Prenup enquiry", when: "2d ago" },
+  { ini: "MP", name: "Maria Pascual", sub: "Graduation portraits", when: "5h ago" },
+];
