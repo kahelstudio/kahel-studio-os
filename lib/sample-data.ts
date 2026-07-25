@@ -521,3 +521,92 @@ export const DASHBOARD_INQUIRIES = [
   { ini: "CT", name: "Carla Tan", sub: "Prenup enquiry", when: "2d ago" },
   { ini: "MP", name: "Maria Pascual", sub: "Graduation portraits", when: "5h ago" },
 ];
+
+// ── Finance ──────────────────────────────────────────────────────────
+const FIN_KINDS: Record<string, { bg: string; c: string }> = {
+  deposit: { bg: "#E3EDFF", c: "#053799" },
+  balance: { bg: "#FFE3D4", c: "#B33800" },
+  full: { bg: "#E0F7EC", c: "#005430" },
+  retail: { bg: "#E0F7F8", c: "#00575C" },
+};
+
+export const FINANCE_KPIS = [
+  { label: "Recorded MTD", value: "₱412,500" },
+  { label: "Booklet remaining", value: "54 serials" },
+  { label: "Unreconciled", value: "2 items" },
+];
+
+export const FINANCE_INVOICES = [
+  { serial: "KS-000-1042", ref: "KS-2026-0142", kind: "deposit", amount: "₱92,500.00", issued: "20 Jun 2026" },
+  { serial: "KS-000-1043", ref: "KS-2026-0149", kind: "deposit", amount: "₱21,000.00", issued: "28 Jun 2026" },
+  { serial: "KS-000-1044", ref: "ORD-2026-0771", kind: "retail", amount: "₱3,350.00", issued: "12 Jul 2026" },
+  { serial: "KS-000-1045", ref: "KS-2025-0088", kind: "full", amount: "₱29,000.00", issued: "01 Mar 2026" },
+  { serial: "KS-000-1046", ref: "KS-2026-0138", kind: "balance", amount: "₱48,000.00", issued: "18 Jul 2026" },
+].map((r) => ({
+  ...r,
+  kindLabel: r.kind.charAt(0).toUpperCase() + r.kind.slice(1),
+  kindBg: FIN_KINDS[r.kind].bg,
+  kindColor: FIN_KINDS[r.kind].c,
+}));
+
+export const FINANCE_SALES_KPIS = [
+  { label: "Sales this month", value: "₱125,750" },
+  { label: "Transactions", value: "27" },
+  { label: "Average sale", value: "₱4,657" },
+  { label: "vs. last month", value: "▲ 8%" },
+];
+
+export const FINANCE_SALES = [
+  { ref: "POS-2026-0712", desc: "Prints & frames — walk-in", method: "Cash", date: "21 Jul 2026", amt: "₱3,450.00" },
+  { ref: "POS-2026-0711", desc: "Package add-on — Reyes", method: "GCash", date: "20 Jul 2026", amt: "₱6,000.00" },
+  { ref: "KS-2026-0149", desc: "Wedding deposit — Deveza", method: "Bank transfer", date: "28 Jun 2026", amt: "₱21,000.00" },
+  { ref: "KS-2026-0142", desc: "Corporate deposit — Globe", method: "Bank transfer", date: "20 Jun 2026", amt: "₱92,500.00" },
+  { ref: "POS-2026-0708", desc: "Album reprint — Santos", method: "Maya", date: "18 Jul 2026", amt: "₱2,800.00" },
+];
+
+export const FINANCE_EXPENSE_KPIS = [
+  { label: "Expenses this month", value: "₱101,830" },
+  { label: "Largest category", value: "Payroll" },
+  { label: "Entries", value: "18" },
+  { label: "vs. last month", value: "▲ 6%" },
+];
+
+const EXP_TONE: Record<string, { bg: string; c: string }> = {
+  blue: { bg: "#E3EDFF", c: "#053799" },
+  indigo: { bg: "#EDEAFD", c: "#2A1F87" },
+  orange: { bg: "#FFF4EE", c: "#B33800" },
+  teal: { bg: "#E0F7F8", c: "#00575C" },
+  grey: { bg: "#F1EFEC", c: "#6E6963" },
+};
+
+export const FINANCE_EXPENSES = [
+  { ref: "EXP-2026-0221", cat: "Equipment", tone: "blue", desc: "Lens rental — 70-200mm", date: "19 Jul 2026", amt: "₱4,500.00" },
+  { ref: "EXP-2026-0220", cat: "Studio", tone: "indigo", desc: "Studio rent — July", date: "01 Jul 2026", amt: "₱35,000.00" },
+  { ref: "EXP-2026-0219", cat: "Payroll", tone: "orange", desc: "Semi-monthly payroll — Jul A", date: "15 Jul 2026", amt: "₱47,190.00" },
+  { ref: "EXP-2026-0218", cat: "Supplies", tone: "teal", desc: "Prints & framing stock", date: "12 Jul 2026", amt: "₱6,240.00" },
+  { ref: "EXP-2026-0217", cat: "Utilities", tone: "grey", desc: "Electricity & internet", date: "08 Jul 2026", amt: "₱8,900.00" },
+].map((r) => ({ ...r, catBg: EXP_TONE[r.tone].bg, catColor: EXP_TONE[r.tone].c }));
+
+export const FINANCE_PAYMENT_KPIS = [
+  { label: "Money in", value: "₱119,500" },
+  { label: "Money out", value: "₱82,190" },
+  { label: "Net movement", value: "₱37,310" },
+  { label: "Pending", value: "1" },
+];
+
+export const FINANCE_PAYMENTS = [
+  { ref: "PAY-IN-0342", party: "Reyes Family", dir: "in", method: "GCash ••7712", date: "20 Jul 2026", amt: "₱6,000.00", st: "cleared" },
+  { ref: "PAY-OUT-0119", party: "Payroll — Jul A · 5 staff", dir: "out", method: "Bank transfer", date: "15 Jul 2026", amt: "₱47,190.00", st: "cleared" },
+  { ref: "PAY-IN-0341", party: "Globe Telecom", dir: "in", method: "Bank transfer", date: "20 Jun 2026", amt: "₱92,500.00", st: "cleared" },
+  { ref: "PAY-OUT-0118", party: "Studio rent — July", dir: "out", method: "Bank transfer", date: "01 Jul 2026", amt: "₱35,000.00", st: "cleared" },
+  { ref: "PAY-IN-0343", party: "Deveza — balance", dir: "in", method: "Bank transfer", date: "Awaiting", amt: "₱21,000.00", st: "pending" },
+].map((r) => ({
+  ...r,
+  dirColor: r.dir === "in" ? "#005430" : "#8A0625",
+  dirSign: r.dir === "in" ? "+" : "−",
+  dirBg: r.dir === "in" ? "#E0F7EC" : "#FDE4EA",
+  dirLabel: r.dir === "in" ? "In" : "Out",
+  stBg: r.st === "cleared" ? "#E0F7EC" : "#FDF0D5",
+  stColor: r.st === "cleared" ? "#005430" : "#8A6D00",
+  stLabel: r.st === "cleared" ? "Cleared" : "Pending",
+}));
