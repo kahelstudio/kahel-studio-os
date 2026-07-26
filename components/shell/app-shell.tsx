@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { APPS_BY_ID } from "@/lib/apps-config";
 import { Sidebar } from "@/components/shell/sidebar";
@@ -33,9 +33,9 @@ export function AppShell({ appId, children }: { appId: string; children: React.R
         onOpenCommandPalette={() => setPaletteOpen(true)}
         onOpenMobileNav={() => setMobileNavOpen(true)}
       />
-      <div className="flex flex-1 overflow-hidden">
-        <div className="hidden lg:block">
-          <Sidebar app={app} />
+        <div className="flex flex-1 overflow-hidden">
+          <div className="hidden lg:block">
+            <Suspense fallback={<div className="h-full w-60 border-r border-[var(--color-border)] bg-[var(--color-surface)]" />}><Sidebar app={app} /></Suspense>
         </div>
         <main className="flex flex-1 flex-col overflow-y-auto bg-[var(--color-canvas)]">
           {children}
@@ -57,7 +57,7 @@ export function AppShell({ appId, children }: { appId: string; children: React.R
             >
               <X className="h-4 w-4" />
             </button>
-            <Sidebar app={app} onNavigate={() => setMobileNavOpen(false)} />
+            <Suspense fallback={null}><Sidebar app={app} onNavigate={() => setMobileNavOpen(false)} /></Suspense>
           </div>
         </div>
       )}

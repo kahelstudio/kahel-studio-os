@@ -6,7 +6,7 @@ export default function ItPolicyPage() {
     <div className="max-w-[900px] p-12 pt-9">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             IT policy
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">

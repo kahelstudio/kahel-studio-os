@@ -3,7 +3,7 @@ import { PAYROLL_EMPLOYEE_PROFILE as p } from "@/lib/sample-data";
 
 export default function PayrollEmployeeDetailPage() {
   return (
-    <div className="max-w-[1100px] p-10 pb-14 pt-6">
+    <div className="p-10 pb-14 pt-6">
       <Link
         href="/payroll/employees"
         className="mb-4 inline-flex items-center gap-1.5 text-[13px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
@@ -37,11 +37,11 @@ export default function PayrollEmployeeDetailPage() {
           </div>
 
           <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-            <div className="border-b border-[var(--color-ink-100)] px-5 py-3.5 font-display text-[15px] font-semibold">
+            <div className="border-b border-[var(--color-border)] px-5 py-3.5 font-display text-[15px] font-semibold">
               Earnings
             </div>
             {p.earnings.map((e) => (
-              <div key={e.label} className="flex items-center justify-between border-b border-[var(--color-ink-50)] px-5 py-3 text-sm last:border-b-0">
+              <div key={e.label} className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-3 text-sm last:border-b-0">
                 <span className="text-[var(--color-text-secondary)]">{e.label}</span>
                 <span className="font-semibold">{e.value}</span>
               </div>
@@ -49,11 +49,11 @@ export default function PayrollEmployeeDetailPage() {
           </div>
 
           <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-            <div className="border-b border-[var(--color-ink-100)] px-5 py-3.5 font-display text-[15px] font-semibold">
+            <div className="border-b border-[var(--color-border)] px-5 py-3.5 font-display text-[15px] font-semibold">
               Deductions
             </div>
             {p.deductions.map((d) => (
-              <div key={d.label} className="flex items-center justify-between border-b border-[var(--color-ink-50)] px-5 py-3 text-sm last:border-b-0">
+              <div key={d.label} className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-3 text-sm last:border-b-0">
                 <span className="text-[var(--color-text-secondary)]">{d.label}</span>
                 <span className="font-semibold">{d.value}</span>
               </div>
@@ -61,12 +61,12 @@ export default function PayrollEmployeeDetailPage() {
           </div>
 
           <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-            <div className="border-b border-[var(--color-ink-100)] px-5 py-3.5 font-display text-[15px] font-semibold">
+            <div className="border-b border-[var(--color-border)] px-5 py-3.5 font-display text-[15px] font-semibold">
               Salary history
             </div>
             {p.history.map((h, i) => (
-              <div key={i} className="flex items-center gap-4 border-b border-[var(--color-ink-50)] px-5 py-3 text-sm last:border-b-0">
-                <span className="font-mono text-xs text-[var(--color-text-muted)]">{h.date}</span>
+              <div key={i} className="flex items-center gap-4 border-b border-[var(--color-border)] px-5 py-3 text-sm last:border-b-0">
+                <span className="text-xs text-[var(--color-text-muted)]">{h.date}</span>
                 <span>
                   {h.prev} → <span className="font-semibold">{h.next}</span>
                 </span>
@@ -80,21 +80,21 @@ export default function PayrollEmployeeDetailPage() {
           <div className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
             <div className="mb-3.5 font-display text-[15px] font-semibold">Government IDs</div>
             <div className="flex flex-col gap-3 text-sm">
-              <Field label="SSS" value={p.sss} mono />
-              <Field label="PhilHealth" value={p.ph} mono />
-              <Field label="Pag-IBIG" value={p.pag} mono />
-              <Field label="TIN" value={p.tin} mono />
+              <Field label="SSS" value={p.sss} />
+              <Field label="PhilHealth" value={p.ph} />
+              <Field label="Pag-IBIG" value={p.pag} />
+              <Field label="TIN" value={p.tin} />
             </div>
           </div>
 
           <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-            <div className="border-b border-[var(--color-ink-100)] px-5 py-3.5 font-display text-[15px] font-semibold">
+            <div className="border-b border-[var(--color-border)] px-5 py-3.5 font-display text-[15px] font-semibold">
               Recent payslips
             </div>
             {p.payslips.map((s) => (
-              <div key={s.ref} className="flex items-center justify-between border-b border-[var(--color-ink-50)] px-5 py-3 text-sm last:border-b-0">
+              <div key={s.ref} className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-3 text-sm last:border-b-0">
                 <div>
-                  <div className="font-mono text-xs text-[var(--color-text-muted)]">{s.ref}</div>
+                  <div className="text-xs text-[var(--color-text-muted)]">{s.ref}</div>
                   <div className="text-xs text-[var(--color-text-secondary)]">{s.period}</div>
                 </div>
                 <span className="font-display font-semibold">{s.net}</span>
@@ -107,11 +107,11 @@ export default function PayrollEmployeeDetailPage() {
   );
 }
 
-function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-[var(--color-text-secondary)]">{label}</span>
-      <span className={mono ? "font-mono text-sm font-semibold" : "text-sm font-semibold"}>{value}</span>
+      <span className="text-sm font-semibold">{value}</span>
     </div>
   );
 }

@@ -2,10 +2,10 @@ import { PERFORMANCE_REVIEWS } from "@/lib/sample-data";
 
 export default function PerformanceReviewsPage() {
   return (
-    <div className="max-w-[1100px] p-12 pt-9">
+    <div className="p-12 pt-9">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Reviews
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -25,7 +25,7 @@ export default function PerformanceReviewsPage() {
         {PERFORMANCE_REVIEWS.map((r) => (
           <div
             key={r.name}
-            className="grid h-[58px] grid-cols-[2fr_1.4fr_1fr_1fr] items-center border-b border-[var(--color-ink-100)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
+            className="grid h-[58px] grid-cols-[2fr_1.4fr_1fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[var(--color-indigo-100)] font-display text-xs font-semibold text-[var(--color-indigo-800)]">
@@ -36,7 +36,7 @@ export default function PerformanceReviewsPage() {
                 <div className="text-xs text-[var(--color-text-secondary)]">{r.role}</div>
               </div>
             </div>
-            <div className="text-[var(--color-ink-700)]">{r.cycle}</div>
+            <div className="text-[var(--color-text-primary)]">{r.cycle}</div>
             <div>
               <span
                 className="rounded-pill px-2.5 py-1 text-xs font-semibold"

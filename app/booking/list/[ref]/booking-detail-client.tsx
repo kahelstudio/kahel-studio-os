@@ -43,7 +43,7 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
       <div className="flex items-center gap-4">
         <div>
           <div className="text-sm text-[var(--color-text-secondary)]">{booking.ref}</div>
-          <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
             {booking.account} · {booking.type.split(" — ")[0].split(" / ")[0]}
           </h1>
         </div>
@@ -64,7 +64,7 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
               const dotBg = done ? "#00A15C" : active ? "var(--color-kahel-500)" : "#fff";
               const dotColor = done || active ? "#fff" : "#9B9691";
               const dotBorder = done ? "#00A15C" : active ? "var(--color-kahel-500)" : "var(--color-border)";
-              const labelColor = active ? "var(--color-ink-800)" : done ? "#005430" : "var(--color-text-muted)";
+              const labelColor = active ? "var(--color-text-primary)" : done ? "#005430" : "var(--color-text-muted)";
               const lineColor = done ? "#00A15C" : "var(--color-border)";
               const isLast = i === BOOKING_STEPS_ORDER.length - 1;
               return (
@@ -102,11 +102,11 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
 
           {booking.auditLog && (
             <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-              <div className="border-b border-[var(--color-ink-100)] px-5 py-3.5 font-display text-[15px] font-semibold">
+              <div className="border-b border-[var(--color-border)] px-5 py-3.5 font-display text-[15px] font-semibold">
                 Audit history
               </div>
               {booking.auditLog.map((e, i) => (
-                <div key={i} className="flex gap-3.5 border-b border-[var(--color-ink-50)] px-5 py-3 text-[13px] last:border-b-0">
+                <div key={i} className="flex gap-3.5 border-b border-[var(--color-border)] px-5 py-3 text-[13px] last:border-b-0">
                   <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: e.dot }} />
                   <div>
                     <div className="font-medium text-[var(--color-text-primary)]">{e.text}</div>
@@ -124,7 +124,7 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
               <div className="mb-3 font-display text-[15px] font-semibold">Payment</div>
               <Row label="Total" value={booking.payment.total} bold />
               <Row label="Deposit (50%)" value={booking.payment.deposit} />
-              <div className="mt-1.5 flex justify-between border-t border-[var(--color-ink-100)] pt-1.5 text-sm">
+              <div className="mt-1.5 flex justify-between border-t border-[var(--color-border)] pt-1.5 text-sm">
                 <span className="text-[var(--color-text-secondary)]">Balance</span>
                 <span className="font-display font-semibold text-[var(--color-kahel-700)]">
                   {booking.payment.balance}
@@ -172,13 +172,13 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
                     </span>
                     <span className="font-display text-sm font-semibold">Linked project</span>
                   </div>
-                  <div className="font-mono text-xs text-[var(--color-text-secondary)]">
+                  <div className="text-xs text-[var(--color-text-secondary)]">
                     {booking.linkedProjectRef ?? `PRJ-${booking.ref.slice(3)}`}
                   </div>
                   <p className="my-0.5 text-xs leading-[17px] text-[var(--color-text-secondary)]">
                     Auto-created on confirmation. Production, team and deliverables live here.
                   </p>
-                  <button className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-control border border-[var(--color-ink-300)] bg-[var(--color-surface)] text-[13px] font-semibold text-[var(--color-indigo-800)] hover:border-[var(--color-indigo-800)]">
+                  <button className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-control border border-[var(--color-border-strong)] bg-[var(--color-surface)] text-[13px] font-semibold text-[var(--color-indigo-800)] hover:border-[var(--color-indigo-800)]">
                     Open project →
                   </button>
                 </div>

@@ -4,10 +4,10 @@ import { KpiStrip } from "@/components/finance/kpi-strip";
 
 export default function FinanceExpensesPage() {
   return (
-    <div className="max-w-[1200px] p-12 pt-9">
+    <div className="p-12 pt-9">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Expenses
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -32,7 +32,7 @@ export default function FinanceExpensesPage() {
         {FINANCE_EXPENSES.map((r) => (
           <div
             key={r.ref}
-            className="grid h-[54px] grid-cols-[1.1fr_1fr_1.6fr_1fr_1fr] items-center border-b border-[var(--color-ink-100)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
+            className="grid h-[54px] grid-cols-[1.1fr_1fr_1.6fr_1fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
           >
             <div className="text-xs font-medium text-[var(--color-text-primary)]">{r.ref}</div>
             <div>
@@ -44,7 +44,7 @@ export default function FinanceExpensesPage() {
               </span>
             </div>
             <div className="font-medium">{r.desc}</div>
-            <div className="text-[var(--color-ink-600)]">{r.date}</div>
+            <div className="text-[var(--color-text-secondary)]">{r.date}</div>
             <div className="text-right font-semibold text-[var(--color-danger-text)]">−{r.amt}</div>
           </div>
         ))}

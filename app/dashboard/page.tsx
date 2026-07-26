@@ -15,7 +15,7 @@ export default function DashboardPage() {
     <div className="max-w-[1360px] p-12 pt-9">
       <div className="flex items-baseline justify-between">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Overview
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">How are we doing this month</p>
@@ -30,13 +30,13 @@ export default function DashboardPage() {
             <div
               key={k.label}
               className="px-6 py-[22px]"
-              style={{ borderLeft: i === 0 ? "none" : "1px solid var(--color-ink-100)" }}
+              style={{ borderLeft: i === 0 ? "none" : "1px solid var(--color-border)" }}
             >
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.02em] text-[var(--color-text-secondary)]">
                 <Icon className="h-[15px] w-[15px]" strokeWidth={1.75} />
                 {k.label}
               </div>
-              <div className="mt-3.5 font-display text-[38px] font-bold leading-[1.05] tracking-[-0.02em] text-[var(--color-ink-800)]">
+              <div className="mt-3.5 font-display text-[38px] font-bold leading-[1.05] tracking-[-0.02em] text-[var(--color-text-primary)]">
                 {k.value}
               </div>
               <div
@@ -52,7 +52,7 @@ export default function DashboardPage() {
 
       <div className="mt-5 grid grid-cols-[1.5fr_1fr] gap-5">
         <div className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-[22px]">
-          <div className="flex items-baseline justify-between border-b border-[var(--color-ink-100)] pb-3.5">
+          <div className="flex items-baseline justify-between border-b border-[var(--color-border)] pb-3.5">
             <span className="font-display text-[13px] font-semibold uppercase tracking-[0.16em]">
               Revenue trend
             </span>
@@ -86,7 +86,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-          <div className="flex items-baseline justify-between border-b border-[var(--color-ink-100)] px-[22px] pb-3.5 pt-[18px]">
+          <div className="flex items-baseline justify-between border-b border-[var(--color-border)] px-[22px] pb-3.5 pt-[18px]">
             <span className="font-display text-[13px] font-semibold uppercase tracking-[0.16em]">
               Today&rsquo;s schedule
             </span>
@@ -95,7 +95,7 @@ export default function DashboardPage() {
             </span>
           </div>
           {DASHBOARD_SCHEDULE.map((s) => (
-            <div key={s.time} className="flex gap-4 border-b border-[var(--color-ink-50)] px-[22px] py-3.5 last:border-b-0">
+            <div key={s.time} className="flex gap-4 border-b border-[var(--color-border)] px-[22px] py-3.5 last:border-b-0">
               <div className="w-[68px] shrink-0 pt-px text-xs font-medium text-[var(--color-teal-800)]">{s.time}</div>
               <div>
                 <div className="text-sm font-semibold">{s.title}</div>
@@ -108,14 +108,14 @@ export default function DashboardPage() {
 
       <div className="mt-5 grid grid-cols-2 gap-5">
         <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-          <div className="flex items-baseline justify-between border-b border-[var(--color-ink-100)] px-[22px] pb-3.5 pt-[18px]">
+          <div className="flex items-baseline justify-between border-b border-[var(--color-border)] px-[22px] pb-3.5 pt-[18px]">
             <span className="font-display text-[13px] font-semibold uppercase tracking-[0.16em]">
               Outstanding balances
             </span>
-            <span className="font-display text-sm font-semibold text-[var(--color-kahel-700)]">₱71,000</span>
+            <span className="font-display text-sm font-semibold text-[#FF5300]">₱71,000</span>
           </div>
           {DASHBOARD_BALANCES.map((b) => (
-            <div key={b.ref} className="flex items-center gap-3 border-b border-[var(--color-ink-50)] px-[22px] py-3.5 text-sm last:border-b-0">
+            <div key={b.ref} className="flex items-center gap-3 border-b border-[var(--color-border)] px-[22px] py-3.5 text-sm last:border-b-0">
               <span className="font-semibold">{b.name}</span>
               <span className="text-xs text-[var(--color-text-muted)]">{b.ref}</span>
               <span className="ml-auto font-display font-semibold">{b.amount}</span>
@@ -123,7 +123,7 @@ export default function DashboardPage() {
           ))}
         </div>
         <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-          <div className="flex items-baseline justify-between border-b border-[var(--color-ink-100)] px-[22px] pb-3.5 pt-[18px]">
+          <div className="flex items-baseline justify-between border-b border-[var(--color-border)] px-[22px] pb-3.5 pt-[18px]">
             <span className="font-display text-[13px] font-semibold uppercase tracking-[0.16em]">
               New inquiries
             </span>
@@ -132,8 +132,8 @@ export default function DashboardPage() {
             </span>
           </div>
           {DASHBOARD_INQUIRIES.map((i) => (
-            <div key={i.name} className="flex items-center gap-3 border-b border-[var(--color-ink-50)] px-[22px] py-3.5 text-sm last:border-b-0">
-              <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[var(--color-ink-100)] font-display text-xs font-semibold text-[var(--color-ink-600)]">
+            <div key={i.name} className="flex items-center gap-3 border-b border-[var(--color-border)] px-[22px] py-3.5 text-sm last:border-b-0">
+              <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-muted)] font-display text-xs font-semibold text-[var(--color-text-secondary)]">
                 {i.ini}
               </div>
               <div>

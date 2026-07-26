@@ -3,6 +3,8 @@
 // of clients, bookings, and figures. Swap for Supabase queries later —
 // keep the shapes stable so that swap stays mechanical.
 
+import type { AccentId } from "@/lib/apps-config";
+
 export type BookingStatusId =
   | "inquiry"
   | "quoted"
@@ -12,31 +14,31 @@ export type BookingStatusId =
   | "cancelled";
 
 export const BOOKING_STATUS: Record<BookingStatusId, { label: string; bg: string; text: string }> = {
-  inquiry: { label: "Inquiry", bg: "#F1EFEC", text: "#6E6963" },
-  quoted: { label: "Quoted", bg: "#E3EDFF", text: "#053799" },
-  confirmed: { label: "Confirmed", bg: "#E0F7EC", text: "#005430" },
-  progress: { label: "In progress", bg: "#FFE3D4", text: "#B33800" },
-  completed: { label: "Completed", bg: "#E0F7F8", text: "#00575C" },
-  cancelled: { label: "Cancelled", bg: "#FDE4EA", text: "#8A0625" },
+  inquiry: { label: "Inquiry", bg: "var(--color-surface-muted)", text: "var(--color-text-secondary)" },
+  quoted: { label: "Quoted", bg: "var(--color-info-bg)", text: "var(--color-info-text)" },
+  confirmed: { label: "Confirmed", bg: "var(--color-success-bg)", text: "var(--color-success-text)" },
+  progress: { label: "In progress", bg: "var(--color-attention-bg)", text: "var(--color-attention-text)" },
+  completed: { label: "Completed", bg: "var(--color-teal-100)", text: "var(--color-teal-800)" },
+  cancelled: { label: "Cancelled", bg: "var(--color-danger-bg)", text: "var(--color-danger-text)" },
 };
 
-export type AccountType = "Corporate" | "Consumer";
+type AccountType = "Corporate" | "Consumer";
 
-export interface Contact {
+interface Contact {
   ini: string;
   name: string;
   tag: string;
   email: string;
 }
 
-export interface AccountPayment {
+interface AccountPayment {
   label: string;
   date: string;
   method: string;
   amount: string;
 }
 
-export interface AccountBookingRef {
+interface AccountBookingRef {
   ref: string;
   type: string;
   date: string;
@@ -282,8 +284,8 @@ export const BOOKINGS: BookingRow[] = [
     auditLog: [
       { text: "Booking confirmed · deposit invoice sent", when: "20 Jun 2026 · 10:04", dot: "#00A15C" },
       { text: "Quote sent to Bianca & Marco Deveza", when: "15 Jun 2026 · 14:20", dot: "#0B5FFF" },
-      { text: "Booking created from inquiry", when: "10 Jun 2026 · 09:11", dot: "#9B9691" },
-      { text: "Inquiry received via referral", when: "08 Jun 2026 · 17:45", dot: "#9B9691" },
+      { text: "Booking created from inquiry", when: "10 Jun 2026 · 09:11", dot: "var(--color-text-muted)" },
+      { text: "Inquiry received via referral", when: "08 Jun 2026 · 17:45", dot: "var(--color-text-muted)" },
     ],
   },
   {
@@ -295,7 +297,7 @@ export const BOOKINGS: BookingRow[] = [
     status: "quoted",
     total: "₱28,000",
     sessionDetails: {
-      dateTime: "26 Jul 2026 · 2:00–5:00 PM",
+      dateTime: "26 Jul 2026 · 2:00PM – 5:00PM",
       location: "Studio A, BGC",
       sessionType: "Birthday / Christening",
       balanceDueOn: "24 Jul 2026",
@@ -303,8 +305,8 @@ export const BOOKINGS: BookingRow[] = [
     payment: { total: "₱28,000.00", deposit: "₱14,000.00", balance: "₱14,000.00" },
     auditLog: [
       { text: "Quote sent to Reyes Family", when: "21 Jul 2026 · 09:02", dot: "#0B5FFF" },
-      { text: "Booking created from inquiry", when: "19 Jul 2026 · 16:40", dot: "#9B9691" },
-      { text: "Inquiry received via Instagram", when: "18 Jul 2026 · 11:15", dot: "#9B9691" },
+      { text: "Booking created from inquiry", when: "19 Jul 2026 · 16:40", dot: "var(--color-text-muted)" },
+      { text: "Inquiry received via Instagram", when: "18 Jul 2026 · 11:15", dot: "var(--color-text-muted)" },
     ],
   },
   {
@@ -324,10 +326,10 @@ export const BOOKINGS: BookingRow[] = [
     payment: { total: "₱96,000.00", deposit: "₱48,000.00", balance: "₱48,000.00" },
     linkedProjectRef: "PRJ-2026-0138",
     auditLog: [
-      { text: "Corporate Headshots in progress", when: "22 Jul 2026 · 09:15", dot: "#B33800" },
+      { text: "Corporate Headshots in progress", when: "22 Jul 2026 · 09:15", dot: "var(--color-attention-text)" },
       { text: "Booking confirmed · deposit invoice sent", when: "10 Jul 2026 · 11:30", dot: "#00A15C" },
       { text: "Quote sent to Ayala Land Premier", when: "05 Jul 2026 · 15:02", dot: "#0B5FFF" },
-      { text: "Booking created from inquiry", when: "02 Jul 2026 · 10:00", dot: "#9B9691" },
+      { text: "Booking created from inquiry", when: "02 Jul 2026 · 10:00", dot: "var(--color-text-muted)" },
     ],
   },
   {
@@ -339,7 +341,7 @@ export const BOOKINGS: BookingRow[] = [
     status: "confirmed",
     total: "₱42,000",
     sessionDetails: {
-      dateTime: "02 Aug 2026 · 3:00–6:00 PM",
+      dateTime: "02 Aug 2026 · 3:00PM – 6:00PM",
       location: "Bonifacio High Street",
       sessionType: "Prenup / Engagement",
       balanceDueOn: "19 Jul 2026",
@@ -349,7 +351,7 @@ export const BOOKINGS: BookingRow[] = [
     auditLog: [
       { text: "Booking confirmed · deposit invoice sent", when: "28 Jun 2026 · 13:40", dot: "#00A15C" },
       { text: "Quote sent to Aria & Josh Lim", when: "26 Jun 2026 · 09:20", dot: "#0B5FFF" },
-      { text: "Booking created from inquiry", when: "24 Jun 2026 · 18:05", dot: "#9B9691" },
+      { text: "Booking created from inquiry", when: "24 Jun 2026 · 18:05", dot: "var(--color-text-muted)" },
     ],
   },
   {
@@ -360,7 +362,7 @@ export const BOOKINGS: BookingRow[] = [
     date: "30 Jul 2026",
     status: "inquiry",
     total: "—",
-    auditLog: [{ text: "Inquiry received via LinkedIn", when: "16 Jul 2026 · 14:12", dot: "#9B9691" }],
+    auditLog: [{ text: "Inquiry received via LinkedIn", when: "16 Jul 2026 · 14:12", dot: "var(--color-text-muted)" }],
   },
 ];
 
@@ -402,12 +404,12 @@ export interface Product {
 }
 
 export const PRODUCTS: Product[] = [
-  { sku: "PR-8X10", id: "P01", name: "8×10 Matte Print", category: "Prints", price: 180, stock: 120, swatch: "#4F3DD9" },
-  { sku: "FR-1218", id: "P02", name: "Framed 12×18 (Oak)", category: "Frames", price: 1450, stock: 14, swatch: "#00A5AD" },
-  { sku: "AL-30PP", id: "P03", name: "Premium Album (30pp)", category: "Albums", price: 4800, stock: 6, swatch: "#B33800" },
-  { sku: "US-64GB", id: "P04", name: "USB Drive 64GB", category: "Media", price: 950, stock: 38, swatch: "#333333" },
-  { sku: "CV-1620", id: "P05", name: "Canvas Wrap 16×20", category: "Frames", price: 2200, stock: 9, swatch: "#00A15C" },
-  { sku: "AC-0606", id: "P06", name: "Acrylic Block 6×6", category: "Frames", price: 1350, stock: 3, swatch: "#8C2B00" },
+  { sku: "PR-8X10", id: "P01", name: "8×10 Matte Print", category: "Prints", price: 180, stock: 120, swatch: "#F2383A" },
+  { sku: "FR-1218", id: "P02", name: "Framed 12×18 (Oak)", category: "Frames", price: 1450, stock: 14, swatch: "#8A4BE3" },
+  { sku: "AL-30PP", id: "P03", name: "Premium Album (30pp)", category: "Albums", price: 4800, stock: 6, swatch: "#F6A21A" },
+  { sku: "US-64GB", id: "P04", name: "USB Drive 64GB", category: "Media", price: 950, stock: 38, swatch: "#16A34A" },
+  { sku: "CV-1620", id: "P05", name: "Canvas Wrap 16×20", category: "Frames", price: 2200, stock: 9, swatch: "#0EA5A8" },
+  { sku: "AC-0606", id: "P06", name: "Acrylic Block 6×6", category: "Frames", price: 1350, stock: 3, swatch: "#CECBC5" },
 ];
 
 export interface CatalogItem {
@@ -482,12 +484,6 @@ export const POS_CATALOGS: Record<string, { title: string; sub: string; unit: st
 };
 
 // ── Dashboard KPIs (July 2026) ───────────────────────────────────────
-export const SALES_MONTHS = [
-  { label: "May 2026", total: 189000 },
-  { label: "June 2026", total: 275000 },
-  { label: "July 2026", total: 71000 },
-];
-
 export const DASHBOARD_KPIS = [
   { label: "Revenue MTD", value: "₱412,500", delta: "▲ 18% vs Jun", positive: true },
   { label: "Gross profit", value: "₱268,100", delta: "65% margin", positive: true },
@@ -524,10 +520,10 @@ export const DASHBOARD_INQUIRIES = [
 
 // ── Finance ──────────────────────────────────────────────────────────
 const FIN_KINDS: Record<string, { bg: string; c: string }> = {
-  deposit: { bg: "#E3EDFF", c: "#053799" },
-  balance: { bg: "#FFE3D4", c: "#B33800" },
-  full: { bg: "#E0F7EC", c: "#005430" },
-  retail: { bg: "#E0F7F8", c: "#00575C" },
+  deposit: { bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
+  balance: { bg: "var(--color-attention-bg)", c: "var(--color-attention-text)" },
+  full: { bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
+  retail: { bg: "var(--color-teal-100)", c: "var(--color-teal-800)" },
 };
 
 export const FINANCE_KPIS = [
@@ -572,11 +568,11 @@ export const FINANCE_EXPENSE_KPIS = [
 ];
 
 const EXP_TONE: Record<string, { bg: string; c: string }> = {
-  blue: { bg: "#E3EDFF", c: "#053799" },
-  indigo: { bg: "#EDEAFD", c: "#2A1F87" },
-  orange: { bg: "#FFF4EE", c: "#B33800" },
-  teal: { bg: "#E0F7F8", c: "#00575C" },
-  grey: { bg: "#F1EFEC", c: "#6E6963" },
+  blue: { bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
+  indigo: { bg: "var(--color-indigo-100)", c: "var(--color-indigo-800)" },
+  orange: { bg: "#FFF4EE", c: "var(--color-attention-text)" },
+  teal: { bg: "var(--color-teal-100)", c: "var(--color-teal-800)" },
+  grey: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)" },
 };
 
 export const FINANCE_EXPENSES = [
@@ -602,21 +598,21 @@ export const FINANCE_PAYMENTS = [
   { ref: "PAY-IN-0343", party: "Deveza — balance", dir: "in", method: "Bank transfer", date: "Awaiting", amt: "₱21,000.00", st: "pending" },
 ].map((r) => ({
   ...r,
-  dirColor: r.dir === "in" ? "#005430" : "#8A0625",
+  dirColor: r.dir === "in" ? "var(--color-success-text)" : "var(--color-danger-text)",
   dirSign: r.dir === "in" ? "+" : "−",
-  dirBg: r.dir === "in" ? "#E0F7EC" : "#FDE4EA",
+  dirBg: r.dir === "in" ? "var(--color-success-bg)" : "var(--color-danger-bg)",
   dirLabel: r.dir === "in" ? "In" : "Out",
-  stBg: r.st === "cleared" ? "#E0F7EC" : "#FDF0D5",
-  stColor: r.st === "cleared" ? "#005430" : "#8A6D00",
+  stBg: r.st === "cleared" ? "var(--color-success-bg)" : "var(--color-warning-bg)",
+  stColor: r.st === "cleared" ? "var(--color-success-text)" : "var(--color-warning-text)",
   stLabel: r.st === "cleared" ? "Cleared" : "Pending",
 }));
 
 // ── Quotation ────────────────────────────────────────────────────────
 const QUOTE_ST: Record<string, { bg: string; c: string; l: string }> = {
-  draft: { bg: "#ECEAE7", c: "#4A453F", l: "Draft" },
-  sent: { bg: "#E3EDFF", c: "#053799", l: "Sent" },
-  accepted: { bg: "#E0F7EC", c: "#005430", l: "Accepted" },
-  expired: { bg: "#FDE4EA", c: "#8A0625", l: "Expired" },
+  draft: { bg: "var(--color-surface-muted)", c: "var(--color-text-primary)", l: "Draft" },
+  sent: { bg: "var(--color-info-bg)", c: "var(--color-info-text)", l: "Sent" },
+  accepted: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", l: "Accepted" },
+  expired: { bg: "var(--color-danger-bg)", c: "var(--color-danger-text)", l: "Expired" },
 };
 
 export const QUOTATIONS = [
@@ -630,13 +626,13 @@ export const QUOTATIONS = [
 
 // ── Maintenance & repair ─────────────────────────────────────────────
 const MAINT_ST: Record<string, { bg: string; c: string; l: string }> = {
-  reported: { bg: "#FDE4EA", c: "#8A0625", l: "Reported" },
-  inspect: { bg: "#FDF0D5", c: "#8A6D00", l: "Inspection required" },
-  scheduled: { bg: "#E3EDFF", c: "#053799", l: "Scheduled" },
-  inrepair: { bg: "#FFE3D4", c: "#B33800", l: "In repair" },
-  awaiting: { bg: "#FDF0D5", c: "#8A6D00", l: "Awaiting parts" },
-  completed: { bg: "#E0F7EC", c: "#005430", l: "Completed" },
-  unrepairable: { bg: "#ECEAE7", c: "#4A453F", l: "Unrepairable" },
+  reported: { bg: "var(--color-danger-bg)", c: "var(--color-danger-text)", l: "Reported" },
+  inspect: { bg: "var(--color-warning-bg)", c: "var(--color-warning-text)", l: "Inspection required" },
+  scheduled: { bg: "var(--color-info-bg)", c: "var(--color-info-text)", l: "Scheduled" },
+  inrepair: { bg: "var(--color-attention-bg)", c: "var(--color-attention-text)", l: "In repair" },
+  awaiting: { bg: "var(--color-warning-bg)", c: "var(--color-warning-text)", l: "Awaiting parts" },
+  completed: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", l: "Completed" },
+  unrepairable: { bg: "var(--color-surface-muted)", c: "var(--color-text-primary)", l: "Unrepairable" },
 };
 
 const MAINT_TASK_RAISED = ["reported", "inspect", "scheduled", "inrepair", "awaiting"];
@@ -659,10 +655,10 @@ export const MAINTENANCE_ITEMS = [
 
 // ── Projects ─────────────────────────────────────────────────────────
 const PROJ_STAGE_META: Record<string, { label: string; bg: string; c: string }> = {
-  culling: { label: "Culling", bg: "#F1EFEC", c: "#6E6963" },
-  editing: { label: "Editing", bg: "#FFE3D4", c: "#B33800" },
-  review: { label: "Client review", bg: "#E3EDFF", c: "#053799" },
-  delivered: { label: "Delivered", bg: "#E0F7EC", c: "#005430" },
+  culling: { label: "Culling", bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)" },
+  editing: { label: "Editing", bg: "var(--color-attention-bg)", c: "var(--color-attention-text)" },
+  review: { label: "Client review", bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
+  delivered: { label: "Delivered", bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
 };
 
 export const PROJECT_GROUPS = [
@@ -701,13 +697,13 @@ export const PROJECT_GROUPS = [
 
 // ── Glitches ─────────────────────────────────────────────────────────
 const GLITCH_ST: Record<string, { bg: string; c: string; l: string }> = {
-  open: { bg: "#FDE4EA", c: "#8A0625", l: "Open" },
-  progress: { bg: "#FDF0D5", c: "#8A6D00", l: "Investigating" },
-  fixed: { bg: "#E0F7EC", c: "#005430", l: "Fixed" },
-  closed: { bg: "#ECEAE7", c: "#4A453F", l: "Closed" },
+  open: { bg: "var(--color-danger-bg)", c: "var(--color-danger-text)", l: "Open" },
+  progress: { bg: "var(--color-warning-bg)", c: "var(--color-warning-text)", l: "Investigating" },
+  fixed: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", l: "Fixed" },
+  closed: { bg: "var(--color-surface-muted)", c: "var(--color-text-primary)", l: "Closed" },
 };
 
-const SEV_COLOR: Record<string, string> = { High: "#8A0625", Medium: "#8A6D00", Low: "#6E6963" };
+const SEV_COLOR: Record<string, string> = { High: "var(--color-danger-text)", Medium: "var(--color-warning-text)", Low: "var(--color-text-secondary)" };
 
 export const GLITCHES = [
   { ref: "GL-0042", title: "Gallery link expired 3 days early", area: "Website · delivery", by: "Mika R.", sev: "High", when: "22 Jul · 2:14 PM", st: "progress", group: "open" },
@@ -728,8 +724,8 @@ export const GLITCHES = [
 
 // ── Website ──────────────────────────────────────────────────────────
 const WEB_STATUS: Record<string, { bg: string; c: string; label: string }> = {
-  published: { bg: "#E0F7EC", c: "#005430", label: "Published" },
-  draft: { bg: "#F1EFEC", c: "#6E6963", label: "Draft" },
+  published: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "Published" },
+  draft: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)", label: "Draft" },
 };
 
 export const WEBSITE_PORTFOLIO = [
@@ -756,9 +752,9 @@ export const WEBSITE_PAGES = [
 
 // ── Inventory ────────────────────────────────────────────────────────
 const INV_STATUS: Record<string, { bg: string; c: string; label: string }> = {
-  available: { bg: "#E0F7EC", c: "#005430", label: "Available" },
-  out: { bg: "#FFE3D4", c: "#B33800", label: "Checked out" },
-  maint: { bg: "#FDE4EA", c: "#8A0625", label: "Maintenance" },
+  available: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "Available" },
+  out: { bg: "var(--color-attention-bg)", c: "var(--color-attention-text)", label: "Checked out" },
+  maint: { bg: "var(--color-danger-bg)", c: "var(--color-danger-text)", label: "Maintenance" },
 };
 
 export const INVENTORY_EQUIPMENT = [
@@ -773,14 +769,14 @@ export const INVENTORY_EQUIPMENT = [
   stBg: INV_STATUS[e.st].bg,
   stColor: INV_STATUS[e.st].c,
   stLabel: INV_STATUS[e.st].label,
-  noteColor: e.st === "maint" ? "#8A0625" : "#6E6963",
+  noteColor: e.st === "maint" ? "var(--color-danger-text)" : "var(--color-text-secondary)",
 }));
 
 // ── Marketing ────────────────────────────────────────────────────────
 const MKT_STATUS: Record<string, { bg: string; c: string; label: string }> = {
-  live: { bg: "#E0F7EC", c: "#005430", label: "Live" },
-  scheduled: { bg: "#E3EDFF", c: "#053799", label: "Scheduled" },
-  ended: { bg: "#F1EFEC", c: "#6E6963", label: "Ended" },
+  live: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "Live" },
+  scheduled: { bg: "var(--color-info-bg)", c: "var(--color-info-text)", label: "Scheduled" },
+  ended: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)", label: "Ended" },
 };
 
 export const MARKETING_KPIS = [
@@ -801,13 +797,13 @@ export const MARKETING_SOURCES = [
   { label: "Referral", pct: 27, val: "₱50,300" },
   { label: "Facebook", pct: 21, val: "₱39,100" },
   { label: "Website", pct: 14, val: "₱26,200" },
-].map((s, i) => ({ ...s, color: i === 0 ? "#FF5300" : "#C7C3BE", labelColor: i === 0 ? "#B33800" : "#6E6963" }));
+].map((s, i) => ({ ...s, color: i === 0 ? "#FF5300" : "var(--color-text-muted)", labelColor: i === 0 ? "var(--color-attention-text)" : "var(--color-text-secondary)" }));
 
 // ── Attendance ───────────────────────────────────────────────────────
 const ATT_STATUS: Record<string, { bg: string; c: string; label: string }> = {
-  in: { bg: "#E0F7EC", c: "#005430", label: "On shoot" },
-  done: { bg: "#F1EFEC", c: "#6E6963", label: "Logged" },
-  pending: { bg: "#FFE3D4", c: "#B33800", label: "Unsubmitted" },
+  in: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "On shoot" },
+  done: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)", label: "Logged" },
+  pending: { bg: "var(--color-attention-bg)", c: "var(--color-attention-text)", label: "Unsubmitted" },
 };
 
 export const ATTENDANCE_ROWS = [
@@ -825,10 +821,10 @@ export const ATTENDANCE_KPIS = [
 
 // ── Recruitment ──────────────────────────────────────────────────────
 const REC_STAGES: Record<string, { label: string; bg: string; c: string }> = {
-  applied: { label: "Applied", bg: "#F1EFEC", c: "#6E6963" },
-  screening: { label: "Screening", bg: "#E3EDFF", c: "#053799" },
-  interview: { label: "Interview", bg: "#FFE3D4", c: "#B33800" },
-  offer: { label: "Offer", bg: "#E0F7EC", c: "#005430" },
+  applied: { label: "Applied", bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)" },
+  screening: { label: "Screening", bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
+  interview: { label: "Interview", bg: "var(--color-attention-bg)", c: "var(--color-attention-text)" },
+  offer: { label: "Offer", bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
 };
 
 export const RECRUITMENT_CANDIDATES = [
@@ -844,8 +840,8 @@ export const RECRUITMENT_ROLES = [
   { title: "Studio coordinator", type: "Part-time", applicants: "Draft — not posted", open: false },
 ].map((r) => ({
   ...r,
-  stBg: r.open ? "#E0F7EC" : "#F1EFEC",
-  stColor: r.open ? "#005430" : "#6E6963",
+  stBg: r.open ? "var(--color-success-bg)" : "var(--color-surface-muted)",
+  stColor: r.open ? "var(--color-success-text)" : "var(--color-text-secondary)",
   stLabel: r.open ? "Open" : "Draft",
 }));
 
@@ -856,8 +852,8 @@ function progressMeta(done: number, total: number, completeColor: string, active
     pct: `${pct}%`,
     label: `${done} / ${total}`,
     barColor: complete ? completeColor : activeColor,
-    stBg: complete ? "#E0F7EC" : activeColor === "#4F3DD9" ? "#EDEAFD" : "#FFE3D4",
-    stColor: complete ? "#005430" : activeColor === "#4F3DD9" ? "#2A1F87" : "#B33800",
+    stBg: complete ? "var(--color-success-bg)" : activeColor === "#4F3DD9" ? "var(--color-indigo-100)" : "var(--color-attention-bg)",
+    stColor: complete ? "var(--color-success-text)" : activeColor === "#4F3DD9" ? "var(--color-indigo-800)" : "var(--color-attention-text)",
     stLabel: complete ? "Complete" : "In progress",
   };
 }
@@ -878,15 +874,15 @@ export const ONBOARDING_CHECKLIST = [
 ].map((c) => ({
   label: c.label,
   done: c.done,
-  tick: c.done ? "#00A15C" : "#C7C3BE",
-  bg: c.done ? "#E0F7EC" : "#F1EFEC",
-  textColor: c.done ? "#242424" : "#9B9691",
+  tick: c.done ? "#00A15C" : "var(--color-text-muted)",
+  bg: c.done ? "var(--color-success-bg)" : "var(--color-surface-muted)",
+  textColor: c.done ? "var(--color-text-primary)" : "var(--color-text-muted)",
 }));
 
 export const OFFBOARDING_DEPARTURES = [
   { ini: "DL", name: "Danniel Lopez", role: "Retoucher · freelance", done: 3, total: 5 },
   { ini: "GV", name: "Grace Villar", role: "Second shooter", done: 5, total: 5 },
-].map((h) => ({ ...h, ...progressMeta(h.done, h.total, "#00A15C", "#B33800") }));
+].map((h) => ({ ...h, ...progressMeta(h.done, h.total, "#00A15C", "var(--color-attention-text)") }));
 
 export const OFFBOARDING_CHECKLIST = [
   { label: "Final payout cleared", done: true },
@@ -897,16 +893,16 @@ export const OFFBOARDING_CHECKLIST = [
 ].map((c) => ({
   label: c.label,
   done: c.done,
-  tick: c.done ? "#00A15C" : "#C7C3BE",
-  bg: c.done ? "#E0F7EC" : "#F1EFEC",
-  textColor: c.done ? "#242424" : "#9B9691",
+  tick: c.done ? "#00A15C" : "var(--color-text-muted)",
+  bg: c.done ? "var(--color-success-bg)" : "var(--color-surface-muted)",
+  textColor: c.done ? "var(--color-text-primary)" : "var(--color-text-muted)",
 }));
 
 // ── Performance ──────────────────────────────────────────────────────
 const PF_STATUS: Record<string, { bg: string; c: string; label: string }> = {
-  due: { bg: "#FFE3D4", c: "#B33800", label: "Review due" },
-  scheduled: { bg: "#E3EDFF", c: "#053799", label: "Scheduled" },
-  done: { bg: "#E0F7EC", c: "#005430", label: "Completed" },
+  due: { bg: "var(--color-attention-bg)", c: "var(--color-attention-text)", label: "Review due" },
+  scheduled: { bg: "var(--color-info-bg)", c: "var(--color-info-text)", label: "Scheduled" },
+  done: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "Completed" },
 };
 
 export const PERFORMANCE_REVIEWS = [
@@ -936,16 +932,16 @@ export const PERFORMANCE_GOALS = [
 
 // ── Tasks ────────────────────────────────────────────────────────────
 const TASK_COL_DEFS = [
-  { key: "todo", label: "To do", c: "#6E6963", bg: "#F1EFEC" },
-  { key: "doing", label: "In progress", c: "#B33800", bg: "#FFE3D4" },
-  { key: "blocked", label: "Blocked", c: "#8A0625", bg: "#FDE4EA" },
-  { key: "done", label: "Done", c: "#005430", bg: "#E0F7EC" },
+  { key: "todo", label: "To do", c: "var(--color-text-secondary)", bg: "var(--color-surface-muted)" },
+  { key: "doing", label: "In progress", c: "var(--color-attention-text)", bg: "var(--color-attention-bg)" },
+  { key: "blocked", label: "Blocked", c: "var(--color-danger-text)", bg: "var(--color-danger-bg)" },
+  { key: "done", label: "Done", c: "var(--color-success-text)", bg: "var(--color-success-bg)" },
 ];
 
 const TASK_PRIO: Record<string, { bg: string; c: string }> = {
-  High: { bg: "#FDE4EA", c: "#8A0625" },
-  Med: { bg: "#FDF0D5", c: "#8A6D00" },
-  Low: { bg: "#F1EFEC", c: "#6E6963" },
+  High: { bg: "var(--color-danger-bg)", c: "var(--color-danger-text)" },
+  Med: { bg: "var(--color-warning-bg)", c: "var(--color-warning-text)" },
+  Low: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)" },
 };
 
 const TASK_ITEMS = [
@@ -977,10 +973,10 @@ export const TASKS_BOARD = TASK_COL_DEFS.map((c) => {
 });
 
 const TASK_STATUS: Record<string, { l: string; bg: string; c: string }> = {
-  todo: { l: "To do", bg: "#F1EFEC", c: "#6E6963" },
-  doing: { l: "In progress", bg: "#FFE3D4", c: "#B33800" },
-  blocked: { l: "Blocked", bg: "#FDE4EA", c: "#8A0625" },
-  done: { l: "Done", bg: "#E0F7EC", c: "#005430" },
+  todo: { l: "To do", bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)" },
+  doing: { l: "In progress", bg: "var(--color-attention-bg)", c: "var(--color-attention-text)" },
+  blocked: { l: "Blocked", bg: "var(--color-danger-bg)", c: "var(--color-danger-text)" },
+  done: { l: "Done", bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
 };
 
 export const TASKS_MINE = TASK_ITEMS.map((t) => ({
@@ -993,7 +989,7 @@ export const TASKS_MINE = TASK_ITEMS.map((t) => ({
   stL: TASK_STATUS[t.col].l,
   stBg: TASK_STATUS[t.col].bg,
   stColor: TASK_STATUS[t.col].c,
-  ring: t.col === "done" ? "#00A15C" : "#C7C3BE",
+  ring: t.col === "done" ? "#00A15C" : "var(--color-text-muted)",
   done: t.col === "done",
   recur: t.recur,
   cat: t.cat,
@@ -1001,8 +997,8 @@ export const TASKS_MINE = TASK_ITEMS.map((t) => ({
 
 // ── Shiftboard ───────────────────────────────────────────────────────
 const SHIFT_LOC: Record<string, { bg: string; c: string; label: string }> = {
-  studio: { bg: "#E0F7F8", c: "#00575C", label: "Studio" },
-  location: { bg: "#FFF4EE", c: "#B33800", label: "On location" },
+  studio: { bg: "var(--color-teal-100)", c: "var(--color-teal-800)", label: "Studio" },
+  location: { bg: "#FFF4EE", c: "var(--color-attention-text)", label: "On location" },
 };
 
 export interface ShiftEntry {
@@ -1016,18 +1012,25 @@ export interface ShiftEntry {
 }
 
 export const SHIFT_DEFAULT: ShiftEntry[] = [
-  { id: "s1", d: 0, ini: "MR", who: "Marisol", role: "Studio open", time: "9:00–18:00", loc: "studio" },
-  { id: "s2", d: 0, ini: "DC", who: "Danilo", role: "Editing", time: "10:00–18:00", loc: "studio" },
-  { id: "s3", d: 1, ini: "EB", who: "Eusebio", role: "Ayala shoot", time: "8:00–14:00", loc: "location" },
-  { id: "s4", d: 1, ini: "IS", who: "Ivy", role: "Studio duty", time: "9:00–18:00", loc: "studio" },
-  { id: "s5", d: 2, ini: "DC", who: "Danilo", role: "Editing", time: "10:00–18:00", loc: "studio" },
-  { id: "s6", d: 2, ini: "JL", who: "Josefa", role: "Retouch", time: "13:00–18:00", loc: "studio" },
-  { id: "s7", d: 3, ini: "EB", who: "Eusebio", role: "Deveza prep", time: "9:00–17:00", loc: "studio" },
-  { id: "s8", d: 3, ini: "MR", who: "Marisol", role: "Studio open", time: "9:00–18:00", loc: "studio" },
-  { id: "s9", d: 4, ini: "IS", who: "Ivy", role: "Headshots", time: "10:00–16:00", loc: "location" },
-  { id: "s10", d: 4, ini: "KT", who: "Kevin", role: "Assist", time: "10:00–16:00", loc: "location" },
-  { id: "s11", d: 5, ini: "EB", who: "Eusebio", role: "Wedding — Deveza", time: "14:00–23:00", loc: "location" },
-  { id: "s12", d: 5, ini: "MR", who: "Marisol", role: "Coordinator", time: "14:00–23:00", loc: "location" },
+  { id: "s1", d: 0, ini: "MR", who: "Marisol", role: "Studio open", time: "8:00AM – 5:00PM", loc: "studio" },
+  { id: "s2", d: 0, ini: "DC", who: "Danilo", role: "Editing", time: "8:00AM – 5:00PM", loc: "studio" },
+  { id: "s3", d: 1, ini: "EB", who: "Eusebio", role: "Ayala shoot", time: "8:00AM – 2:00PM", loc: "location" },
+  { id: "s4", d: 1, ini: "IS", who: "Ivy", role: "Studio duty", time: "8:00AM – 5:00PM", loc: "studio" },
+  { id: "s5", d: 2, ini: "DC", who: "Danilo", role: "Editing", time: "8:00AM – 5:00PM", loc: "studio" },
+  { id: "s6", d: 2, ini: "JL", who: "Josefa", role: "Retouch", time: "8:00AM – 5:00PM", loc: "studio" },
+  { id: "s7", d: 3, ini: "EB", who: "Eusebio", role: "Deveza prep", time: "8:00AM – 5:00PM", loc: "studio" },
+  { id: "s8", d: 3, ini: "MR", who: "Marisol", role: "Studio open", time: "8:00AM – 5:00PM", loc: "studio" },
+  { id: "s9", d: 4, ini: "IS", who: "Ivy", role: "Headshots", time: "8:00AM – 4:00PM", loc: "location" },
+  { id: "s10", d: 4, ini: "KT", who: "Kevin", role: "Assist", time: "8:00AM – 4:00PM", loc: "location" },
+  { id: "s11", d: 5, ini: "EB", who: "Eusebio", role: "Wedding — Deveza", time: "2:00PM – 12:00AM", loc: "location" },
+  { id: "s12", d: 5, ini: "MR", who: "Marisol", role: "Coordinator", time: "2:00PM – 12:00AM", loc: "location" },
+  { id: "s13", d: 5, ini: "KT", who: "Kevin", role: "Assist", time: "2:00PM – 12:00AM", loc: "location" },
+  { id: "s14", d: 6, ini: "EB", who: "Eusebio", role: "Day off", time: "—", loc: "studio" },
+  { id: "s15", d: 6, ini: "MR", who: "Marisol", role: "Day off", time: "—", loc: "studio" },
+  { id: "s16", d: 6, ini: "DC", who: "Danilo", role: "Day off", time: "—", loc: "studio" },
+  { id: "s17", d: 6, ini: "IS", who: "Ivy", role: "Day off", time: "—", loc: "studio" },
+  { id: "s18", d: 6, ini: "JL", who: "Josefa", role: "Day off", time: "—", loc: "studio" },
+  { id: "s19", d: 6, ini: "KT", who: "Kevin", role: "Day off", time: "—", loc: "studio" },
 ];
 
 export const SHIFT_DAY_META: [string, string, boolean][] = [
@@ -1037,6 +1040,7 @@ export const SHIFT_DAY_META: [string, string, boolean][] = [
   ["Thu", "24", false],
   ["Fri", "25", false],
   ["Sat", "26", false],
+  ["Sun", "27", false],
 ];
 
 export function shiftLocStyle(loc: "studio" | "location") {
@@ -1045,13 +1049,13 @@ export function shiftLocStyle(loc: "studio" | "location") {
 
 // ── Compliance ───────────────────────────────────────────────────────
 const COMP_ST: Record<string, { bg: string; c: string; l: string; o: number }> = {
-  expired: { bg: "#FDE4EA", c: "#8A0625", l: "Expired", o: 1 },
-  action: { bg: "#FFE3D4", c: "#B33800", l: "Action required", o: 2 },
-  duesoon: { bg: "#FDF0D5", c: "#8A6D00", l: "Due soon", o: 3 },
-  submitted: { bg: "#E3EDFF", c: "#053799", l: "Submitted", o: 6 },
-  review: { bg: "#E3EDFF", c: "#053799", l: "Under review", o: 6 },
-  compliant: { bg: "#E0F7EC", c: "#005430", l: "Compliant", o: 7 },
-  na: { bg: "#ECEAE7", c: "#6E6963", l: "Not applicable", o: 8 },
+  expired: { bg: "var(--color-danger-bg)", c: "var(--color-danger-text)", l: "Expired", o: 1 },
+  action: { bg: "var(--color-attention-bg)", c: "var(--color-attention-text)", l: "Action required", o: 2 },
+  duesoon: { bg: "var(--color-warning-bg)", c: "var(--color-warning-text)", l: "Due soon", o: 3 },
+  submitted: { bg: "var(--color-info-bg)", c: "var(--color-info-text)", l: "Submitted", o: 6 },
+  review: { bg: "var(--color-info-bg)", c: "var(--color-info-text)", l: "Under review", o: 6 },
+  compliant: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", l: "Compliant", o: 7 },
+  na: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)", l: "Not applicable", o: 8 },
 };
 
 const COMPLIANCE_DATA_RAW = [
@@ -1092,42 +1096,236 @@ export const COMPLIANCE_SUMMARY = [
   {
     label: "Overall status",
     value: complianceActionNeeded ? "Action needed" : "On track",
-    tone: complianceActionNeeded ? "#B33800" : "#005430",
+    tone: complianceActionNeeded ? "var(--color-attention-text)" : "var(--color-success-text)",
     sub: `${COMPLIANCE_DATA_RAW.length} requirements tracked`,
   },
-  { label: "Expired", value: String(complianceCount("expired")), tone: "#8A0625", sub: "Renew immediately" },
+  { label: "Expired", value: String(complianceCount("expired")), tone: "var(--color-danger-text)", sub: "Renew immediately" },
   {
     label: "Due within 30 days",
     value: String(complianceCount("duesoon") + complianceCount("action")),
-    tone: "#8A6D00",
+    tone: "var(--color-warning-text)",
     sub: "Action required soon",
   },
   {
     label: "Pending applications",
     value: String(complianceCount("submitted") + complianceCount("review")),
-    tone: "#053799",
+    tone: "var(--color-info-text)",
     sub: "Submitted / under review",
   },
-  { label: "Estimated fees due", value: "₱18,500", tone: "#141414", sub: "Planning estimate" },
-  { label: "Actual fees paid (YTD)", value: "₱21,900", tone: "#141414", sub: "2026 to date" },
+  { label: "Estimated fees due", value: "₱18,500", tone: "var(--color-text-primary)", sub: "Planning estimate" },
+  { label: "Actual fees paid (YTD)", value: "₱21,900", tone: "var(--color-text-primary)", sub: "2026 to date" },
 ];
 
 // ── Feedback ─────────────────────────────────────────────────────────
-export const FEEDBACK_REPORTS = [
-  { kind: "Problem", kc: "#8A0625", kb: "#FDE4EA", summary: "Balance on Reyes booking doesn't match deposit", iid: "#248", app: "Booking", status: "In progress", sc: "#0B5FFF" },
-  { kind: "Idea", kc: "#053799", kb: "#E3EDFF", summary: "Add a \"duplicate booking\" action", iid: "#241", app: "Booking", status: "Triaged", sc: "#6E6963" },
-  { kind: "Problem", kc: "#8A0625", kb: "#FDE4EA", summary: "POS cart clears if I switch tabs", iid: "#236", app: "POS", status: "Shipped", sc: "#00A15C" },
-  { kind: "Idea", kc: "#053799", kb: "#E3EDFF", summary: "Show referral source on account cards", iid: "#229", app: "CRM", status: "Submitted", sc: "#9B9691" },
+export type FeedbackStatus = "Submitted" | "Triaged" | "In progress" | "Shipped";
+export type FeedbackKind = "Problem" | "Idea";
+export type FeedbackPriority = "Urgent" | "Normal" | "Low";
+
+export interface FeedbackReport {
+  iid: string;
+  title: string;
+  summary: string;
+  app: string;
+  kind: FeedbackKind;
+  status: FeedbackStatus;
+  priority: FeedbackPriority;
+  submitted: string;
+  checked?: boolean;
+}
+
+export const FEEDBACK_STATUS_META: Record<
+  FeedbackStatus,
+  { bg: string; color: string }
+> = {
+  Submitted: { bg: "#F1EFEC", color: "#6E6963" },
+  Triaged: { bg: "#E3EDFF", color: "#053799" },
+  "In progress": { bg: "#FFF0D6", color: "#8A6D00" },
+  Shipped: { bg: "#E0F7EC", color: "#005430" },
+};
+
+export const FEEDBACK_KIND_META: Record<FeedbackKind, { bg: string; color: string }> = {
+  Problem: { bg: "#FDE4EA", color: "#8A0625" },
+  Idea: { bg: "#E3EDFF", color: "#053799" },
+};
+
+export const FEEDBACK_PRIORITY_META: Record<FeedbackPriority, { bg: string; color: string }> = {
+  Urgent: { bg: "#FDE4EA", color: "#8A0625" },
+  Normal: { bg: "#FFF0D6", color: "#8A6D00" },
+  Low: { bg: "#E0F7EC", color: "#005430" },
+};
+
+export const FEEDBACK_REPORTS: FeedbackReport[] = [
+  {
+    iid: "#252",
+    title: "Referral source on account cards",
+    summary: "Show how each account found us on the CRM card.",
+    app: "CRM",
+    kind: "Idea",
+    status: "Submitted",
+    priority: "Normal",
+    submitted: "22 Jul 2026",
+  },
+  {
+    iid: "#251",
+    title: "Keyboard shortcut for new sale",
+    summary: "Add ⌘N on POS to start a blank cart instantly.",
+    app: "POS",
+    kind: "Idea",
+    status: "Submitted",
+    priority: "Low",
+    submitted: "21 Jul 2026",
+  },
+  {
+    iid: "#250",
+    title: "Export payslip as PDF",
+    summary: "Staff need a downloadable copy for bank loans.",
+    app: "Payroll",
+    kind: "Idea",
+    status: "Submitted",
+    priority: "Normal",
+    submitted: "20 Jul 2026",
+  },
+  {
+    iid: "#249",
+    title: "Calendar drag to reschedule",
+    summary: "Dragging a booking on the week view does nothing.",
+    app: "Booking",
+    kind: "Problem",
+    status: "Submitted",
+    priority: "Urgent",
+    submitted: "19 Jul 2026",
+  },
+  {
+    iid: "#248",
+    title: "Balance on Reyes booking",
+    summary: "Shown balance doesn't match the deposit recorded this morning.",
+    app: "Booking",
+    kind: "Problem",
+    status: "In progress",
+    priority: "Urgent",
+    submitted: "18 Jul 2026",
+    checked: true,
+  },
+  {
+    iid: "#247",
+    title: "Duplicate booking action",
+    summary: "One-click clone of session details into a new booking.",
+    app: "Booking",
+    kind: "Idea",
+    status: "In progress",
+    priority: "Normal",
+    submitted: "16 Jul 2026",
+  },
+  {
+    iid: "#246",
+    title: "Shiftboard week print layout",
+    summary: "Printed week view cuts off Saturday column.",
+    app: "Shiftboard",
+    kind: "Problem",
+    status: "In progress",
+    priority: "Normal",
+    submitted: "15 Jul 2026",
+    checked: true,
+  },
+  {
+    iid: "#245",
+    title: "Inventory low-stock threshold",
+    summary: "Let each SKU set its own reorder point.",
+    app: "Inventory",
+    kind: "Idea",
+    status: "In progress",
+    priority: "Low",
+    submitted: "14 Jul 2026",
+  },
+  {
+    iid: "#241",
+    title: "Filter queue by assignee",
+    summary: "CRM follow-up queue needs filter by who owns the next action.",
+    app: "CRM",
+    kind: "Idea",
+    status: "Triaged",
+    priority: "Normal",
+    submitted: "12 Jul 2026",
+  },
+  {
+    iid: "#240",
+    title: "BIR serial photo too dark",
+    summary: "Capture step rejects underexposed invoice photos with no retry tip.",
+    app: "Finance",
+    kind: "Problem",
+    status: "Triaged",
+    priority: "Urgent",
+    submitted: "11 Jul 2026",
+  },
+  {
+    iid: "#239",
+    title: "Bulk mark tasks complete",
+    summary: "Select multiple tasks on the board and complete in one action.",
+    app: "Tasks",
+    kind: "Idea",
+    status: "Triaged",
+    priority: "Normal",
+    submitted: "10 Jul 2026",
+  },
+  {
+    iid: "#238",
+    title: "Dark mode contrast on tables",
+    summary: "Secondary text on ink rows is hard to read in dark theme.",
+    app: "Settings",
+    kind: "Problem",
+    status: "Triaged",
+    priority: "Low",
+    submitted: "09 Jul 2026",
+  },
+  {
+    iid: "#236",
+    title: "POS cart clears on tab switch",
+    summary: "Leaving the sale tab wiped an in-progress cart.",
+    app: "POS",
+    kind: "Problem",
+    status: "Shipped",
+    priority: "Urgent",
+    submitted: "02 Jul 2026",
+    checked: true,
+  },
+  {
+    iid: "#233",
+    title: "Dashboard outstanding drill-down",
+    summary: "Click ₱71,000 to open the balances list.",
+    app: "Dashboard",
+    kind: "Idea",
+    status: "Shipped",
+    priority: "Normal",
+    submitted: "28 Jun 2026",
+    checked: true,
+  },
+  {
+    iid: "#229",
+    title: "Receipt email subject line",
+    summary: "Subject now includes booking ref and amount.",
+    app: "Finance",
+    kind: "Idea",
+    status: "Shipped",
+    priority: "Low",
+    submitted: "20 Jun 2026",
+  },
+];
+
+export const FEEDBACK_STATUS_ORDER: FeedbackStatus[] = [
+  "Submitted",
+  "Triaged",
+  "In progress",
+  "Shipped",
 ];
 
 // ── Settings ─────────────────────────────────────────────────────────
 export const SETTINGS_GENERAL = [
-  { label: "Workspace name", value: "Kahel Studio", mono: false },
-  { label: "Domain", value: "app.kahelstudio.com", mono: true },
-  { label: "Timezone", value: "Asia/Manila (GMT+8)", mono: false },
-  { label: "Currency", value: "PHP · ₱ · centavos", mono: false },
-  { label: "Date format", value: "21 Jul 2026", mono: true },
-  { label: "Booking reference", value: "KS-YYYY-XXXX", mono: true },
+  { label: "Workspace name", value: "Kahel Studio" },
+  { label: "Domain", value: "app.kahelstudio.com" },
+  { label: "Timezone", value: "Asia/Manila (GMT+8)" },
+  { label: "Currency", value: "PHP · ₱ · centavos" },
+  { label: "Date format", value: "21 Jul 2026" },
+  { label: "Booking reference", value: "KS-YYYY-XXXX" },
 ];
 
 export const SETTINGS_TOGGLES = [
@@ -1146,10 +1344,10 @@ export const SETTINGS_LOGS = [
   { ev: "Team member invited", actor: "Eusebio Barrun", when: "10 Jul 2026 · 15:07", type: "auth", tL: "Auth" },
 ].map((r) => {
   const tone: Record<string, { bg: string; c: string }> = {
-    auth: { bg: "#EDEAFD", c: "#2A1F87" },
-    data: { bg: "#E3EDFF", c: "#053799" },
-    warn: { bg: "#FDF0D5", c: "#8A6D00" },
-    ok: { bg: "#E0F7EC", c: "#005430" },
+    auth: { bg: "var(--color-indigo-100)", c: "var(--color-indigo-800)" },
+    data: { bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
+    warn: { bg: "var(--color-warning-bg)", c: "var(--color-warning-text)" },
+    ok: { bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
   };
   return { ...r, tBg: tone[r.type].bg, tColor: tone[r.type].c };
 });
@@ -1238,8 +1436,8 @@ export const EMERGENCY_CONTACTS = [
 ].map((c) => ({
   ...c,
   badgeL: c.primary ? "Primary" : "Secondary",
-  badgeBg: c.primary ? "#FFF4EE" : "#F1EFEC",
-  badgeColor: c.primary ? "#B33800" : "#6E6963",
+  badgeBg: c.primary ? "#FFF4EE" : "var(--color-surface-muted)",
+  badgeColor: c.primary ? "var(--color-attention-text)" : "var(--color-text-secondary)",
 }));
 
 export const SECURITY_ITEMS = [
@@ -1283,7 +1481,7 @@ export const PREFERENCES_NOTIFY = [
 ];
 
 // ── Company Policies ─────────────────────────────────────────────────
-export type PolicyBlock =
+type PolicyBlock =
   | { type: "heading"; text: string }
   | { type: "text"; text: string }
   | { type: "list"; items: string[] };
@@ -1476,6 +1674,76 @@ export const IT_POLICY_SECTIONS: PolicySection[] = [
   ]},
 ];
 
+export const HEALTH_AND_SAFETY_POLICY_SECTIONS: PolicySection[] = [
+  { n: "01", title: "Purpose", blocks: [
+    { type: "text", text: "Kahel Studio is committed to maintaining a clean, safe and healthy environment for staff, clients and visitors. All team members are responsible for following these requirements and reporting safety concerns immediately." },
+  ] },
+  { n: "02", title: "General studio cleanliness", blocks: [
+    { type: "text", text: "Staff must:" },
+    { type: "list", items: ["Disinfect frequently touched surfaces, props and equipment before and after each session.", "Clean and sanitize studio floors daily and immediately address spills.", "Keep restrooms clean, properly supplied and regularly checked.", "Keep entrances, exits, walkways and shooting areas free from obstruction.", "Return equipment, furniture and props to their assigned locations after use.", "Dispose of waste properly and remove it at the end of each working day.", "Report pest activity, water leaks, mould, unusual odours or other sanitation concerns."] },
+    { type: "text", text: "Cleaning tasks must be recorded in the assigned checklist or Staff Hub task." },
+  ] },
+  { n: "03", title: "Hand hygiene", blocks: [
+    { type: "list", items: ["Wash or sanitize hands before and after every client session.", "Hand sanitizer must remain available at entrances, dressing areas and shooting zones.", "Wash hands before handling food, infant props or items used close to a client's face.", "Avoid touching a client unnecessarily.", "Cover coughs and sneezes and sanitize hands immediately afterward.", "Report empty or damaged hygiene dispensers for replacement."] },
+  ] },
+  { n: "04", title: "Masks and personal protective equipment", blocks: [
+    { type: "text", text: "Staff must wear appropriate protective equipment when required by:" },
+    { type: "list", items: ["The nature of the task", "A client's reasonable health request", "Management instructions", "Exposure to cleaning products, dust or other workplace hazards", "Sessions involving infants or immunocompromised individuals"] },
+    { type: "text", text: "Disposable masks must be available in the studio. Gloves may be used for cleaning, handling waste or when additional hygiene precautions are required. Gloves do not replace proper handwashing or sanitizing." },
+  ] },
+  { n: "05", title: "Illness and fitness for work", blocks: [
+    { type: "text", text: "Staff must not report for work when they have a contagious illness or symptoms that may place clients or colleagues at risk." },
+    { type: "text", text: "Employees should promptly inform their supervisor when they:" },
+    { type: "list", items: ["Have a fever or symptoms of a contagious illness", "Have been advised to isolate", "Are unable to perform their duties safely", "Are taking medication that may affect safe equipment operation", "Require temporary adjustments or health accommodations"] },
+    { type: "text", text: "Medical information must be handled confidentially. Staff should only provide information reasonably necessary for workplace safety and attendance management." },
+  ] },
+  { n: "06", title: "Client and guest management", blocks: [
+    { type: "list", items: ["Studio sessions are generally best suited for groups of up to eight people.", "Only clients being photographed and essential companions should remain inside the shooting area.", "Additional visitors may be asked to wait outside or in a designated waiting area.", "Walkways, fire exits and equipment zones must not become overcrowded.", "Children must remain under the supervision of a parent, guardian or designated adult.", "Staff must professionally communicate occupancy or safety restrictions to clients."] },
+  ] },
+  { n: "07", title: "Infant and baby sessions", blocks: [
+    { type: "text", text: "Additional precautions apply during infant and baby sessions:" },
+    { type: "list", items: ["Sanitize blankets, wraps, posing materials and props before use.", "Store clean and used items separately.", "Maintain a clean and comfortably warm environment.", "Sanitize hands immediately before handling the baby or baby-related items.", "Wear a mask when requested or when additional precautions are appropriate.", "Use gloves only when suitable for the task and safe for the baby.", "Ensure a parent or guardian remains present.", "Never leave a baby unattended or in an unsecured position.", "Stop the session if the baby shows signs of distress or discomfort."] },
+    { type: "text", text: "Only trained or authorised team members may position or directly handle infants." },
+  ] },
+  { n: "08", title: "Equipment and electrical safety", blocks: [
+    { type: "text", text: "Staff must:" },
+    { type: "list", items: ["Inspect cameras, lights, stands, cables and electrical equipment before use.", "Secure light stands and backdrops with appropriate weights or sandbags.", "Keep cables secured and away from walkways whenever possible.", "Never overload sockets or use visibly damaged cables.", "Turn off and unplug equipment before cleaning or maintenance.", "Keep liquids away from cameras, computers, printers and electrical connections.", "Immediately label and remove unsafe equipment from service.", "Report damage or malfunction through Maintenance & repair.", "Never attempt unauthorised electrical or equipment repairs."] },
+  ] },
+  { n: "09", title: "Fire and emergency safety", blocks: [
+    { type: "text", text: "All staff must know:" },
+    { type: "list", items: ["The location of emergency exits", "The location and proper use of fire extinguishers", "The studio's evacuation route and assembly point", "Who to contact during an emergency", "Where the first-aid kit is stored"] },
+    { type: "text", text: "Emergency exits and firefighting equipment must remain unobstructed. Staff must immediately report smoke, burning smells, exposed wiring or other fire hazards." },
+    { type: "text", text: "During an emergency, protecting people takes priority over protecting equipment or files." },
+  ] },
+  { n: "10", title: "Accidents, hazards and near misses", blocks: [
+    { type: "text", text: "All injuries, accidents, equipment-related incidents and near misses must be reported immediately, even when no medical treatment is initially required." },
+    { type: "text", text: "The report should include:" },
+    { type: "list", items: ["Date, time and location", "People involved", "Description of what happened", "Immediate action taken", "Witnesses, when applicable", "Photos or supporting evidence", "Recommended preventive action"] },
+    { type: "text", text: "Incident records must be factual and must not be altered or deleted to conceal an error." },
+  ] },
+  { n: "11", title: "Cleaning chemicals and supplies", blocks: [
+    { type: "list", items: ["Keep cleaning chemicals in their original labelled containers.", "Never mix cleaning products unless the manufacturer confirms it is safe.", "Store chemicals away from food, clients and children.", "Use gloves, masks or ventilation when required.", "Follow the product instructions and safety warnings.", "Immediately clean or isolate spills.", "Report accidental exposure and seek appropriate assistance."] },
+  ] },
+  { n: "12", title: "Staff responsibilities", blocks: [
+    { type: "text", text: "Every staff member must:" },
+    { type: "list", items: ["Complete required health and safety training.", "Follow studio safety procedures and checklists.", "Use equipment only when trained or authorised.", "Report unsafe conditions promptly.", "Cooperate with emergency procedures and investigations.", "Never remove safety equipment or bypass safety controls.", "Stop work and seek guidance when a task presents an immediate serious danger.", "Respect health accommodations and client safety requests."] },
+    { type: "text", text: "Supervisors must respond promptly to reported hazards and must not require staff to continue work under unsafe conditions." },
+  ] },
+  { n: "13", title: "Communication and client requests", blocks: [
+    { type: "text", text: "Staff should respond professionally when clients raise health or safety concerns." },
+    { type: "heading", text: "Suggested response" },
+    { type: "text", text: "Thank you for letting us know. We'll review your request and adjust the studio setup where reasonably possible." },
+    { type: "text", text: "Any special precaution should be recorded in the booking notes and communicated only to staff who need the information. Do not place unnecessary medical details in general notes or public team channels." },
+  ] },
+  { n: "14", title: "Non-compliance", blocks: [
+    { type: "text", text: "Failure to follow health and safety requirements may result in coaching, retraining or corrective action. Deliberate or repeated violations, especially those placing a client, child or colleague at risk, may be treated as serious misconduct." },
+    { type: "text", text: "Good-faith safety reports are protected. Staff must not be penalised for reporting a genuine hazard or stopping work because of an immediate serious safety concern." },
+  ] },
+];
+
+export const HEALTH_AND_SAFETY_ACK_STATEMENT =
+  "I confirm that I have read and understood the Kahel Studio Staff Health & Safety Policy. I agree to follow its requirements, complete assigned safety tasks and promptly report hazards, injuries, illnesses and unsafe conditions.";
+
 // ── Payroll ──────────────────────────────────────────────────────────
 function pmoney(n: number) {
   return "₱" + n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -1489,10 +1757,10 @@ export const PAYROLL_PRIMARY_KPIS = [
 ];
 
 export const PAYROLL_SEC_STATS = [
-  { label: "Attendance exceptions", value: "3", sub: "2 blocking · 1 non-blocking", accent: "#8A6D00" },
-  { label: "Pending approvals", value: "1", sub: "Awaiting super admin", accent: "#8A6D00" },
-  { label: "Employer contributions", value: pmoney(6142), sub: "SSS · PhilHealth · Pag-IBIG", accent: "#00575C" },
-  { label: "Upcoming payment", value: "31 Jul 2026", sub: "Second cutoff", accent: "#2A1F87" },
+  { label: "Attendance exceptions", value: "3", sub: "2 blocking · 1 non-blocking", accent: "var(--color-warning-text)" },
+  { label: "Pending approvals", value: "1", sub: "Awaiting super admin", accent: "var(--color-warning-text)" },
+  { label: "Employer contributions", value: pmoney(6142), sub: "SSS · PhilHealth · Pag-IBIG", accent: "var(--color-teal-800)" },
+  { label: "Upcoming payment", value: "31 Jul 2026", sub: "Second cutoff", accent: "var(--color-indigo-800)" },
 ];
 
 export const PAYROLL_ATTENTION = [
@@ -1501,17 +1769,17 @@ export const PAYROLL_ATTENTION = [
   { emp: "Josefa Lim", issue: "Duplicate adjustment", detail: "Incentive entered twice", sev: "warn", date: "26 Jul", action: "Review adjustments", who: "M. Reyes" },
 ].map((a) => ({
   ...a,
-  sevBg: a.sev === "block" ? "#FDE4EA" : "#FDF0D5",
-  sevColor: a.sev === "block" ? "#8A0625" : "#8A6D00",
+  sevBg: a.sev === "block" ? "var(--color-danger-bg)" : "var(--color-warning-bg)",
+  sevColor: a.sev === "block" ? "var(--color-danger-text)" : "var(--color-warning-text)",
   sevLabel: a.sev === "block" ? "Blocking" : "Non-blocking",
   dot: a.sev === "block" ? "#D3163C" : "#C99400",
 }));
 
 const PAYROLL_STATUS: Record<string, { bg: string; c: string; label: string }> = {
-  draft: { bg: "#F1EFEC", c: "#6E6963", label: "Draft" },
-  attreview: { bg: "#FDF0D5", c: "#8A6D00", label: "Attendance review" },
-  paid: { bg: "#E0F7EC", c: "#005430", label: "Paid" },
-  completed: { bg: "#E0F7EC", c: "#005430", label: "Completed" },
+  draft: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)", label: "Draft" },
+  attreview: { bg: "var(--color-warning-bg)", c: "var(--color-warning-text)", label: "Attendance review" },
+  paid: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "Paid" },
+  completed: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "Completed" },
 };
 
 export const PAYROLL_RUNS = [
@@ -1523,10 +1791,10 @@ export const PAYROLL_RUNS = [
 ].map((r) => ({ ...r, stBg: PAYROLL_STATUS[r.st].bg, stColor: PAYROLL_STATUS[r.st].c, stLabel: PAYROLL_STATUS[r.st].label }));
 
 const EMP_TYPE_TINT: Record<string, { bg: string; c: string }> = {
-  "Full time": { bg: "#EDEAFD", c: "#2A1F87" },
-  "Part time": { bg: "#E0F7F8", c: "#00575C" },
-  Intern: { bg: "#F1EFEC", c: "#6E6963" },
-  Freelancer: { bg: "#FFF4EE", c: "#B33800" },
+  "Full time": { bg: "var(--color-indigo-100)", c: "var(--color-indigo-800)" },
+  "Part time": { bg: "var(--color-teal-100)", c: "var(--color-teal-800)" },
+  Intern: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)" },
+  Freelancer: { bg: "#FFF4EE", c: "var(--color-attention-text)" },
 };
 
 export const PAYROLL_EMPLOYEES = [
@@ -1540,8 +1808,8 @@ export const PAYROLL_EMPLOYEES = [
   ...e,
   tBg: EMP_TYPE_TINT[e.type].bg,
   tColor: EMP_TYPE_TINT[e.type].c,
-  readyBg: e.ready ? "#E0F7EC" : "#FDF0D5",
-  readyColor: e.ready ? "#005430" : "#8A6D00",
+  readyBg: e.ready ? "var(--color-success-bg)" : "var(--color-warning-bg)",
+  readyColor: e.ready ? "var(--color-success-text)" : "var(--color-warning-text)",
   readyLabel: e.ready ? "Ready" : "Needs setup",
 }));
 
@@ -1580,12 +1848,167 @@ export const PAYROLL_EMPLOYEE_PROFILE = {
   ],
 };
 
+export const PAYROLL_EMPLOYEE_PROFILE_DC = {
+  name: "Danilo Cruz",
+  id: "EMP-004",
+  role: "Senior editor",
+  team: "Editorial",
+  type: "Full time",
+  schedule: "Semi-monthly · 5 days/week · 8 hrs",
+  rate: "₱30,000.00 / month",
+  semi: "₱15,000.00 / cutoff",
+  bank: "BDO •••• 7788",
+  sss: "23-•••••••-4",
+  ph: "11-••••••••-9",
+  pag: "1211-••••-••45",
+  tin: "295-•••-•••-001",
+  earnings: [
+    { label: "Basic salary", value: "₱15,000.00 / cutoff" },
+    { label: "Transportation allowance", value: "₱750.00 / cutoff" },
+  ],
+  deductions: [
+    { label: "SSS (EE share)", value: "₱675.00" },
+    { label: "PhilHealth (EE share)", value: "₱375.00" },
+    { label: "Pag-IBIG (EE share)", value: "₱100.00" },
+    { label: "Salary advance", value: "₱1,000.00 · 1 of 5" },
+  ],
+  history: [
+    { prev: "₱27,000.00", next: "₱30,000.00", date: "1 Jan 2026", reason: "Annual merit increase" },
+  ],
+  payslips: [
+    { ref: "PS-2026-07-A-004", period: "1–15 Jul 2026", net: "₱13,020.00" },
+    { ref: "PS-2026-06-B-004", period: "16–30 Jun 2026", net: "₱12,850.00" },
+    { ref: "PS-2026-06-A-004", period: "1–15 Jun 2026", net: "₱12,790.00" },
+  ],
+};
+
+export const PAYROLL_EMPLOYEE_PROFILE_IS = {
+  name: "Ivy Santos",
+  id: "EMP-007",
+  role: "Junior photographer",
+  team: "Creative",
+  type: "Full time",
+  schedule: "Semi-monthly · 5 days/week · 8 hrs",
+  rate: "₱22,000.00 / month",
+  semi: "₱11,000.00 / cutoff",
+  bank: "GCash •••• 7712",
+  sss: "12-•••••••-3",
+  ph: "09-••••••••-1",
+  pag: "1209-••••-••78",
+  tin: "306-•••-•••-002",
+  earnings: [
+    { label: "Basic salary", value: "₱11,000.00 / cutoff" },
+    { label: "Photography equipment allowance", value: "₱500.00 / cutoff" },
+  ],
+  deductions: [
+    { label: "SSS (EE share)", value: "₱495.00" },
+    { label: "PhilHealth (EE share)", value: "₱275.00" },
+    { label: "Pag-IBIG (EE share)", value: "₱100.00" },
+  ],
+  history: [
+    { prev: "₱20,000.00", next: "₱22,000.00", date: "1 Jan 2026", reason: "Annual merit increase" },
+  ],
+  payslips: [
+    { ref: "PS-2026-07-A-007", period: "1–15 Jul 2026", net: "₱10,410.00" },
+    { ref: "PS-2026-06-B-007", period: "16–30 Jun 2026", net: "₱10,355.00" },
+    { ref: "PS-2026-06-A-007", period: "1–15 Jun 2026", net: "₱10,290.00" },
+  ],
+};
+
+export const PAYROLL_EMPLOYEE_PROFILE_JL = {
+  name: "Josefa Lim",
+  id: "EMP-009",
+  role: "Retouch assistant",
+  team: "Post-production",
+  type: "Part time",
+  schedule: "Semi-monthly · 4 days/week · 6 hrs",
+  rate: "₱180.00 / hr",
+  semi: "By hours logged",
+  bank: "Maya •••• 1150",
+  sss: "27-•••••••-1",
+  ph: "14-••••••••-6",
+  pag: "1214-••••-••92",
+  tin: "317-•••-•••-003",
+  earnings: [
+    { label: "Regular hours", value: "₱4,320.00 / cutoff" },
+    { label: "Overtime", value: "₱540.00 / cutoff" },
+  ],
+  deductions: [
+    { label: "SSS (EE share)", value: "₱225.00" },
+    { label: "PhilHealth (EE share)", value: "₱100.00" },
+    { label: "Pag-IBIG (EE share)", value: "₱50.00" },
+  ],
+  history: [
+    { prev: "₱160.00", next: "₱180.00", date: "1 Jan 2026", reason: "Rate adjustment" },
+  ],
+  payslips: [
+    { ref: "PS-2026-07-A-009", period: "1–15 Jul 2026", net: "₱4,760.00" },
+    { ref: "PS-2026-06-B-009", period: "16–30 Jun 2026", net: "₱4,650.00" },
+    { ref: "PS-2026-06-A-009", period: "1–15 Jun 2026", net: "₱4,590.00" },
+  ],
+};
+
+export const PAYROLL_EMPLOYEE_PROFILE_KT = {
+  name: "Kevin Tan",
+  id: "EMP-011",
+  role: "Production intern",
+  team: "Production",
+  type: "Intern",
+  schedule: "Semi-monthly · 4 days/week · 6 hrs",
+  rate: "₱8,000.00 / month (allowance)",
+  semi: "₱4,000.00 / cutoff",
+  bank: "GCash •••• 3390",
+  sss: "—",
+  ph: "—",
+  pag: "—",
+  tin: "328-•••-•••-004",
+  earnings: [
+    { label: "Internship allowance", value: "₱4,000.00 / cutoff" },
+  ],
+  deductions: [
+    { label: "SSS (EE share)", value: "₱0.00" },
+    { label: "PhilHealth (EE share)", value: "₱0.00" },
+    { label: "Pag-IBIG (EE share)", value: "₱0.00" },
+  ],
+  history: [] as { prev: string; next: string; date: string; reason: string }[],
+  payslips: [
+    { ref: "PS-2026-07-A-011", period: "1–15 Jul 2026", net: "₱4,000.00" },
+    { ref: "PS-2026-06-B-011", period: "16–30 Jun 2026", net: "₱4,000.00" },
+    { ref: "PS-2026-06-A-011", period: "1–15 Jun 2026", net: "₱4,000.00" },
+  ],
+};
+
+export const PAYROLL_EMPLOYEE_PROFILE_MP = {
+  name: "Miguel Padua",
+  id: "FRL-003",
+  role: "Videographer",
+  team: "Creative",
+  type: "Freelancer",
+  schedule: "Per project",
+  rate: "By statement",
+  semi: "By statement",
+  bank: "Bank •••• 9921",
+  sss: "—",
+  ph: "—",
+  pag: "—",
+  tin: "339-•••-•••-005",
+  earnings: [
+    { label: "Project fee — Kahel wedding", value: "₱5,000.00" },
+    { label: "Project fee — Studio tour", value: "₱2,500.00" },
+  ],
+  deductions: [
+    { label: "Withholding tax (5%)", value: "₱375.00" },
+  ],
+  history: [] as { prev: string; next: string; date: string; reason: string }[],
+  payslips: [] as { ref: string; period: string; net: string }[],
+};
+
 const ADJ_STATUS: Record<string, { bg: string; c: string }> = {
-  applied: { bg: "#E0F7EC", c: "#005430" },
-  approved: { bg: "#E0F7EC", c: "#005430" },
-  awaiting: { bg: "#FDF0D5", c: "#8A6D00" },
-  rejected: { bg: "#FDE4EA", c: "#8A0625" },
-  reversed: { bg: "#EDEAFD", c: "#2A1F87" },
+  applied: { bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
+  approved: { bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
+  awaiting: { bg: "var(--color-warning-bg)", c: "var(--color-warning-text)" },
+  rejected: { bg: "var(--color-danger-bg)", c: "var(--color-danger-text)" },
+  reversed: { bg: "var(--color-indigo-100)", c: "var(--color-indigo-800)" },
 };
 
 export const PAYROLL_ADJUSTMENTS = [
@@ -1595,13 +2018,13 @@ export const PAYROLL_ADJUSTMENTS = [
   { ref: "ADJ-0139", emp: "Josefa Lim", kind: "Incentive", dir: "Earning", amt: "+₱500.00", run: "PAY-2026-07-B", st: "awaiting", stL: "Awaiting approval" },
   { ref: "ADJ-0138", emp: "Josefa Lim", kind: "Incentive (duplicate)", dir: "Earning", amt: "+₱500.00", run: "PAY-2026-07-B", st: "rejected", stL: "Rejected" },
   { ref: "ADJ-0137", emp: "Danilo Cruz", kind: "Retro pay correction", dir: "Earning", amt: "+₱1,200.00", run: "PAY-2026-06-B", st: "reversed", stL: "Reversed" },
-].map((a) => ({ ...a, dirColor: a.dir === "Earning" ? "#005430" : "#8A0625", stBg: ADJ_STATUS[a.st].bg, stColor: ADJ_STATUS[a.st].c }));
+].map((a) => ({ ...a, dirColor: a.dir === "Earning" ? "var(--color-success-text)" : "var(--color-danger-text)", stBg: ADJ_STATUS[a.st].bg, stColor: ADJ_STATUS[a.st].c }));
 
 const PS_STATUS: Record<string, { bg: string; c: string }> = {
-  generated: { bg: "#E3EDFF", c: "#053799" },
-  published: { bg: "#E0F7EC", c: "#005430" },
-  viewed: { bg: "#E0F7EC", c: "#005430" },
-  downloaded: { bg: "#E0F7EC", c: "#005430" },
+  generated: { bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
+  published: { bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
+  viewed: { bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
+  downloaded: { bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
 };
 
 export const PAYROLL_PAYSLIPS = [
@@ -1613,10 +2036,10 @@ export const PAYROLL_PAYSLIPS = [
 ].map((p) => ({ ...p, stBg: PS_STATUS[p.st].bg, stColor: PS_STATUS[p.st].c }));
 
 const CONT_STATUS: Record<string, { bg: string; c: string; l: string }> = {
-  ready: { bg: "#E3EDFF", c: "#053799", l: "Ready for review" },
-  due: { bg: "#FDF0D5", c: "#8A6D00", l: "Due" },
-  scheduled: { bg: "#E3EDFF", c: "#053799", l: "Scheduled" },
-  remitted: { bg: "#E0F7EC", c: "#005430", l: "Remitted" },
+  ready: { bg: "var(--color-info-bg)", c: "var(--color-info-text)", l: "Ready for review" },
+  due: { bg: "var(--color-warning-bg)", c: "var(--color-warning-text)", l: "Due" },
+  scheduled: { bg: "var(--color-info-bg)", c: "var(--color-info-text)", l: "Scheduled" },
+  remitted: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", l: "Remitted" },
 };
 
 export const PAYROLL_CONTRIB_TABS = [
@@ -1657,9 +2080,9 @@ export const PAYROLL_13TH = [
   { name: "Kevin Tan", basis: "—", earned: "—", paid: "—", bal: "—", st: "excluded", stL: "Not eligible" },
 ].map((r) => {
   const m: Record<string, { bg: string; c: string }> = {
-    ready: { bg: "#E3EDFF", c: "#053799" },
-    review: { bg: "#FDF0D5", c: "#8A6D00" },
-    excluded: { bg: "#F1EFEC", c: "#9B9691" },
+    ready: { bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
+    review: { bg: "var(--color-warning-bg)", c: "var(--color-warning-text)" },
+    excluded: { bg: "var(--color-surface-muted)", c: "var(--color-text-muted)" },
   };
   return { ...r, stBg: m[r.st].bg, stColor: m[r.st].c };
 });
@@ -1680,19 +2103,34 @@ export const PAYROLL_SETTINGS_GROUPS = [
   { title: "Controls", items: [{ l: "Approval chain", v: "Admin → Super admin" }, { l: "Separation of duties", v: "On" }, { l: "Payroll lock date", v: "On approval" }, { l: "Sensitive exports", v: "Super admin only" }] },
 ];
 
+export const SETTINGS_AUDIT = [
+  { ev: "User role updated", actor: "Eusebio Barrun", target: "Ivy Santos", detail: "Junior photographer → Senior photographer", when: "25 Jul 2026 · 16:22", dot: "var(--color-info-text)" },
+  { ev: "Billing plan changed", actor: "Eusebio Barrun", target: "Workspace", detail: "Studio → Studio Plus", when: "22 Jul 2026 · 09:15", dot: "var(--color-kahel-500)" },
+  { ev: "Two-factor authentication enabled", actor: "Danilo Cruz", target: "Account", detail: "Authenticator app", when: "21 Jul 2026 · 14:08", dot: "var(--color-success-text)" },
+  { ev: "Team member invited", actor: "Marisol Reyes", target: "Josefa Lim", detail: "Retouch assistant", when: "20 Jul 2026 · 11:30", dot: "var(--color-info-text)" },
+  { ev: "Health & Safety policy acknowledged", actor: "Kevin Tan", target: "Policy v1.0", detail: "Acknowledged", when: "18 Jul 2026 · 10:45", dot: "var(--color-success-text)" },
+  { ev: "Workspace preferences updated", actor: "Eusebio Barrun", target: "General settings", detail: "Timezone changed to PST", when: "15 Jul 2026 · 08:20", dot: "var(--color-info-text)" },
+  { ev: "Integration connected", actor: "Eusebio Barrun", target: "Cloudflare R2", detail: "Storage provider", when: "12 Jul 2026 · 14:00", dot: "var(--color-success-text)" },
+  { ev: "Password changed", actor: "Marisol Reyes", target: "Account", detail: "Password updated", when: "10 Jul 2026 · 09:33", dot: "var(--color-kahel-500)" },
+  { ev: "Team member removed", actor: "Eusebio Barrun", target: "Miguel Padua", detail: "Freelancer access revoked", when: "8 Jul 2026 · 17:00", dot: "var(--color-danger-text)" },
+  { ev: "Payment method updated", actor: "Eusebio Barrun", target: "Billing", detail: "GCash → BDO", when: "5 Jul 2026 · 11:12", dot: "var(--color-info-text)" },
+  { ev: "Data export requested", actor: "Marisol Reyes", target: "Payroll register", detail: "XLSX export generated", when: "3 Jul 2026 · 16:40", dot: "var(--color-kahel-500)" },
+  { ev: "New admin added", actor: "Eusebio Barrun", target: "Danilo Cruz", detail: "Admin role granted", when: "1 Jul 2026 · 10:00", dot: "var(--color-info-text)" },
+];
+
 export const PAYROLL_AUDIT = [
-  { ev: "Attendance imported", actor: "Marisol Reyes", ref: "PAY-2026-07-B", prev: "—", next: "5 timesheets", reason: "Cutoff close", when: "22 Jul 2026 · 14:20", dot: "#053799" },
-  { ev: "Adjustment rejected", actor: "Marisol Reyes", ref: "ADJ-0138", prev: "Awaiting", next: "Rejected", reason: "Duplicate incentive", when: "22 Jul 2026 · 11:05", dot: "#8A0625" },
-  { ev: "Salary change approved", actor: "Eusebio Barrun", ref: "EMP-002", prev: "₱30,000.00", next: "₱35,000.00", reason: "Promotion", when: "1 Jan 2026 · 09:00", dot: "#005430" },
-  { ev: "Payroll released", actor: "Eusebio Barrun", ref: "PAY-2026-07-A", prev: "Approved", next: "Paid", reason: "Payment confirmed", when: "15 Jul 2026 · 16:02", dot: "#005430" },
-  { ev: "Sensitive export", actor: "Eusebio Barrun", ref: "RPT · Gross-to-net", prev: "—", next: "XLSX", reason: "Accountant request", when: "15 Jul 2026 · 16:40", dot: "#2A1F87" },
+  { ev: "Attendance imported", actor: "Marisol Reyes", ref: "PAY-2026-07-B", prev: "—", next: "5 timesheets", reason: "Cutoff close", when: "22 Jul 2026 · 14:20", dot: "var(--color-info-text)" },
+  { ev: "Adjustment rejected", actor: "Marisol Reyes", ref: "ADJ-0138", prev: "Awaiting", next: "Rejected", reason: "Duplicate incentive", when: "22 Jul 2026 · 11:05", dot: "var(--color-danger-text)" },
+  { ev: "Salary change approved", actor: "Eusebio Barrun", ref: "EMP-002", prev: "₱30,000.00", next: "₱35,000.00", reason: "Promotion", when: "1 Jan 2026 · 09:00", dot: "var(--color-success-text)" },
+  { ev: "Payroll released", actor: "Eusebio Barrun", ref: "PAY-2026-07-A", prev: "Approved", next: "Paid", reason: "Payment confirmed", when: "15 Jul 2026 · 16:02", dot: "var(--color-success-text)" },
+  { ev: "Sensitive export", actor: "Eusebio Barrun", ref: "RPT · Gross-to-net", prev: "—", next: "XLSX", reason: "Accountant request", when: "15 Jul 2026 · 16:40", dot: "var(--color-indigo-800)" },
 ];
 
 const STATE_TONE: Record<string, { bg: string; c: string }> = {
-  blue: { bg: "#E3EDFF", c: "#053799" },
-  red: { bg: "#FDE4EA", c: "#8A0625" },
-  amber: { bg: "#FDF0D5", c: "#8A6D00" },
-  grey: { bg: "#F1EFEC", c: "#6E6963" },
+  blue: { bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
+  red: { bg: "var(--color-danger-bg)", c: "var(--color-danger-text)" },
+  amber: { bg: "var(--color-warning-bg)", c: "var(--color-warning-text)" },
+  grey: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)" },
 };
 
 export const PAYROLL_STATES = [
@@ -1716,15 +2154,237 @@ export const PAYROLL_STATES = [
 }));
 
 export const PAYROLL_STATUS_CHIPS = [
-  { label: "Draft", bg: "#F1EFEC", c: "#6E6963" },
-  { label: "Attendance review", bg: "#FDF0D5", c: "#8A6D00" },
-  { label: "Ready to calculate", bg: "#E3EDFF", c: "#053799" },
-  { label: "Needs review", bg: "#FDF0D5", c: "#8A6D00" },
-  { label: "Awaiting approval", bg: "#FDF0D5", c: "#8A6D00" },
-  { label: "Approved", bg: "#E0F7EC", c: "#005430" },
-  { label: "Scheduled", bg: "#E3EDFF", c: "#053799" },
-  { label: "Partially paid", bg: "#FDF0D5", c: "#8A6D00" },
-  { label: "Paid", bg: "#E0F7EC", c: "#005430" },
-  { label: "Rejected", bg: "#FDE4EA", c: "#8A0625" },
-  { label: "Cancelled", bg: "#F1EFEC", c: "#9B9691" },
+  { label: "Draft", bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)" },
+  { label: "Attendance review", bg: "var(--color-warning-bg)", c: "var(--color-warning-text)" },
+  { label: "Ready to calculate", bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
+  { label: "Needs review", bg: "var(--color-warning-bg)", c: "var(--color-warning-text)" },
+  { label: "Awaiting approval", bg: "var(--color-warning-bg)", c: "var(--color-warning-text)" },
+  { label: "Approved", bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
+  { label: "Scheduled", bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
+  { label: "Partially paid", bg: "var(--color-warning-bg)", c: "var(--color-warning-text)" },
+  { label: "Paid", bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
+  { label: "Rejected", bg: "var(--color-danger-bg)", c: "var(--color-danger-text)" },
+  { label: "Cancelled", bg: "var(--color-surface-muted)", c: "var(--color-text-muted)" },
+];
+
+// Documentation & Help — reached from the launcher footer, not sidebar apps
+export type DocIconKey = "dashboard" | "camera" | "users" | "cart" | "peso" | "userplus" | "folder" | "shield";
+
+type DocBlock =
+  | { kind: "heading"; text: string }
+  | { kind: "text"; text: string }
+  | { kind: "steps"; steps: string[] }
+  | { kind: "note"; label: string; text: string };
+
+export interface DocSection {
+  key: string;
+  title: string;
+  accent: AccentId;
+  icon: DocIconKey;
+  kicker: string;
+  desc: string;
+  blocks: DocBlock[];
+}
+
+const H = (text: string): DocBlock => ({ kind: "heading", text });
+const T = (text: string): DocBlock => ({ kind: "text", text });
+const STP = (steps: string[]): DocBlock => ({ kind: "steps", steps });
+const NT = (label: string, text: string): DocBlock => ({ kind: "note", label, text });
+
+export const DOCS_SECTIONS: DocSection[] = [
+  {
+    key: "start",
+    title: "Getting started",
+    accent: "orange",
+    icon: "dashboard",
+    kicker: "Basics",
+    desc: "The launcher is home. Every app is a tile, and every tile opens into a focused workspace that shares one database with the rest.",
+    blocks: [
+      T("Kahel Studio OS replaces the scatter of DMs, spreadsheets, and manual invoicing with one system. Because every app reads and writes the same database, a booking made in Booking shows up in CRM, Dashboard, and Finance without any copying between them."),
+      H("Moving around"),
+      STP([
+        "Click any tile on the launcher to open that app.",
+        "Use the app switcher in the top-left of any workspace — or the “All apps” link — to jump back home.",
+        "Press ⌘K anywhere to search apps, accounts, and bookings, or to jump to a recent item.",
+        "Use Create (top bar) to start a new booking, account, or sale from wherever you are.",
+      ]),
+      H("Phases"),
+      T("Phase 1 is owner-only and covers Booking, CRM, POS, Dashboard, and Feedback. Later phases add Finance, Quotation, Projects, Tasks, Maintenance & repair, Compliance, Website, Inventory, Marketing, and the people apps — all already visible in the launcher."),
+      NT("Note", "Nothing is ever deleted in this system. Records are voided, corrected, or superseded so the history always ties out."),
+    ],
+  },
+  {
+    key: "booking",
+    title: "Booking",
+    accent: "orange",
+    icon: "camera",
+    kicker: "Core app",
+    desc: "Status is the spine of Booking. A job moves inquiry → quoted → confirmed → in progress → completed, and that status shows up as a badge in lists, a stepper on the detail page, and a filter everywhere.",
+    blocks: [
+      H("Confirming a quote"),
+      T("The quoted → confirmed transition is the moment the business runs on. Confirming sends the deposit invoice and locks the date."),
+      STP([
+        "Open the booking and review the session details and total.",
+        "Click Confirm booking in the payment panel.",
+        "The deposit invoice is sent and the audit history records the change.",
+      ]),
+      H("Deposits"),
+      T("A deposit is either 50% or the full amount, chosen at checkout. The 50% figure is computed on the server as half the total rounded up — it is never taken from the checkout screen."),
+      NT("Balances are derived", "A booking's balance comes from its recorded payments. To change it, add or void a payment rather than editing the number."),
+    ],
+  },
+  {
+    key: "crm",
+    title: "CRM",
+    accent: "ink",
+    icon: "users",
+    kicker: "Core app",
+    desc: "The follow-up queue is the home of CRM — not the accounts list. Inquiries die from no follow-up, silently, and the queue is built to stop that.",
+    blocks: [
+      H("The three groups"),
+      T("The queue splits into overdue, due today, and no next action set. The last group is the one that matters most: an account with no scheduled follow-up is one you are about to forget."),
+      STP([
+        "Work the “No next action set” group first — set a next action on each.",
+        "Clear “Due today” as you complete calls and messages.",
+        "Keep “Overdue” empty; when it is, the queue tells you so.",
+      ]),
+      H("Accounts"),
+      T("Accounts are either corporate or consumer. They share a layout but lead differently — corporate leads with contacts and terms, consumer with the household and its history."),
+    ],
+  },
+  {
+    key: "pos",
+    title: "POS & invoicing",
+    accent: "orange",
+    icon: "cart",
+    kicker: "Core app",
+    desc: "POS is built for iPad in landscape. It sells physical products — prints, frames, albums, USBs — and captures a BIR serial on every sale.",
+    blocks: [
+      H("Taking a sale"),
+      STP([
+        "Tap products to add them to the cart on the right.",
+        "Adjust quantities with the + / − controls.",
+        "Tap the large orange Charge button and take payment by cash or PayMongo.",
+      ]),
+      H("Invoice capture"),
+      T("After payment, capture the printed BIR serial: it pre-fills from the active booklet, you photograph the invoice, and confirm. This step is a legal requirement — keep it to a few taps so it never gets skipped."),
+      NT("Receipts are email-only", "There is no thermal printer. A copy is emailed to the client on every completed sale."),
+    ],
+  },
+  {
+    key: "finance",
+    title: "Finance & BIR",
+    accent: "teal",
+    icon: "peso",
+    kicker: "Back office",
+    desc: "Finance records serials from your printed BIR Sales Invoice booklets and stores the scans. It is a management system, not your books of accounts.",
+    blocks: [
+      H("What it does — and doesn't"),
+      T("The system records which serial was used, for what, and keeps a scan of the invoice. It never generates a BIR invoice; the printed booklet is always the source of truth."),
+      H("Reconciliation"),
+      T("Daily reconciliation surfaces three mismatches: orders without a serial, serials without an order, and serials without a scan. When everything ties out, the screen tells you so."),
+      NT("All money is centavos", "Every amount is stored as an integer number of centavos. No floating-point money, anywhere."),
+    ],
+  },
+  {
+    key: "team",
+    title: "Team & freelancers",
+    accent: "indigo",
+    icon: "userplus",
+    kicker: "People",
+    desc: "Second shooters and editors are freelancer staff records. Onboarding tracks the paperwork each hire needs before their first payout.",
+    blocks: [
+      H("Onboarding checklists"),
+      T("Each hire gets a checklist — contract, copyright assignment, payout details, equipment orientation, style guide, first engagement. Progress is tracked to the last signature."),
+      H("Copyright assignment"),
+      T("A written copyright assignment is required from every freelancer. Until it is signed, that person's engagement payout is held."),
+      NT("Owner-only for now", "Phase 1 is a single-user workspace. Multi-user access and roles arrive in a later phase."),
+    ],
+  },
+  {
+    key: "workflow",
+    title: "Projects & Tasks",
+    accent: "indigo",
+    icon: "folder",
+    kicker: "Operations",
+    desc: "Projects and Tasks are separate modules. A project is the client work created from a confirmed booking; a task is internal work assigned to staff.",
+    blocks: [
+      H("Projects come from bookings"),
+      T("Confirming a booking automatically creates one linked project — reconfirming never makes a duplicate. Cancelling or rescheduling flags the project rather than deleting it, so production history is never lost."),
+      H("Tasks are internal work"),
+      T("Tasks can stand alone (studio cleaning, charging batteries, backups, inventory checks) or link to a project (culling, editing, equipment prep). They carry an assignee, priority, due date, recurrence, checklist, category, status, attachments, and completion evidence."),
+      NT("Recurring maintenance raises tasks", "Items in Maintenance & repair that approach their due date automatically raise a linked staff task — you will see a “From maintenance” chip on the task and a “Staff task raised” chip on the maintenance record."),
+    ],
+  },
+  {
+    key: "catalog",
+    title: "POS catalog",
+    accent: "orange",
+    icon: "cart",
+    kicker: "Core app",
+    desc: "Beyond retail products, POS holds the studio's service and rental catalog: Studio Sessions, Event Coverage, Rentals, Retail, and Add-ons.",
+    blocks: [
+      H("Categories"),
+      STP([
+        "Studio Sessions — in-studio shoots by the hour or package.",
+        "Event Coverage — on-location wedding, corporate and event packages.",
+        "Rentals — gear rented per day with live availability.",
+        "Retail — physical products sold at the counter.",
+        "Add-ons — extras attached to a session or booking.",
+      ]),
+      NT("Non-VAT", "Kahel Studio is registered Non-VAT, so sales totals carry no 12% VAT line."),
+    ],
+  },
+  {
+    key: "compliance",
+    title: "Compliance",
+    accent: "indigo",
+    icon: "shield",
+    kicker: "Back office",
+    desc: "Compliance tracks permits, renewals, statutory filings and business requirements for the studio's Philippine operations. It is an administrative tracker, not legal advice.",
+    blocks: [
+      H("What it tracks"),
+      T("Government registrations, local permits, BIR filings, statutory remittances (SSS, PhilHealth, Pag-IBIG) and labor/privacy obligations — each with agency, masked reg number, coverage, dates, assigned person, estimated and actual fees, and status."),
+      H("Urgency & reminders"),
+      T("The register sorts by urgency — expired first, then action required, then due within 30 / 60 / 90 days, then submitted/under review, compliant, and not applicable. Reminders auto-send to the Super Admin and assignee at 90, 60, 30, 14 and 7 days before each deadline, and a linked staff task is created when action is required."),
+      NT("Not a legal statement", "Marking an item complete does not by itself mean the studio is legally compliant. Fees are a planning estimate — confirm with the issuing agency. The BIR ₱500 annual registration fee is excluded (collection ceased 22 Jan 2024)."),
+    ],
+  },
+  {
+    key: "shiftboard",
+    title: "Shift Board",
+    accent: "teal",
+    icon: "userplus",
+    kicker: "Core app",
+    desc: "The shift board shows who is working when. Regular hours are 8:00AM – 5:00PM, Monday to Sunday, and event hours are flexible until 12:00AM.",
+    blocks: [
+      H("Schedule"),
+      T("Kahel Studio is open every day. Regular shifts run 8:00AM – 5:00PM. Event coverage (weddings, location shoots) is flexible and often extends past midnight — those shifts show the actual hours on the board."),
+      H("Drag & drop"),
+      T("Every shift card is draggable. Pick it up and drop it on another day to reassign. Changes save automatically to your browser so they persist between visits."),
+      H("Staff"),
+      STP([
+        "Eusebio — Lead photographer",
+        "Marisol — Studio coordinator",
+        "Danilo — Lead editor",
+        "Ivy — Studio assistant",
+        "Josefa — Retoucher",
+        "Kevin — Production assistant",
+      ]),
+      H("Legend"),
+      T("Each shift type has its own colour: Studio Shoot (red), Event (purple), Editing / Post (amber), Admin / Office (green), Production Support (teal), Remote Work (blue), and Day Off (grey). The colour also maps to the Production View toggle for quick visual scanning."),
+      NT("Days off", "Scheduled days off appear as grey cards. The studio is closed on no day — Sunday rest is rotated."),
+    ],
+  },
+];
+
+export const HELP_FAQS = [
+  { q: "Why can't I edit a paid balance?", a: "Balances are derived from recorded payments — void or add a payment rather than editing the number." },
+  { q: "The system won't print a BIR invoice. Is that a bug?", a: "No. Kahel Studio OS records serials from your printed BIR booklets and stores scans; it never generates an invoice." },
+  { q: "How is a deposit calculated?", a: "Server-side as half the total, rounded up. It's never accepted from the checkout screen." },
+  { q: "Can I add another team member?", a: "Phase 1 is owner-only. Multi-user and roles are deferred to a later phase." },
+  { q: "What's the difference between a Project and a Task?", a: "A project is client work auto-created when a booking is confirmed; a task is internal staff work that can stand alone or link to a project. Confirming a booking never creates a duplicate project." },
+  { q: "Why is there no VAT on the sale total?", a: "Kahel Studio is registered Non-VAT, so the cart carries no 12% VAT line." },
+  { q: "Does marking a Compliance item complete mean we're legally compliant?", a: "No. Compliance is an administrative tracker only. Fees shown are a planning estimate — confirm the exact amount with the issuing agency." },
+  { q: "Where do recurring maintenance tasks come from?", a: "Maintenance & repair raises a linked staff task automatically as each item nears its due date; completing it updates the service history and sets the next due date." },
 ];

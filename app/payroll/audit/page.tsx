@@ -2,7 +2,7 @@ import { PAYROLL_AUDIT } from "@/lib/sample-data";
 
 export default function PayrollAuditPage() {
   return (
-    <div className="max-w-[1200px] p-10 pb-14 pt-8">
+    <div className="p-10 pb-14 pt-8">
       <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
         Audit log
       </h1>

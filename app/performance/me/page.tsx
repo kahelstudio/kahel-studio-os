@@ -8,7 +8,7 @@ export default function PerformanceMePage() {
           EB
         </div>
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             My performance
           </h1>
           <p className="mt-0.5 text-[15px] text-[var(--color-text-secondary)]">
@@ -20,11 +20,11 @@ export default function PerformanceMePage() {
 
       <div className="mt-6 grid grid-cols-4 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
         {PERFORMANCE_ME_KPIS.map((k, i) => (
-          <div key={k.label} className="px-6 py-[22px]" style={{ borderLeft: i === 0 ? "none" : "1px solid var(--color-ink-100)" }}>
+          <div key={k.label} className="px-6 py-[22px]" style={{ borderLeft: i === 0 ? "none" : "1px solid var(--color-border)" }}>
             <div className="text-xs font-medium uppercase tracking-[0.02em] text-[var(--color-text-secondary)]">
               {k.label}
             </div>
-            <div className="mt-3 font-display text-[34px] font-bold leading-[1.05] tracking-[-0.02em] text-[var(--color-ink-800)]">
+            <div className="mt-3 font-display text-[34px] font-bold leading-[1.05] tracking-[-0.02em] text-[var(--color-text-primary)]">
               {k.value}
             </div>
             <div
@@ -39,13 +39,13 @@ export default function PerformanceMePage() {
 
       <div className="mt-5 grid grid-cols-[1.4fr_1fr] gap-5">
         <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-          <div className="border-b border-[var(--color-ink-100)] px-[22px] pb-3.5 pt-[18px]">
+          <div className="border-b border-[var(--color-border)] px-[22px] pb-3.5 pt-[18px]">
             <span className="font-display text-[13px] font-semibold uppercase tracking-[0.16em]">
               Review history
             </span>
           </div>
           {PERFORMANCE_ME_CYCLES.map((c) => (
-            <div key={c.cycle} className="flex items-center gap-4 border-b border-[var(--color-ink-50)] px-[22px] py-[15px] last:border-b-0">
+            <div key={c.cycle} className="flex items-center gap-4 border-b border-[var(--color-border)] px-[22px] py-[15px] last:border-b-0">
               <span className="w-[72px] shrink-0 text-[13px] text-[var(--color-text-secondary)]">{c.cycle}</span>
               <div className="min-w-0">
                 <div className="text-sm font-semibold">{c.note}</div>
@@ -53,12 +53,12 @@ export default function PerformanceMePage() {
                   Completed
                 </span>
               </div>
-              <span className="ml-auto font-display text-xl font-bold text-[var(--color-ink-800)]">{c.rating}</span>
+              <span className="ml-auto font-display text-xl font-bold text-[var(--color-text-primary)]">{c.rating}</span>
             </div>
           ))}
         </div>
         <div className="flex flex-col gap-5 self-start rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-[22px]">
-          <div className="border-b border-[var(--color-ink-100)] pb-3.5 font-display text-[13px] font-semibold uppercase tracking-[0.16em]">
+          <div className="border-b border-[var(--color-border)] pb-3.5 font-display text-[13px] font-semibold uppercase tracking-[0.16em]">
             My goals
           </div>
           {PERFORMANCE_GOALS.map((g) => (
@@ -67,7 +67,7 @@ export default function PerformanceMePage() {
                 <span className="text-[13px] font-semibold">{g.label}</span>
                 <span className="text-xs text-[var(--color-text-secondary)]">{g.val}</span>
               </div>
-              <div className="h-2 overflow-hidden rounded-pill bg-[var(--color-ink-100)]">
+              <div className="h-2 overflow-hidden rounded-pill bg-[var(--color-surface-muted)]">
                 <div className="h-full rounded-pill bg-[var(--color-indigo-500)]" style={{ width: `${g.pct}%` }} />
               </div>
             </div>

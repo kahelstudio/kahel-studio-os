@@ -14,7 +14,7 @@ export default async function CrmAccountDetailPage({
   if (!account) notFound();
 
   return (
-    <div className="p-10 pb-10 pt-6">
+    <div className="p-4 pb-10 pt-6 sm:p-10 sm:pb-10 sm:pt-6">
       <Link
         href="/crm/accounts"
         className="mb-4 inline-flex items-center gap-1.5 text-[13px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
@@ -22,16 +22,16 @@ export default async function CrmAccountDetailPage({
         ‹ Accounts
       </Link>
 
-      <div className="flex items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-card bg-[var(--color-ink-100)] font-display text-xl font-semibold text-[var(--color-ink-600)]">
+      <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-card bg-[var(--color-surface-muted)] font-display text-xl font-semibold text-[var(--color-text-secondary)]">
           {account.ini}
         </div>
         <div>
-          <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
             {account.name}
           </h1>
           <div className="mt-1 flex items-center gap-2.5">
-            <span className="rounded-pill bg-[var(--color-ink-100)] px-2.5 py-1 text-xs font-semibold text-[var(--color-ink-800)]">
+            <span className="rounded-pill bg-[var(--color-surface-muted)] px-2.5 py-1 text-xs font-semibold text-[var(--color-text-primary)]">
               {account.type}
             </span>
             {account.referredBy && (
@@ -44,7 +44,7 @@ export default async function CrmAccountDetailPage({
             )}
           </div>
         </div>
-        <div className="ml-auto flex gap-2">
+        <div className="flex gap-2 sm:ml-auto">
           <button className="h-[38px] rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-sm font-semibold text-[var(--color-text-primary)]">
             Edit
           </button>
@@ -54,7 +54,7 @@ export default async function CrmAccountDetailPage({
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-[1.4fr_1fr] gap-5">
+      <div className="mt-6 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-4">
           {account.nextAction && (
             <div className="rounded-card border border-[#FADBB0] bg-[var(--color-kahel-50)] px-[18px] py-4">
@@ -76,7 +76,7 @@ export default async function CrmAccountDetailPage({
           )}
 
           <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-            <div className="border-b border-[var(--color-ink-100)] px-[18px] py-3.5 font-display text-[15px] font-semibold">
+            <div className="border-b border-[var(--color-border)] px-[18px] py-3.5 font-display text-[15px] font-semibold">
               Bookings
             </div>
             {account.bookings.length === 0 && (
@@ -88,7 +88,7 @@ export default async function CrmAccountDetailPage({
                 <Link
                   key={b.ref}
                   href={`/booking/list/${b.ref}`}
-                  className="flex items-center gap-3.5 border-b border-[var(--color-ink-100)] px-[18px] py-3 last:border-b-0 hover:bg-[var(--color-canvas)]"
+                  className="flex items-center gap-3.5 border-b border-[var(--color-border)] px-[18px] py-3 last:border-b-0 hover:bg-[var(--color-canvas)]"
                 >
                   <span className="text-[13px] text-[var(--color-text-secondary)]">{b.ref}</span>
                   <div>
@@ -108,7 +108,7 @@ export default async function CrmAccountDetailPage({
           </div>
 
           <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-            <div className="border-b border-[var(--color-ink-100)] px-[18px] py-3.5 font-display text-[15px] font-semibold">
+            <div className="border-b border-[var(--color-border)] px-[18px] py-3.5 font-display text-[15px] font-semibold">
               Payments
             </div>
             {account.payments.length === 0 && (
@@ -117,7 +117,7 @@ export default async function CrmAccountDetailPage({
             {account.payments.map((p, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3.5 border-b border-[var(--color-ink-100)] px-[18px] py-3 text-sm last:border-b-0"
+                className="flex items-center gap-3.5 border-b border-[var(--color-border)] px-[18px] py-3 text-sm last:border-b-0"
               >
                 <CheckCircle2 className="h-4 w-4 text-[var(--color-success)]" strokeWidth={1.75} />
                 <div>
@@ -140,7 +140,7 @@ export default async function CrmAccountDetailPage({
                 <Lock className="h-3 w-3" /> Masked
               </span>
             </div>
-            <div className="flex items-center justify-between border-b border-[var(--color-ink-50)] py-2">
+            <div className="flex items-center justify-between border-b border-[var(--color-border)] py-2">
               <div>
                 <div className="text-xs text-[var(--color-text-muted)]">Primary mobile</div>
                 <div className="mt-0.5 text-sm font-semibold">{account.identity.primaryMobile}</div>
@@ -156,7 +156,7 @@ export default async function CrmAccountDetailPage({
               )}
             </div>
             {account.identity.altMobile && (
-              <div className="flex items-center justify-between border-b border-[var(--color-ink-50)] py-2">
+              <div className="flex items-center justify-between border-b border-[var(--color-border)] py-2">
                 <div>
                   <div className="text-xs text-[var(--color-text-muted)]">Alternative mobile</div>
                   <div className="mt-0.5 text-sm font-semibold">{account.identity.altMobile}</div>
@@ -173,14 +173,14 @@ export default async function CrmAccountDetailPage({
               </div>
               <span className="text-[11px] text-[var(--color-text-muted)]">Immutable key</span>
             </div>
-            <div className="mt-2 border-t border-[var(--color-ink-100)] pt-2.5">
+            <div className="mt-2 border-t border-[var(--color-border)] pt-2.5">
               <div className="mb-1 text-xs text-[var(--color-text-muted)]">Number history</div>
               {account.identity.numberHistory.map((h, i) => (
                 <div
                   key={i}
                   className={cn(
-                    "font-mono text-xs",
-                    i === 0 ? "text-[var(--color-text-secondary)]" : "text-[var(--color-ink-300)]"
+                    "text-xs",
+                    i === 0 ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-muted)]"
                   )}
                 >
                   {h.number} · {h.note}
@@ -192,7 +192,7 @@ export default async function CrmAccountDetailPage({
           <div className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-[18px]">
             <div className="mb-3 font-display text-[15px] font-semibold">Contacts</div>
             {account.contacts.map((c) => (
-              <div key={c.email} className="flex items-center gap-3 border-b border-[var(--color-ink-50)] py-2 last:border-b-0">
+              <div key={c.email} className="flex items-center gap-3 border-b border-[var(--color-border)] py-2 last:border-b-0">
                 <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[var(--color-indigo-100)] font-display text-xs font-semibold text-[var(--color-indigo-800)]">
                   {c.ini}
                 </div>
@@ -208,7 +208,7 @@ export default async function CrmAccountDetailPage({
 
           <div className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-[18px]">
             <div className="mb-2.5 font-display text-[15px] font-semibold">Notes</div>
-            <p className="text-[13px] leading-5 text-[var(--color-ink-600)]">{account.notes}</p>
+            <p className="text-[13px] leading-5 text-[var(--color-text-secondary)]">{account.notes}</p>
           </div>
         </div>
       </div>

@@ -3,10 +3,10 @@ import { SETTINGS_LOGS } from "@/lib/sample-data";
 
 export default function LogsPage() {
   return (
-    <div className="max-w-[1000px] p-12 pt-9">
+    <div className="p-12 pt-9">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Logs
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -28,7 +28,7 @@ export default function LogsPage() {
         {SETTINGS_LOGS.map((r, i) => (
           <div
             key={i}
-            className="grid h-[54px] grid-cols-[2fr_1.3fr_1fr_1.2fr] items-center border-b border-[var(--color-ink-100)] px-5 text-sm last:border-b-0"
+            className="grid h-[54px] grid-cols-[2fr_1.3fr_1fr_1.2fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0"
           >
             <div className="font-medium">{r.ev}</div>
             <div className="text-[var(--color-text-secondary)]">{r.actor}</div>

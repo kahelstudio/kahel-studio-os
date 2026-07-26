@@ -3,7 +3,7 @@ import { RECRUITMENT_ROLES } from "@/lib/sample-data";
 export default function RecruitmentRolesPage() {
   return (
     <div className="max-w-[1000px] p-12 pt-9">
-      <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+      <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
         Open roles
       </h1>
       <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -14,7 +14,7 @@ export default function RecruitmentRolesPage() {
         {RECRUITMENT_ROLES.map((r) => (
           <div
             key={r.title}
-            className="flex items-center gap-4 border-b border-[var(--color-ink-100)] px-5 py-[18px] last:border-b-0"
+            className="flex items-center gap-4 border-b border-[var(--color-border)] px-5 py-[18px] last:border-b-0"
           >
             <div className="min-w-0 flex-1">
               <div className="text-[15px] font-semibold">{r.title}</div>

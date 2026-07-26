@@ -36,7 +36,7 @@ export default function RootLayout({
       <head>
         <ThemeScript />
       </head>
-      <body className="min-h-full">
+      <body className="min-h-full font-sans">
         <ThemeProvider>
           <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>

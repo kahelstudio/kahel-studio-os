@@ -5,10 +5,10 @@ export function QuotationTable({ draftsOnly }: { draftsOnly: boolean }) {
   const rows = draftsOnly ? QUOTATIONS.filter((q) => q.st === "draft") : QUOTATIONS;
 
   return (
-    <div className="max-w-[1100px] p-12 pt-9">
+    <div className="p-12 pt-9">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             {draftsOnly ? "Drafts" : "Quotation"}
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -33,7 +33,7 @@ export function QuotationTable({ draftsOnly }: { draftsOnly: boolean }) {
         {rows.map((q) => (
           <div
             key={q.ref}
-            className="grid min-h-[58px] grid-cols-[1fr_2fr_1.4fr_1fr_1fr] items-center border-b border-[var(--color-ink-100)] px-5 text-[13px] last:border-b-0 hover:bg-[var(--color-canvas)]"
+            className="grid min-h-[58px] grid-cols-[1fr_2fr_1.4fr_1fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-[13px] last:border-b-0 hover:bg-[var(--color-canvas)]"
           >
             <div className="text-xs text-[var(--color-text-muted)]">{q.ref}</div>
             <div className="font-semibold text-[var(--color-text-primary)]">{q.client}</div>

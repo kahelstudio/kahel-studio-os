@@ -1,10 +1,10 @@
 import { CALENDAR_EVENTS, CALENDAR_TODAY, CALENDAR_WEEKDAYS } from "@/lib/sample-data";
 
 const EVENT_TINT: Record<string, { bg: string; c: string }> = {
-  ink: { bg: "#F1EFEC", c: "#242424" },
-  orange: { bg: "#FFF4EE", c: "#B33800" },
-  indigo: { bg: "#EDEAFD", c: "#2A1F87" },
-  teal: { bg: "#E0F7F8", c: "#00575C" },
+  ink: { bg: "var(--color-surface-muted)", c: "var(--color-text-primary)" },
+  orange: { bg: "var(--color-kahel-50)", c: "var(--color-kahel-700)" },
+  indigo: { bg: "var(--color-indigo-100)", c: "var(--color-indigo-800)" },
+  teal: { bg: "var(--color-teal-100)", c: "var(--color-teal-800)" },
 };
 
 export default function BookingCalendarPage() {
@@ -23,7 +23,7 @@ export default function BookingCalendarPage() {
   return (
     <div className="p-10 pt-8">
       <div className="mb-5 flex items-center gap-4">
-        <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-ink-800)]">
+        <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
           July 2026
         </h1>
         <div className="flex gap-1">
@@ -34,7 +34,7 @@ export default function BookingCalendarPage() {
             ›
           </button>
         </div>
-        <div className="ml-auto flex gap-0.5 rounded-control bg-[var(--color-ink-100)] p-[3px]">
+        <div className="ml-auto flex gap-0.5 rounded-control bg-[var(--color-surface-muted)] p-[3px]">
           <button className="h-[30px] rounded-[6px] bg-[var(--color-surface)] px-3.5 text-[13px] font-semibold shadow-sm">
             Month
           </button>
@@ -56,14 +56,14 @@ export default function BookingCalendarPage() {
           {days.map((c, i) => (
             <div
               key={i}
-              className="overflow-hidden border-b border-r border-[var(--color-ink-100)] p-2"
-              style={{ background: c.today ? "#FFF9F5" : "var(--color-surface)" }}
+              className="overflow-hidden border-b border-r border-[var(--color-border)] p-2"
+              style={{ background: c.today ? "var(--color-kahel-50)" : "var(--color-surface)" }}
             >
               <div
                 className="flex items-center gap-1.5 text-[13px]"
                 style={{
                   fontWeight: c.today ? 700 : 500,
-                  color: !c.inMonth ? "var(--color-ink-300)" : c.today ? "var(--color-kahel-700)" : "var(--color-ink-600)",
+                  color: !c.inMonth ? "var(--color-text-muted)" : c.today ? "var(--color-kahel-700)" : "var(--color-text-secondary)",
                 }}
               >
                 {c.day ?? ""}

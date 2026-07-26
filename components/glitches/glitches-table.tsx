@@ -5,10 +5,10 @@ export function GlitchesTable({ group }: { group: "open" | "closed" }) {
   const rows = GLITCHES.filter((g) => g.group === group);
 
   return (
-    <div className="max-w-[1100px] p-12 pt-9">
+    <div className="p-12 pt-9">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Glitches
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -32,14 +32,14 @@ export function GlitchesTable({ group }: { group: "open" | "closed" }) {
         {rows.map((g) => (
           <div
             key={g.ref}
-            className="grid min-h-[58px] grid-cols-[0.8fr_2fr_1fr_0.7fr_0.9fr_1fr] items-center border-b border-[var(--color-ink-100)] px-5 text-[13px] last:border-b-0 hover:bg-[var(--color-canvas)]"
+            className="grid min-h-[58px] grid-cols-[0.8fr_2fr_1fr_0.7fr_0.9fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-[13px] last:border-b-0 hover:bg-[var(--color-canvas)]"
           >
             <div className="text-xs text-[var(--color-text-muted)]">{g.ref}</div>
             <div>
               <div className="font-semibold">{g.title}</div>
               <div className="text-xs text-[var(--color-text-muted)]">{g.area}</div>
             </div>
-            <div className="text-[var(--color-ink-700)]">{g.by}</div>
+            <div className="text-[var(--color-text-primary)]">{g.by}</div>
             <div className="font-semibold" style={{ color: g.sevColor }}>
               {g.sev}
             </div>

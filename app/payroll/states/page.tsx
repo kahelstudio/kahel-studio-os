@@ -10,8 +10,8 @@ export default function PayrollStatesPage() {
   const { fireToast } = useToast();
 
   return (
-    <div className="max-w-[1240px] p-10 pb-14 pt-8">
-      <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-ink-800)]">
+    <div className="p-10 pb-14 pt-8">
+      <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
         System states
       </h1>
       <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">

@@ -28,7 +28,7 @@ export default function CompanyPoliciesPage() {
     <div className="max-w-[900px] p-12 pt-9">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Company policies
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -59,16 +59,16 @@ export default function CompanyPoliciesPage() {
         </div>
       )}
 
-      <div className="mt-4 flex gap-3 rounded-card border border-[#FADBB0] bg-[#FFF9F5] px-[18px] py-3.5">
+      <div className="mt-4 flex gap-3 rounded-card border border-[var(--color-kahel-200)] bg-[var(--color-kahel-50)] px-[18px] py-3.5">
         <Info className="h-4 w-4 shrink-0 text-[var(--color-kahel-700)]" strokeWidth={1.75} />
-        <span className="text-[13px] leading-[1.5] text-[#8A3B12]">{POLICY_NOTE}</span>
+        <span className="text-[13px] leading-[1.5] text-[var(--color-kahel-700)]">{POLICY_NOTE}</span>
       </div>
 
       <PolicySections sections={POLICY_SECTIONS} />
 
       <div className="mt-5 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
         <div className="font-display text-base font-semibold">Employee acknowledgement</div>
-        <p className="mt-2.5 text-sm leading-[1.6] text-[#4A4640]">{POLICY_ACK_STATEMENT}</p>
+        <p className="mt-2.5 text-sm leading-[1.6] text-[var(--color-text-primary)]">{POLICY_ACK_STATEMENT}</p>
         <div className="mt-[18px] flex flex-wrap items-center gap-3.5">
           {!acked ? (
             <button

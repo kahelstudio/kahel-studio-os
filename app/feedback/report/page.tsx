@@ -18,7 +18,7 @@ export default function FeedbackReportPage() {
   return (
     <div className="flex justify-center p-12">
       <div className="w-[560px]">
-        <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-ink-800)]">
+        <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
           Report a problem
         </h1>
         <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -32,7 +32,7 @@ export default function FeedbackReportPage() {
               className={cn(
                 "flex h-11 flex-1 items-center justify-center gap-2 rounded-control text-sm font-semibold",
                 kind === "problem"
-                  ? "border-2 border-[var(--color-ink-600)] bg-[var(--color-surface)]"
+                  ? "border-2 border-[var(--color-text-primary)] bg-[var(--color-surface)]"
                   : "border border-[var(--color-border)] bg-[var(--color-surface)] font-medium text-[var(--color-text-secondary)]"
               )}
             >
@@ -43,7 +43,7 @@ export default function FeedbackReportPage() {
               className={cn(
                 "h-11 flex-1 rounded-control text-sm",
                 kind === "idea"
-                  ? "border-2 border-[var(--color-ink-600)] bg-[var(--color-surface)] font-semibold"
+                  ? "border-2 border-[var(--color-text-primary)] bg-[var(--color-surface)] font-semibold"
                   : "border border-[var(--color-border)] bg-[var(--color-surface)] font-medium text-[var(--color-text-secondary)]"
               )}
             >
@@ -59,7 +59,7 @@ export default function FeedbackReportPage() {
             className="min-h-[120px] w-full resize-none rounded-control border border-[var(--color-border)] p-3.5 text-sm outline-none placeholder:text-[var(--color-text-muted)]"
           />
 
-          <div className="mt-4 flex items-center gap-2.5 rounded-control border border-[var(--color-ink-100)] bg-[var(--color-canvas)] px-3.5 py-3 text-xs text-[var(--color-text-secondary)]">
+          <div className="mt-4 flex items-center gap-2.5 rounded-control border border-[var(--color-border)] bg-[var(--color-canvas)] px-3.5 py-3 text-xs text-[var(--color-text-secondary)]">
             <Info className="h-4 w-4 shrink-0" strokeWidth={1.75} />
             Captured automatically: Booking · /bookings/KS-2026-0151 · Chrome · 21 Jul 2026 09:14
           </div>

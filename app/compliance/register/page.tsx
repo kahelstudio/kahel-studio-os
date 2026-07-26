@@ -3,10 +3,10 @@ import { COMPLIANCE_REGISTER } from "@/lib/sample-data";
 
 export default function ComplianceRegisterPage() {
   return (
-    <div className="max-w-[1320px] p-12 pt-9">
+    <div className="p-12 pt-9">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Compliance register
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -30,7 +30,7 @@ export default function ComplianceRegisterPage() {
         {COMPLIANCE_REGISTER.map((c) => (
           <div
             key={c.req}
-            className="grid min-h-[62px] grid-cols-[2fr_1.3fr_1.1fr_1fr_1.1fr_1.2fr] items-center border-b border-[var(--color-ink-100)] px-5 text-[13px] last:border-b-0 hover:bg-[var(--color-canvas)]"
+            className="grid min-h-[62px] grid-cols-[2fr_1.3fr_1.1fr_1fr_1.1fr_1.2fr] items-center border-b border-[var(--color-border)] px-5 text-[13px] last:border-b-0 hover:bg-[var(--color-canvas)]"
           >
             <div>
               <div className="font-semibold" style={{ color: c.stColor }}>
@@ -40,11 +40,11 @@ export default function ComplianceRegisterPage() {
                 {c.cat} · {c.freq} · {c.who}
               </div>
             </div>
-            <div className="text-[var(--color-ink-700)]">{c.agency}</div>
-            <div className="font-mono text-xs text-[var(--color-text-muted)]">{c.num}</div>
-            <div className="text-xs text-[var(--color-ink-700)]">{c.expiry}</div>
+            <div className="text-[var(--color-text-primary)]">{c.agency}</div>
+            <div className="text-xs text-[var(--color-text-muted)]">{c.num}</div>
+            <div className="text-xs text-[var(--color-text-primary)]">{c.expiry}</div>
             <div>
-              <div className="text-xs text-[var(--color-ink-700)]">{c.est}</div>
+              <div className="text-xs text-[var(--color-text-primary)]">{c.est}</div>
               <div className="text-[11px] text-[var(--color-text-muted)]">Actual {c.act}</div>
             </div>
             <div>

@@ -1,7 +1,7 @@
 export default function SettingsTeamPage() {
   return (
     <div className="max-w-[820px] p-12 pt-9">
-      <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+      <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
         Team &amp; roles
       </h1>
       <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -22,7 +22,7 @@ export default function SettingsTeamPage() {
       </div>
 
       <div className="mt-4 rounded-card border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface)] p-8 text-center">
-        <div className="font-display text-base font-semibold text-[var(--color-ink-600)]">
+        <div className="font-display text-base font-semibold text-[var(--color-text-secondary)]">
           Invites open in a later phase
         </div>
         <div className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">

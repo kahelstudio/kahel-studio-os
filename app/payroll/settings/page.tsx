@@ -2,7 +2,7 @@ import { PAYROLL_SETTINGS_GROUPS } from "@/lib/sample-data";
 
 export default function PayrollSettingsPage() {
   return (
-    <div className="max-w-[1000px] p-10 pb-14 pt-8">
+    <div className="p-10 pb-14 pt-8">
       <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
         Payroll settings
       </h1>

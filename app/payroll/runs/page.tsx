@@ -3,10 +3,10 @@ import { PAYROLL_RUNS } from "@/lib/sample-data";
 
 export default function PayrollRunsPage() {
   return (
-    <div className="max-w-[1320px] p-10 pb-14 pt-8">
+    <div className="p-10 pb-14 pt-8">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Pay runs
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -19,7 +19,7 @@ export default function PayrollRunsPage() {
       </div>
 
       <div className="mt-6 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="grid h-11 grid-cols-[1.3fr_1.3fr_1fr_1fr_1fr_1fr_1fr] items-center bg-[var(--color-canvas)] px-5 text-[11px] font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
+        <div className="grid h-11 grid-cols-[1fr_1.5fr_0.8fr_0.9fr_0.9fr_1.5fr_1.3fr] items-center bg-[var(--color-canvas)] px-5 text-[11px] font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
           <div>Reference</div>
           <div>Period</div>
           <div>Pay date</div>
@@ -31,11 +31,11 @@ export default function PayrollRunsPage() {
         {PAYROLL_RUNS.map((r) => (
           <div
             key={r.ref}
-            className="grid h-14 grid-cols-[1.3fr_1.3fr_1fr_1fr_1fr_1fr_1fr] items-center border-b border-[var(--color-ink-100)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
+            className="grid h-14 grid-cols-[1fr_1.5fr_0.8fr_0.9fr_0.9fr_1.5fr_1.3fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
           >
-            <div className="font-mono text-[13px] text-[var(--color-text-primary)]">{r.ref}</div>
-            <div className="text-[var(--color-ink-700)]">{r.period}</div>
-            <div className="text-[var(--color-ink-700)]">{r.pay}</div>
+            <div className="text-[13px] text-[var(--color-text-primary)]">{r.ref}</div>
+            <div className="text-[var(--color-text-primary)]">{r.period}</div>
+            <div className="text-[var(--color-text-primary)]">{r.pay}</div>
             <div className="text-right font-display font-semibold">{r.gross}</div>
             <div className="text-right text-[var(--color-danger-text)]">{r.ded}</div>
             <div className="text-right font-display font-semibold">{r.net}</div>

@@ -6,7 +6,7 @@ export default function WebsitePortfolioPage() {
     <div className="max-w-[1200px] p-12 pt-9">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Portfolio
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -24,7 +24,7 @@ export default function WebsitePortfolioPage() {
             key={p.slot}
             className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-strong)]"
           >
-            <div className="relative flex h-[150px] items-center justify-center bg-[var(--color-ink-100)] text-xs text-[var(--color-text-muted)]">
+            <div className="relative flex h-[150px] items-center justify-center bg-[var(--color-surface-muted)] text-xs text-[var(--color-text-muted)]">
               Portfolio image
               <span
                 className="absolute right-2.5 top-2.5 rounded-pill px-2.5 py-1 text-[11px] font-semibold"
@@ -37,7 +37,7 @@ export default function WebsitePortfolioPage() {
               <div className="font-display text-base font-semibold">{p.title}</div>
               <div className="mt-1.5 flex items-center justify-between">
                 <span className="text-[13px] text-[var(--color-text-secondary)]">{p.cat}</span>
-                <span className="font-mono text-[11px] text-[var(--color-text-muted)]">{p.consentMono}</span>
+                <span className="text-[11px] text-[var(--color-text-muted)]">{p.consentMono}</span>
               </div>
             </div>
           </div>

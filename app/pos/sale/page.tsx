@@ -43,37 +43,37 @@ export default function PosSalePage() {
   }
 
   return (
-    <div className="flex h-full bg-[var(--color-ink-100)]">
-      <div className="flex-1 overflow-y-auto p-6">
-        <div className="mb-[18px] flex items-center gap-3">
+    <div className="flex min-h-full flex-col bg-[var(--color-surface-muted)] xl:flex-row">
+      <div className="min-w-0 flex-1 overflow-y-auto p-5 sm:p-6">
+        <div className="mb-[18px] flex flex-wrap items-center gap-3">
           <h1 className="font-display text-2xl font-semibold">Products</h1>
-          <div className="ml-2 flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5 sm:ml-2">
             {CATEGORIES.map((c) => (
               <button
                 key={c}
                 onClick={() => setCategory(c)}
                 className={cn(
-                  "h-[38px] rounded-pill px-4 text-sm font-semibold",
+                  "h-11 rounded-pill px-4 text-sm font-semibold",
                   c === category
                     ? "border border-[var(--color-kahel-500)] bg-[var(--color-kahel-500)] text-white"
-                    : "border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-ink-600)]"
+                    : "border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]"
                 )}
               >
                 {c}
               </button>
             ))}
           </div>
-          <span className="ml-auto flex items-center gap-2 rounded-pill border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-[13px] text-[var(--color-text-secondary)]">
+          <span className="ml-auto hidden items-center gap-2 rounded-pill border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-[13px] text-[var(--color-text-secondary)] 2xl:flex">
             iPad landscape · 1024×768
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3">
           {filtered.map((p) => (
             <button
               key={p.id}
               onClick={() => addToCart(p.id)}
-              className="flex flex-col overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] text-left"
+              className="flex min-h-[190px] flex-col overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] text-left"
             >
               <div className="flex h-24 items-center justify-center" style={{ background: p.swatch }}>
                 <Package className="h-8 w-8 text-white/90" strokeWidth={1.5} />
@@ -95,19 +95,19 @@ export default function PosSalePage() {
         </div>
       </div>
 
-      <div className="flex w-[380px] shrink-0 flex-col border-l border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="border-b border-[var(--color-ink-100)] px-[22px] py-5">
+      <div className="flex w-full shrink-0 flex-col border-t border-[var(--color-border)] bg-[var(--color-surface)] xl:w-[380px] xl:border-l xl:border-t-0">
+        <div className="border-b border-[var(--color-border)] px-[22px] py-5">
           <div className="font-display text-xl font-semibold">Current sale</div>
           <div className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">Walk-in · no account</div>
         </div>
-        <div className="flex-1 overflow-y-auto px-3 py-2">
+        <div className="max-h-[360px] flex-1 overflow-y-auto px-3 py-2 xl:max-h-none">
           {cartLines.length === 0 && (
             <div className="px-3 py-10 text-center text-sm text-[var(--color-text-muted)]">
               Tap a product to add it to the sale.
             </div>
           )}
           {cartLines.map(({ product, qty }) => (
-            <div key={product.id} className="flex items-center gap-3 border-b border-[var(--color-ink-50)] px-2.5 py-3">
+            <div key={product.id} className="flex items-center gap-3 border-b border-[var(--color-border)] px-2.5 py-3">
               <div className="h-10 w-10 shrink-0 rounded-control" style={{ background: product.swatch }} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{product.name}</div>
@@ -116,14 +116,14 @@ export default function PosSalePage() {
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => dec(product.id)}
-                  className="flex h-8 w-8 items-center justify-center rounded-control border border-[var(--color-border)] text-lg text-[var(--color-text-secondary)]"
+                  className="flex h-11 w-11 items-center justify-center rounded-control border border-[var(--color-border)] text-lg text-[var(--color-text-secondary)]"
                 >
                   −
                 </button>
                 <span className="w-[22px] text-center text-sm font-semibold">{qty}</span>
                 <button
                   onClick={() => inc(product.id)}
-                  className="flex h-8 w-8 items-center justify-center rounded-control border border-[var(--color-border)] text-lg text-[var(--color-text-secondary)]"
+                  className="flex h-11 w-11 items-center justify-center rounded-control border border-[var(--color-border)] text-lg text-[var(--color-text-secondary)]"
                 >
                   +
                 </button>

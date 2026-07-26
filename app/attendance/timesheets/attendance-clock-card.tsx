@@ -180,7 +180,7 @@ export function AttendanceClockCard() {
       </div>
 
       {phase === "done" && (
-        <div className="mt-5 border-t border-[var(--color-ink-100)] pt-[18px]">
+        <div className="mt-5 border-t border-[var(--color-border)] pt-[18px]">
           <div className="flex flex-wrap gap-8">
             <div>
               <div className="text-xs font-medium uppercase tracking-[0.02em] text-[var(--color-text-secondary)]">
@@ -258,18 +258,18 @@ export function AttendanceClockCard() {
         )}
       </div>
 
-      <div className="mt-[18px] border-t border-[var(--color-ink-100)] pt-4">
+      <div className="mt-[18px] border-t border-[var(--color-border)] pt-4">
         <div className="mb-2 text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
           Recorded events · Eusebio Barrun
         </div>
         {events.map((ev, i) => (
-          <div key={i} className="flex flex-wrap items-center gap-3 border-b border-[var(--color-ink-50)] py-2.5 text-[13px] last:border-b-0">
+          <div key={i} className="flex flex-wrap items-center gap-3 border-b border-[var(--color-border)] py-2.5 text-[13px] last:border-b-0">
             <span
               className="rounded-pill px-2.5 py-1 text-[11px] font-semibold"
               style={
                 ev.type === "Clock in"
-                  ? { background: "#E0F7EC", color: "#005430" }
-                  : { background: "#EDEAFD", color: "#2A1F87" }
+                  ? { background: "var(--color-success-bg)", color: "var(--color-success-text)" }
+                  : { background: "var(--color-indigo-100)", color: "var(--color-indigo-800)" }
               }
             >
               {ev.type}

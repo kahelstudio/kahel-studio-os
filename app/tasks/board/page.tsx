@@ -6,7 +6,7 @@ export default function TasksBoardPage() {
     <div className="max-w-[1320px] p-12 pt-9">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Tasks
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -39,7 +39,7 @@ export default function TasksBoardPage() {
                   <div className="text-sm font-semibold leading-[1.35]">{t.title}</div>
                   <div className="mt-1.5 text-xs text-[var(--color-text-muted)]">{t.meta}</div>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    <span className="rounded-pill bg-[var(--color-ink-100)] px-2 py-0.5 text-[10px] font-semibold text-[#4A453F]">
+                    <span className="rounded-pill bg-[var(--color-surface-muted)] px-2 py-0.5 text-[10px] font-semibold text-[var(--color-text-primary)]">
                       {t.cat}
                     </span>
                     {t.recur && (

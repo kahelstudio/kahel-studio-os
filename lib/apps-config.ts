@@ -34,10 +34,13 @@ export type AccentId = "orange" | "teal" | "indigo" | "ink";
 // menu, or the command palette instead, exactly as in the source prototype.
 export type LauncherGroup = "live" | "operations" | "system";
 
-export interface NavItem {
+interface NavItem {
   id: string;
   label: string;
   href: string;
+  group?: string;
+  count?: string;
+  items?: { label: string; href: string }[];
 }
 
 export interface AppDef {
@@ -68,9 +71,9 @@ export const ACCENTS: Record<AccentId, { base: string; tint: string; text: strin
     text: "var(--color-indigo-800)",
   },
   ink: {
-    base: "var(--color-ink-600)",
-    tint: "var(--color-ink-100)",
-    text: "var(--color-ink-700)",
+    base: "var(--color-text-secondary)",
+    tint: "var(--color-surface-muted)",
+    text: "var(--color-text-primary)",
   },
 };
 
@@ -87,6 +90,7 @@ export const APPS: AppDef[] = [
     nav: [
       { id: "list", label: "Bookings", href: "/booking/list" },
       { id: "calendar", label: "Calendar", href: "/booking/calendar" },
+      { id: "emails", label: "Email templates", href: "/booking/emails" },
     ],
   },
   {
@@ -112,6 +116,7 @@ export const APPS: AppDef[] = [
     launcherGroup: "live",
     nav: [
       { id: "sale", label: "New sale", href: "/pos/sale" },
+      { id: "bookings", label: "Bookings", href: "/pos/bookings" },
       { id: "cat-sessions", label: "Studio Sessions", href: "/pos/cat-sessions" },
       { id: "cat-events", label: "Event Coverage", href: "/pos/cat-events" },
       { id: "cat-rentals", label: "Rentals", href: "/pos/cat-rentals" },
@@ -167,8 +172,11 @@ export const APPS: AppDef[] = [
     href: "/projects/pipeline",
     launcherGroup: "live",
     nav: [
-      { id: "pipeline", label: "Post-production", href: "/projects/pipeline" },
-      { id: "deliveries", label: "Gallery delivery", href: "/projects/deliveries" },
+      { id: "all", label: "All projects", href: "/projects/pipeline" },
+      { id: "pre-production", label: "Pre-production", href: "/projects/pipeline?stage=pre" },
+      { id: "production", label: "Production", href: "/projects/pipeline?stage=production" },
+      { id: "post-production", label: "Post-production", href: "/projects/pipeline?stage=post" },
+      { id: "deliveries", label: "Delivery", href: "/projects/deliveries" },
     ],
   },
   {
@@ -272,7 +280,11 @@ export const APPS: AppDef[] = [
     icon: CalendarRange,
     href: "/shiftboard",
     launcherGroup: "operations",
-    nav: [{ id: "board", label: "This week", href: "/shiftboard" }],
+    nav: [
+      { id: "this-week", label: "This Week", href: "/shiftboard" },
+      { id: "next-week", label: "Next Week", href: "/shiftboard/next-week" },
+      { id: "next-month", label: "Next Month", href: "/shiftboard/next-month" },
+    ],
   },
   {
     id: "recruitment",
@@ -301,6 +313,7 @@ export const APPS: AppDef[] = [
     launcherGroup: "operations",
     nav: [
       { id: "policies", label: "Company policies", href: "/policies/policies" },
+      { id: "health-safety", label: "Health & safety", href: "/policies/health-safety" },
       { id: "it", label: "IT policy", href: "/policies/it" },
     ],
   },
@@ -320,9 +333,27 @@ export const APPS: AppDef[] = [
       { id: "payslips", label: "Payslips", href: "/payroll/payslips" },
       { id: "contributions", label: "Contributions", href: "/payroll/contributions" },
       { id: "thirteenth", label: "13th-month pay", href: "/payroll/thirteenth" },
-      { id: "reports", label: "Reports", href: "/payroll/reports" },
-      { id: "settings", label: "Settings", href: "/payroll/settings" },
-      { id: "audit", label: "Audit log", href: "/payroll/audit" },
+      { id: "reports", label: "Reports", href: "/payroll/reports", items: [
+        { label: "Payroll register", href: "/payroll/reports" },
+        { label: "Gross-to-net summary", href: "/payroll/reports" },
+        { label: "Earnings summary", href: "/payroll/reports" },
+        { label: "Deduction summary", href: "/payroll/reports" },
+        { label: "Payroll variance", href: "/payroll/reports" },
+        { label: "Contribution summary", href: "/payroll/reports" },
+        { label: "13th-month pay", href: "/payroll/reports" },
+        { label: "Year-to-date payroll", href: "/payroll/reports" },
+        { label: "Withholding tax", href: "/payroll/reports" },
+        { label: "Payment status", href: "/payroll/reports" },
+        { label: "Attendance-to-payroll", href: "/payroll/reports" },
+        { label: "Overtime", href: "/payroll/reports" },
+        { label: "Leave deductions", href: "/payroll/reports" },
+        { label: "Salary changes", href: "/payroll/reports" },
+        { label: "Payroll cost by team", href: "/payroll/reports" },
+        { label: "Freelancer payments", href: "/payroll/reports" },
+        { label: "Final pay", href: "/payroll/reports" },
+        { label: "Payroll adjustments", href: "/payroll/reports" },
+        { label: "Payroll audit report", href: "/payroll/reports" },
+      ] },
       { id: "states", label: "System states", href: "/payroll/states" },
     ],
   },
@@ -356,9 +387,26 @@ export const APPS: AppDef[] = [
 
   // ── System ──────────────────────────────────────────────────
   {
+    id: "reports",
+    name: "Reports",
+    description: "Analyze, schedule, and export workspace data",
+    accent: "orange",
+    icon: FileText,
+    href: "/reports",
+    launcherGroup: "system",
+    nav: [
+      { id: "overview", label: "Overview", href: "/reports", items: [{ label: "Reports overview", href: "/reports" }, { label: "Favourites · 3", href: "/reports?view=favourites" }, { label: "Recently viewed", href: "/reports?view=recent" }] },
+      { id: "business", label: "Business", href: "/reports?category=Sales", items: [{ label: "Sales", href: "/reports?category=Sales" }, { label: "Quotes & finance", href: "/reports?category=Financial" }, { label: "Bookings", href: "/reports?category=Bookings" }, { label: "POS", href: "/reports?category=POS" }, { label: "Clients & CRM", href: "/reports?category=Clients%20%26%20CRM" }, { label: "Projects", href: "/reports?category=Projects" }, { label: "Tasks & productivity", href: "/reports?category=Tasks" }] },
+      { id: "people", label: "People", href: "/reports?category=Staff%20%26%20attendance", items: [{ label: "Staff", href: "/reports?category=Staff%20%26%20attendance" }, { label: "Attendance", href: "/reports?category=Staff%20%26%20attendance" }, { label: "Payroll", href: "/reports?category=Payroll" }] },
+      { id: "operations", label: "Operations", href: "/reports?category=Inventory%20%26%20assets", items: [{ label: "Inventory & assets", href: "/reports?category=Inventory%20%26%20assets" }, { label: "Maintenance & repairs", href: "/reports?category=Maintenance%20%26%20repair" }, { label: "Files & storage", href: "/reports?category=Files%20%26%20storage" }, { label: "Compliance · 1", href: "/reports?category=Compliance" }] },
+      { id: "growth", label: "Growth", href: "/reports?category=Website%20%26%20marketing", items: [{ label: "Website", href: "/reports?category=Website%20%26%20marketing" }, { label: "Marketing", href: "/reports?category=Website%20%26%20marketing" }] },
+      { id: "tools", label: "Reporting tools", href: "/reports?view=custom", items: [{ label: "Custom reports", href: "/reports?view=custom" }, { label: "Saved reports", href: "/reports?view=saved" }, { label: "Scheduled reports · 2", href: "/reports?view=scheduled" }, { label: "Export history", href: "/reports?view=exports" }] },
+    ],
+  },
+  {
     id: "settings",
     name: "Settings",
-    description: "Workspace, team & roles, billing and BIR",
+    description: "Workspace, team & roles, billing, payroll, and audit",
     accent: "ink",
     icon: Settings,
     href: "/settings/general",
@@ -367,6 +415,8 @@ export const APPS: AppDef[] = [
       { id: "general", label: "General", href: "/settings/general" },
       { id: "team", label: "Team & roles", href: "/settings/team" },
       { id: "billing", label: "Billing & BIR", href: "/settings/billing" },
+      { id: "payroll", label: "Payroll", href: "/settings/payroll" },
+      { id: "audit", label: "Audit log", href: "/settings/audit" },
     ],
   },
   {
@@ -390,6 +440,18 @@ export const APPS: AppDef[] = [
     nav: [{ id: "usage", label: "Usage", href: "/usage" }],
   },
 
+  {
+    id: "client-portal",
+    name: "Client Portal",
+    description: "External gallery, selects, invoices and feedback",
+    accent: "orange",
+    icon: Camera,
+    href: "/client-portal",
+    nav: [
+      { id: "portal", label: "Client Portal", href: "/client-portal" },
+    ],
+  },
+
   // ── Not tiled on the launcher (reached via Help, avatar menu, ⌘K) ──
   {
     id: "feedback",
@@ -405,13 +467,14 @@ export const APPS: AppDef[] = [
   },
   {
     id: "profile",
-    name: "My profile",
+    name: "Account",
     description: "Identity and security",
     accent: "indigo",
     icon: CircleUserRound,
     href: "/profile/me",
     nav: [
       { id: "me", label: "Profile", href: "/profile/me" },
+      { id: "emergency", label: "Emergency Contact", href: "/profile/emergency" },
       { id: "security", label: "Security", href: "/profile/security" },
     ],
   },
@@ -433,8 +496,3 @@ export const APPS: AppDef[] = [
 export const APPS_BY_ID: Record<string, AppDef> = Object.fromEntries(
   APPS.map((a) => [a.id, a])
 );
-
-export function getAppByPath(pathname: string): AppDef | undefined {
-  const segment = pathname.split("/").filter(Boolean)[0];
-  return APPS.find((a) => a.href.split("/").filter(Boolean)[0] === segment);
-}

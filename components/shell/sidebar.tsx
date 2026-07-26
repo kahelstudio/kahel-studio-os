@@ -1,18 +1,84 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { ACCENTS, type AppDef } from "@/lib/apps-config";
+import { useState } from "react";
+import { ChevronDown, ChevronRight, FileText } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
+import type { AppDef } from "@/lib/apps-config";
 import { cn } from "@/lib/utils";
 
 export function Sidebar({ app, onNavigate }: { app: AppDef; onNavigate?: () => void }) {
   const pathname = usePathname();
-  const accent = ACCENTS[app.accent];
+  const searchParams = useSearchParams();
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    const saved = window.localStorage.getItem(`ks_sidebar_expanded_${app.id}`);
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  function matchesHref(href: string) {
+    const [hrefPath, hrefQuery] = href.split("?");
+    if (hrefQuery) return pathname === hrefPath && searchParams.toString() === new URLSearchParams(hrefQuery).toString();
+    return pathname === hrefPath || pathname.startsWith(hrefPath + "/");
+  }
+
+  function toggleExpanded(id: string, open: boolean) {
+    setExpanded((current) => {
+      const next = { ...current, [id]: !open };
+      window.localStorage.setItem(`ks_sidebar_expanded_${app.id}`, JSON.stringify(next));
+      return next;
+    });
+  }
 
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col gap-0.5 border-r border-[var(--color-border)] bg-[var(--color-surface)] p-3">
       {app.nav.map((item) => {
-        const active = pathname === item.href || pathname.startsWith(item.href + "/");
+        const active = matchesHref(item.href) || item.items?.some((sub) => matchesHref(sub.href));
+        const open = expanded[item.id] ?? active;
+        const isSection = item.items && item.items.length > 0;
+
+        if (isSection) {
+          return (
+            <div key={item.id}>
+              <button
+                onClick={() => toggleExpanded(item.id, open)}
+                className={cn(
+                  "flex h-10 w-full items-center gap-3 rounded-control px-3 text-sm transition-colors",
+                  active
+                    ? "bg-[var(--color-kahel-100)] font-semibold text-[#FF5300]"
+                    : "font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
+                )}
+              >
+                {open ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
+                {item.label}
+              </button>
+              {open && (
+                <div className="ml-1 mt-0.5 flex flex-col gap-0.5 border-l border-[var(--color-border)] pl-2">
+                  {item.items!.map((sub) => {
+                    const subActive = matchesHref(sub.href);
+                    return (
+                      <Link
+                        key={sub.label}
+                        href={sub.href}
+                        onClick={onNavigate}
+                        className={cn(
+                          "flex h-8 items-center gap-2 rounded-control px-3 text-sm transition-colors",
+                          subActive
+                            ? "bg-[var(--color-kahel-100)] font-semibold text-[#FF5300]"
+                            : "font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
+                        )}
+                      >
+                        <FileText className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-muted)]" strokeWidth={1.75} />
+                        {sub.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        }
+
         return (
           <Link
             key={item.id}
@@ -21,18 +87,17 @@ export function Sidebar({ app, onNavigate }: { app: AppDef; onNavigate?: () => v
             className={cn(
               "flex h-10 items-center gap-3 rounded-control px-3 text-sm transition-colors",
               active
-                ? "font-semibold text-[var(--color-kahel-500)]"
-                : "font-medium text-[var(--color-ink-600)] hover:bg-[var(--color-surface-muted)]"
+                ? "bg-[var(--color-kahel-100)] font-semibold text-[#FF5300]"
+                : "font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
             )}
-            style={active ? { background: accent.tint } : undefined}
           >
             {item.label}
           </Link>
         );
       })}
 
-      <div className="mt-auto flex items-center gap-1.5 whitespace-nowrap border-t border-[var(--color-ink-100)] px-3 pt-3 text-xs text-[var(--color-text-muted)]">
-        Kahel Studio v2.3
+      <div className="mt-auto flex items-center gap-1.5 whitespace-nowrap border-t border-[var(--color-border)] px-3 pt-3 text-xs text-[var(--color-text-muted)]">
+        Kahel Studio v0.1
         <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-success)]" />
         System Status
       </div>

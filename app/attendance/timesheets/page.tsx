@@ -3,10 +3,10 @@ import { AttendanceClockCard } from "./attendance-clock-card";
 
 export default function AttendanceTimesheetsPage() {
   return (
-    <div className="max-w-[1200px] p-12 pt-9">
+    <div className="p-12 pt-9">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Timesheets
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -20,11 +20,11 @@ export default function AttendanceTimesheetsPage() {
 
       <div className="mt-6 grid grid-cols-3 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
         {ATTENDANCE_KPIS.map((k, i) => (
-          <div key={k.label} className="px-6 py-5" style={{ borderLeft: i === 0 ? "none" : "1px solid var(--color-ink-100)" }}>
+          <div key={k.label} className="px-6 py-5" style={{ borderLeft: i === 0 ? "none" : "1px solid var(--color-border)" }}>
             <div className="text-xs font-medium uppercase tracking-[0.02em] text-[var(--color-text-secondary)]">
               {k.label}
             </div>
-            <div className="mt-2.5 font-display text-[30px] font-bold tracking-[-0.02em] text-[var(--color-ink-800)]">
+            <div className="mt-2.5 font-display text-[30px] font-bold tracking-[-0.02em] text-[var(--color-text-primary)]">
               {k.value}
             </div>
           </div>
@@ -41,7 +41,7 @@ export default function AttendanceTimesheetsPage() {
         {ATTENDANCE_ROWS.map((r) => (
           <div
             key={r.name}
-            className="grid h-14 grid-cols-[1.6fr_1.4fr_1.6fr_1fr] items-center border-b border-[var(--color-ink-100)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
+            className="grid h-14 grid-cols-[1.6fr_1.4fr_1.6fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
           >
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[var(--color-indigo-100)] font-display text-xs font-semibold text-[var(--color-indigo-800)]">
@@ -58,7 +58,7 @@ export default function AttendanceTimesheetsPage() {
               </div>
             </div>
             <div className="text-[var(--color-text-secondary)]">{r.role}</div>
-            <div className="text-[var(--color-ink-700)]">{r.engagement}</div>
+            <div className="text-[var(--color-text-primary)]">{r.engagement}</div>
             <div className="text-right font-display font-semibold">{r.hours}</div>
           </div>
         ))}

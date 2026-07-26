@@ -3,10 +3,10 @@ import { INVENTORY_EQUIPMENT } from "@/lib/sample-data";
 
 export default function InventoryEquipmentPage() {
   return (
-    <div className="max-w-[1200px] p-12 pt-9">
+    <div className="p-12 pt-9">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Equipment
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -29,7 +29,7 @@ export default function InventoryEquipmentPage() {
         {INVENTORY_EQUIPMENT.map((e) => (
           <div
             key={e.serial}
-            className="grid h-[52px] grid-cols-[1.1fr_1.6fr_1fr_1fr_1.4fr] items-center border-b border-[var(--color-ink-100)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
+            className="grid h-[52px] grid-cols-[1.1fr_1.6fr_1fr_1fr_1.4fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
           >
             <div className="text-[13px] font-medium text-[var(--color-text-primary)]">{e.serial}</div>
             <div className="font-semibold">{e.name}</div>

@@ -3,7 +3,7 @@ import { MARKETING_SOURCES } from "@/lib/sample-data";
 export default function MarketingAttributionPage() {
   return (
     <div className="max-w-[820px] p-12 pt-9">
-      <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+      <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
         Attribution
       </h1>
       <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -22,7 +22,7 @@ export default function MarketingAttributionPage() {
                 {s.pct}%
               </span>
             </div>
-            <div className="h-2.5 overflow-hidden rounded-pill bg-[var(--color-ink-100)]">
+            <div className="h-2.5 overflow-hidden rounded-pill bg-[var(--color-surface-muted)]">
               <div className="h-full rounded-pill" style={{ width: `${s.pct}%`, background: s.color }} />
             </div>
           </div>

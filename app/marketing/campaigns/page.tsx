@@ -4,10 +4,10 @@ import { KpiStrip } from "@/components/finance/kpi-strip";
 
 export default function MarketingCampaignsPage() {
   return (
-    <div className="max-w-[1200px] p-12 pt-9">
+    <div className="p-12 pt-9">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Campaigns
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -32,7 +32,7 @@ export default function MarketingCampaignsPage() {
         {MARKETING_CAMPAIGNS.map((c) => (
           <div
             key={c.name}
-            className="grid h-[54px] grid-cols-[2fr_1.6fr_1fr_1fr_1fr] items-center border-b border-[var(--color-ink-100)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
+            className="grid h-[54px] grid-cols-[2fr_1.6fr_1fr_1fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
           >
             <div className="font-semibold">{c.name}</div>
             <div className="text-[var(--color-text-secondary)]">{c.channel}</div>
@@ -44,7 +44,7 @@ export default function MarketingCampaignsPage() {
                 {c.stLabel}
               </span>
             </div>
-            <div className="text-right text-[13px] text-[var(--color-ink-700)]">{c.spend}</div>
+            <div className="text-right text-[13px] text-[var(--color-text-primary)]">{c.spend}</div>
             <div className="text-right font-display font-semibold">{c.bookings}</div>
           </div>
         ))}

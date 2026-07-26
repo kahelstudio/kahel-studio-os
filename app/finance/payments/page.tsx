@@ -3,9 +3,9 @@ import { KpiStrip } from "@/components/finance/kpi-strip";
 
 export default function FinancePaymentsPage() {
   return (
-    <div className="max-w-[1200px] p-12 pt-9">
+    <div className="p-12 pt-9">
       <div>
-        <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+        <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
           Payments
         </h1>
         <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -27,7 +27,7 @@ export default function FinancePaymentsPage() {
         {FINANCE_PAYMENTS.map((r) => (
           <div
             key={r.ref}
-            className="grid h-[54px] grid-cols-[1.1fr_1.7fr_0.8fr_1.3fr_1fr_1fr] items-center border-b border-[var(--color-ink-100)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
+            className="grid h-[54px] grid-cols-[1.1fr_1.7fr_0.8fr_1.3fr_1fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
           >
             <div className="text-xs font-medium text-[var(--color-text-primary)]">{r.ref}</div>
             <div className="font-medium">{r.party}</div>

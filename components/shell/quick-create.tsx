@@ -50,7 +50,7 @@ export function QuickCreateSheet({ open, onClose }: { open: boolean; onClose: ()
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="absolute inset-0 bg-[rgba(20,20,20,0.35)]" onClick={onClose} aria-hidden />
       <div className="relative flex h-full w-full max-w-[440px] flex-col bg-[var(--color-surface)] shadow-[-20px_0_60px_-20px_rgba(10,10,10,0.4)]">
-        <div className="flex items-center justify-between border-b border-[var(--color-ink-100)] px-6 py-[22px]">
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-[22px]">
           <h2 className="font-display text-xl font-semibold text-[var(--color-text-primary)]">
             Quick create
           </h2>
@@ -89,7 +89,7 @@ export function QuickCreateSheet({ open, onClose }: { open: boolean; onClose: ()
                   {item.description}
                 </div>
               </div>
-              <ChevronRight className="ml-auto h-4 w-4 text-[var(--color-ink-300)]" />
+              <ChevronRight className="ml-auto h-4 w-4 text-[var(--color-text-muted)]" />
             </button>
           ))}
         </div>

@@ -101,12 +101,12 @@ function Section({ group, apps, indexOffset }: { group: LauncherGroup; apps: App
             >
               <div className="flex items-center justify-between">
                 <Icon className="h-[26px] w-[26px] text-[var(--color-kahel-500)]" strokeWidth={1.75} />
-                <span className="text-xs tracking-[0.06em] text-[var(--color-ink-300)]">
+                <span className="text-xs tracking-[0.06em] text-[var(--color-text-muted)]">
                   {group === "system" ? "SYS" : String(i + 1 + indexOffset).padStart(2, "0")}
                 </span>
               </div>
               <div>
-                <div className="font-display text-lg font-semibold text-[var(--color-ink-800)]">
+                <div className="font-display text-lg font-semibold text-[var(--color-text-primary)]">
                   {app.name}
                 </div>
                 <div className="mt-1 text-[13px] leading-[18px] text-[var(--color-text-secondary)]">
@@ -129,13 +129,13 @@ export function LauncherGrid() {
   return (
     <div className="px-12 pb-14 pt-6">
       <div>
-        <div className="font-display text-[44px] font-semibold leading-[48px] tracking-[-0.025em] text-[var(--color-ink-800)]">
+        <div className="font-display text-[44px] font-semibold leading-[48px] tracking-[-0.025em] text-[var(--color-text-primary)]">
           Good morning, Eusebio
         </div>
         <div className="mt-2 text-base text-[var(--color-text-secondary)]">
           <span className="font-light">2 events and 3 studio sessions today</span>{" "}
           <span aria-hidden>|</span>{" "}
-          <span className="font-medium text-[var(--color-kahel-700)]">₱71,000</span>{" "}
+          <span className="font-medium text-[#FF5300]">₱71,000</span>{" "}
           <span className="font-light">sales this month</span>
         </div>
       </div>
@@ -146,30 +146,30 @@ export function LauncherGrid() {
 
       <div className="mt-14 flex items-center gap-6 border-t border-[var(--color-border)] pb-2 pt-[22px]">
         <span className="inline-flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
-          Kahel Studio v2.3
+          Kahel Studio v0.1
           <span className="inline-block h-3.5 w-px bg-[var(--color-border-strong)]" />
           <span className="h-2 w-2 rounded-full bg-[var(--color-success)]" />
           System Status
         </span>
         <div className="ml-auto flex items-center gap-[22px]">
-          <a
-            href="#"
+          <Link
+            href="/docs"
             className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-kahel-700)]"
           >
             <Book className="h-4 w-4" strokeWidth={1.75} /> Documentation
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            href="/help"
             className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-kahel-700)]"
           >
             <HelpCircle className="h-4 w-4" strokeWidth={1.75} /> Help &amp; support
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            href="/feedback/report"
             className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-kahel-700)]"
           >
             <MessageSquare className="h-4 w-4" strokeWidth={1.75} /> Feedback
-          </a>
+          </Link>
           <span className="text-[13px] text-[var(--color-text-muted)]">© 2026 Kahel Studio</span>
         </div>
       </div>

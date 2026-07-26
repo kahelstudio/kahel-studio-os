@@ -1,11 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { Bell, LayoutGrid, Menu, Plus, Search } from "lucide-react";
+import { Bell, LayoutGrid, Menu, Search } from "lucide-react";
 import { ACCENTS, type AppDef } from "@/lib/apps-config";
 import { AvatarMenu } from "@/components/shell/avatar-menu";
-import { QuickCreateSheet } from "@/components/shell/quick-create";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export function Topbar({
   app,
@@ -16,7 +15,6 @@ export function Topbar({
   onOpenCommandPalette: () => void;
   onOpenMobileNav?: () => void;
 }) {
-  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const accent = ACCENTS[app.accent];
   const Icon = app.icon;
 
@@ -46,18 +44,17 @@ export function Topbar({
         <span className="font-display text-base font-semibold text-[var(--color-text-primary)]">
           {app.name}
         </span>
-        <LayoutGrid className="h-4 w-4 text-[var(--color-ink-300)]" />
+        <LayoutGrid className="h-4 w-4 text-[var(--color-text-muted)]" />
       </Link>
 
-      <button
-        onClick={onOpenCommandPalette}
-        className="mx-4 hidden h-[38px] max-w-[420px] flex-1 items-center gap-2.5 rounded-control border border-[var(--color-border)] bg-[var(--color-canvas)] px-4 text-left text-sm text-[var(--color-text-muted)] md:flex"
-      >
-        <Search className="h-4 w-4" />
-        Search everything…
-      </button>
-
-      <div className="ml-auto flex shrink-0 items-center gap-4">
+      <div className="ml-auto flex shrink-0 items-center gap-2.5">
+        <button
+          onClick={onOpenCommandPalette}
+          className="hidden h-[38px] min-w-[340px] items-center gap-2.5 rounded-control border border-[var(--color-border)] bg-[var(--color-canvas)] px-3.5 text-left text-sm text-[var(--color-text-muted)] md:flex"
+        >
+          <Search className="h-4 w-4 shrink-0" />
+          Search everything…
+        </button>
         <button
           onClick={onOpenCommandPalette}
           className="flex h-[38px] w-[38px] items-center justify-center rounded-control text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] md:hidden"
@@ -65,19 +62,7 @@ export function Topbar({
         >
           <Search className="h-5 w-5" />
         </button>
-        <button
-          onClick={() => setQuickCreateOpen(true)}
-          className="hidden h-[38px] items-center gap-1.5 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 font-display text-sm font-semibold text-[var(--color-text-primary)] hover:border-[var(--color-border-strong)] sm:flex"
-        >
-          <Plus className="h-4 w-4" /> Create
-        </button>
-        <button
-          onClick={() => setQuickCreateOpen(true)}
-          className="flex h-[38px] w-[38px] items-center justify-center rounded-control text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] sm:hidden"
-          aria-label="Quick create"
-        >
-          <Plus className="h-5 w-5" />
-        </button>
+        <ThemeToggle size={38} />
         <button
           className="flex h-[38px] w-[38px] items-center justify-center rounded-control text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
           aria-label="Notifications"
@@ -86,8 +71,6 @@ export function Topbar({
         </button>
         <AvatarMenu size={38} />
       </div>
-
-      <QuickCreateSheet open={quickCreateOpen} onClose={() => setQuickCreateOpen(false)} />
     </header>
   );
 }

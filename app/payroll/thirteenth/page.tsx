@@ -2,8 +2,8 @@ import { PAYROLL_13TH, PAYROLL_13TH_TOTALS } from "@/lib/sample-data";
 
 export default function Payroll13thPage() {
   return (
-    <div className="max-w-[1100px] p-10 pb-14 pt-8">
-      <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+    <div className="p-10 pb-14 pt-8">
+      <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
         13th-month pay
       </h1>
       <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -22,10 +22,10 @@ export default function Payroll13thPage() {
         {PAYROLL_13TH.map((r) => (
           <div
             key={r.name}
-            className="grid h-14 grid-cols-[1.6fr_1.2fr_1.2fr_1fr_1fr_1fr] items-center border-b border-[var(--color-ink-100)] px-5 text-sm last:border-b-0"
+            className="grid h-14 grid-cols-[1.6fr_1.2fr_1.2fr_1fr_1fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0"
           >
             <div className="font-semibold">{r.name}</div>
-            <div className="text-right text-[var(--color-ink-700)]">{r.basis}</div>
+            <div className="text-right text-[var(--color-text-primary)]">{r.basis}</div>
             <div className="text-right font-display font-semibold">{r.earned}</div>
             <div className="text-right text-[var(--color-text-secondary)]">{r.paid}</div>
             <div className="text-right font-display font-semibold">{r.bal}</div>

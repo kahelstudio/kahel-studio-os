@@ -13,7 +13,7 @@ export default function BookingListPage() {
     <div className="p-10 pt-8">
       <div className="mb-5 flex items-end justify-between">
         <div>
-          <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
             Bookings
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -33,7 +33,7 @@ export default function BookingListPage() {
               "h-8 rounded-pill border px-3.5 text-[13px] font-medium",
               i === 0
                 ? "border-[var(--color-kahel-500)] bg-[var(--color-kahel-50)] text-[var(--color-kahel-700)]"
-                : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-ink-600)]"
+                : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]"
             )}
           >
             {f}
@@ -55,11 +55,11 @@ export default function BookingListPage() {
             <Link
               key={b.ref}
               href={`/booking/list/${b.ref}`}
-              className="grid h-14 grid-cols-[1.1fr_1.6fr_1.4fr_1fr_1fr] items-center border-b border-[var(--color-ink-100)] px-[18px] text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
+              className="grid h-14 grid-cols-[1.1fr_1.6fr_1.4fr_1fr_1fr] items-center border-b border-[var(--color-border)] px-[18px] text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
             >
-              <div className="font-mono text-[13px] text-[var(--color-ink-600)]">{b.ref}</div>
+              <div className="text-[13px] text-[var(--color-text-secondary)]">{b.ref}</div>
               <div className="truncate font-semibold text-[var(--color-text-primary)]">{b.account}</div>
-              <div className="text-[var(--color-ink-600)]">
+              <div className="text-[var(--color-text-secondary)]">
                 {b.type}
                 <div className="text-xs text-[var(--color-text-muted)]">{b.date}</div>
               </div>

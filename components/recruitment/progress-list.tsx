@@ -52,7 +52,7 @@ export function ProgressList({
               </span>
             </div>
             <div className="mt-3.5 flex items-center gap-3">
-              <div className="h-2 flex-1 overflow-hidden rounded-pill bg-[var(--color-ink-100)]">
+              <div className="h-2 flex-1 overflow-hidden rounded-pill bg-[var(--color-surface-muted)]">
                 <div className="h-full rounded-pill" style={{ width: h.pct, background: h.barColor }} />
               </div>
               <span className="text-xs text-[var(--color-text-secondary)]">{h.label}</span>
@@ -61,12 +61,12 @@ export function ProgressList({
         ))}
       </div>
       <div className="self-start overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="flex items-baseline justify-between border-b border-[var(--color-ink-100)] px-5 py-4">
+        <div className="flex items-baseline justify-between border-b border-[var(--color-border)] px-5 py-4">
           <span className="font-display text-[13px] font-semibold uppercase tracking-[0.16em]">{title}</span>
           <span className="text-xs text-[var(--color-text-muted)]">{checklistOwner}</span>
         </div>
         {checklist.map((c) => (
-          <div key={c.label} className="flex items-center gap-3 border-b border-[var(--color-ink-50)] px-5 py-3 text-sm last:border-b-0">
+          <div key={c.label} className="flex items-center gap-3 border-b border-[var(--color-border)] px-5 py-3 text-sm last:border-b-0">
             <span
               className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-full"
               style={{ background: c.bg, color: c.tick }}

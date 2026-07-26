@@ -17,24 +17,3 @@ export function formatPeso(centavos: number, opts?: { decimals?: boolean }) {
     .replace("PHP", "₱")
     .replace("₱ ", "₱");
 }
-
-export function formatDate(iso: string, opts?: { withWeekday?: boolean }) {
-  const d = new Date(iso);
-  return new Intl.DateTimeFormat("en-PH", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    weekday: opts?.withWeekday ? "long" : undefined,
-    timeZone: "Asia/Manila",
-  }).format(d);
-}
-
-export function formatTime(iso: string) {
-  const d = new Date(iso);
-  return new Intl.DateTimeFormat("en-PH", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: "Asia/Manila",
-  }).format(d);
-}

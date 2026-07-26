@@ -11,7 +11,7 @@ export default function PreferencesAppearancePage() {
 
   return (
     <div className="max-w-[820px] p-12 pt-9">
-      <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+      <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
         Appearance
       </h1>
       <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -56,7 +56,7 @@ export default function PreferencesAppearancePage() {
               "h-10 rounded-control border px-5 text-sm font-semibold",
               density === d.k
                 ? "border-[var(--color-ink-600)] bg-[var(--color-ink-600)] text-white"
-                : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-ink-600)]"
+                : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]"
             )}
           >
             {d.label}

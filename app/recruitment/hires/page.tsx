@@ -7,7 +7,7 @@ export default function RecruitmentHiresPage() {
     <div className="max-w-[1200px] p-12 pt-9">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-ink-800)]">
+          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             New hires
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
