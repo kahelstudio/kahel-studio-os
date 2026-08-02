@@ -114,7 +114,7 @@ export function AttendanceClockCard() {
   }
 
   return (
-    <div className="mt-6 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] px-[26px] py-6">
+    <div className="mt-6 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-5 sm:px-[26px] sm:py-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <Clock className="h-5 w-5 text-[var(--color-indigo-800)]" strokeWidth={1.75} />
@@ -130,7 +130,7 @@ export function AttendanceClockCard() {
       </div>
 
       <div className="mt-[22px] flex flex-wrap items-stretch justify-between gap-6">
-        <div className="grid min-w-[340px] flex-1 grid-cols-3 gap-6">
+        <div className="grid min-w-0 flex-[999_1_340px] grid-cols-1 gap-4 min-[430px]:grid-cols-3 sm:gap-6">
           <div>
             <div className="text-xs font-medium uppercase tracking-[0.02em] text-[var(--color-text-secondary)]">
               Clocked in
@@ -156,11 +156,11 @@ export function AttendanceClockCard() {
             </div>
           </div>
         </div>
-        <div className="flex min-w-[240px] flex-1 flex-col items-start justify-center gap-2.5">
+        <div className="flex min-w-0 flex-[1_1_240px] flex-col items-start justify-center gap-2.5">
           {phase === "in" && (
             <button
               onClick={handleClockOut}
-              className="h-10 self-start rounded-control bg-[var(--color-kahel-500)] px-[22px] font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]"
+              className="h-11 self-start rounded-control bg-[var(--color-kahel-500)] px-[22px] font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]"
             >
               Clock out
             </button>
@@ -168,7 +168,7 @@ export function AttendanceClockCard() {
           {(phase === "out" || phase === "done") && (
             <button
               onClick={handleClockIn}
-              className="h-10 self-start rounded-control bg-[var(--color-ink-800)] px-[22px] font-display text-sm font-semibold text-white hover:bg-black"
+              className="h-11 self-start rounded-control bg-[var(--color-ink-800)] px-[22px] font-display text-sm font-semibold text-white hover:bg-black"
             >
               {phase === "done" ? "Clock in · new session" : "Clock in"}
             </button>

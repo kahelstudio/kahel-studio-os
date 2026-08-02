@@ -1376,7 +1376,7 @@ export const BILLING_ROWS = [
 export const PROFILE_INFO = [
   { label: "Full name", value: "Eusebio Barrun" },
   { label: "Preferred name", value: "Sebi" },
-  { label: "Email", value: "eusebio@kahelstudio.com" },
+  { label: "Email", value: "sebi@example.com" },
   { label: "Mobile", value: "+63 917 555 0142" },
 ];
 
@@ -2298,7 +2298,7 @@ export const DOCS_SECTIONS: DocSection[] = [
       T("Each hire gets a checklist — contract, copyright assignment, payout details, equipment orientation, style guide, first engagement. Progress is tracked to the last signature."),
       H("Copyright assignment"),
       T("A written copyright assignment is required from every freelancer. Until it is signed, that person's engagement payout is held."),
-      NT("Owner-only for now", "Phase 1 is a single-user workspace. Multi-user access and roles arrive in a later phase."),
+      NT("Access", "Staff portal management is protected by the workspace access configuration. Client portals use separate, expiring share links."),
     ],
   },
   {
@@ -2314,6 +2314,45 @@ export const DOCS_SECTIONS: DocSection[] = [
       H("Tasks are internal work"),
       T("Tasks can stand alone (studio cleaning, charging batteries, backups, inventory checks) or link to a project (culling, editing, equipment prep). They carry an assignee, priority, due date, recurrence, checklist, category, status, attachments, and completion evidence."),
       NT("Recurring maintenance raises tasks", "Items in Maintenance & repair that approach their due date automatically raise a linked staff task — you will see a “From maintenance” chip on the task and a “Staff task raised” chip on the maintenance record."),
+      H("Working with the board"),
+      T("The Board, List, and Calendar views show the same work in different formats. Use Board to manage status, List to scan assignments and due dates, and Calendar to plan the week."),
+    ],
+  },
+  {
+    key: "client-portal",
+    title: "Client portal",
+    accent: "orange",
+    icon: "camera",
+    kicker: "Delivery",
+    desc: "Client portals provide a private gallery for selecting album favorites, reviewing invoices, and leaving feedback.",
+    blocks: [
+      H("Preparing access"),
+      STP([
+        "Open Projects → Client portals.",
+        "Confirm the client email, publish status, and gallery readiness.",
+        "Create a secure share link and send it through your approved delivery channel.",
+      ]),
+      H("Secure links"),
+      T("Each newly created link replaces the previous link and expires after 30 days. Client activity, selects, feedback, and downloads are recorded against the linked project."),
+      NT("Local development", "Authentication may be temporarily bypassed only when KAHEL_AUTH_DISABLED=true is set in .env.local. Remove the flag before deployment."),
+    ],
+  },
+  {
+    key: "reports",
+    title: "Reports",
+    accent: "teal",
+    icon: "folder",
+    kicker: "Insights",
+    desc: "Reports centralizes operational, financial, booking, and project summaries for export and review.",
+    blocks: [
+      H("Using reports"),
+      STP([
+        "Choose a reporting period and report type.",
+        "Open an available report or download it directly from the list.",
+        "Use Create report to begin a tailored report request.",
+      ]),
+      H("Data scope"),
+      T("Report cards and exports use the data available to the current workspace. Confirm report totals against source records before using them for statutory filings or external statements."),
     ],
   },
   {
@@ -2332,6 +2371,8 @@ export const DOCS_SECTIONS: DocSection[] = [
         "Retail — physical products sold at the counter.",
         "Add-ons — extras attached to a session or booking.",
       ]),
+      H("Editing catalog rows"),
+      T("Use the three-dot action at the end of a row to edit its code, name, details, price, and availability. New item adds a draft row to the active category."),
       NT("Non-VAT", "Kahel Studio is registered Non-VAT, so sales totals carry no 12% VAT line."),
     ],
   },
@@ -2382,9 +2423,11 @@ export const HELP_FAQS = [
   { q: "Why can't I edit a paid balance?", a: "Balances are derived from recorded payments — void or add a payment rather than editing the number." },
   { q: "The system won't print a BIR invoice. Is that a bug?", a: "No. Kahel Studio OS records serials from your printed BIR booklets and stores scans; it never generates an invoice." },
   { q: "How is a deposit calculated?", a: "Server-side as half the total, rounded up. It's never accepted from the checkout screen." },
-  { q: "Can I add another team member?", a: "Phase 1 is owner-only. Multi-user and roles are deferred to a later phase." },
+  { q: "How do I share a client portal?", a: "Open Projects → Client portals, publish the portal, create a secure link, then copy it into your approved delivery email. Creating a new link revokes the previous link." },
+  { q: "Why does my client portal link not open?", a: "Links expire after 30 days and stop working when the portal is unpublished. Generate a new secure link from Projects → Client portals." },
   { q: "What's the difference between a Project and a Task?", a: "A project is client work auto-created when a booking is confirmed; a task is internal staff work that can stand alone or link to a project. Confirming a booking never creates a duplicate project." },
   { q: "Why is there no VAT on the sale total?", a: "Kahel Studio is registered Non-VAT, so the cart carries no 12% VAT line." },
   { q: "Does marking a Compliance item complete mean we're legally compliant?", a: "No. Compliance is an administrative tracker only. Fees shown are a planning estimate — confirm the exact amount with the issuing agency." },
   { q: "Where do recurring maintenance tasks come from?", a: "Maintenance & repair raises a linked staff task automatically as each item nears its due date; completing it updates the service history and sets the next due date." },
+  { q: "How do I update a POS catalog item?", a: "Open the relevant POS category, select the three-dot action on the row, make your edits, and save. New item creates an editable draft row." },
 ];

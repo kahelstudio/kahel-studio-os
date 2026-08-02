@@ -89,9 +89,13 @@ export function ReportsHub() {
   const [selectedReport, setSelectedReport] = useState(reports[0]);
   const [favourites, setFavourites] = useState(reports.filter((report) => report.favourite).map((report) => report.name));
   const [exportFormat, setExportFormat] = useState("XLSX");
+  const validCategories: readonly string[] = categories.map(([name]) => name);
+  const validViews = ["favourites", "recent", "custom", "saved", "scheduled"] as const;
   const sidebarCategory = searchParams.get("category");
   const sidebarView = searchParams.get("view");
-  const activeCategory = sidebarCategory ?? category;
+  const safeSidebarCategory = sidebarCategory && (validCategories as readonly string[]).includes(sidebarCategory) ? sidebarCategory : null;
+  const safeSidebarView = sidebarView && (validViews as readonly string[]).includes(sidebarView) ? sidebarView : null;
+  const activeCategory = safeSidebarCategory ?? category;
 
   const sales = REPORTING_OVERVIEW.netRevenue;
   const expenses = REPORTING_OVERVIEW.expenses;
@@ -109,8 +113,8 @@ export function ReportsHub() {
     fireToast(`${name} is being prepared as ${exportFormat}. You will be notified when it is ready.`, "info");
   }
 
-  if (sidebarCategory || sidebarView) {
-    return <ReportDestination category={sidebarCategory} view={sidebarView} onBack={() => router.push("/reports")} onExport={() => setDialog("export")} />;
+  if (safeSidebarCategory || safeSidebarView) {
+    return <ReportDestination category={safeSidebarCategory} view={safeSidebarView} onBack={() => router.push("/reports")} onExport={() => setDialog("export")} />;
   }
 
   return (

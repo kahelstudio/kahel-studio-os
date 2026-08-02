@@ -38,17 +38,6 @@ export const REPORTING_SERVICE_REVENUE = [
   { service: "Equipment rental", transactions: "4", gross: "₱16,750", discounts: "₱500", refunds: "₱0", net: "₱16,250" },
 ];
 
-export const REPORTING_EXPENSES = [
-  { category: "Payroll", amount: "₱44,000" },
-  { category: "Freelancers and contractors", amount: "₱12,500" },
-  { category: "Equipment and supplies", amount: "₱10,850" },
-  { category: "Rent and utilities", amount: "₱9,600" },
-  { category: "Software and subscriptions", amount: "₱8,460" },
-  { category: "Transportation", amount: "₱4,800" },
-  { category: "Marketing", amount: "₱3,240" },
-  { category: "Repairs and maintenance", amount: "₱3,000" },
-];
-
 export const REPORTING_BOOKINGS = [
   { status: "Requested", count: "2" }, { status: "Booked", count: "1" }, { status: "Confirmed", count: "22" },
   { status: "Rescheduled", count: "1" }, { status: "Cancelled", count: "1" }, { status: "No-show", count: "1" },

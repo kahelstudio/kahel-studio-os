@@ -1,0 +1,14 @@
+{
+  "variants": [
+    { "id": "hero-desktop", "options": { "fit": "cover", "width": 1920, "height": 1080, "metadata": "none" } },
+    { "id": "hero-tablet", "options": { "fit": "cover", "width": 1280, "height": 960, "metadata": "none" } },
+    { "id": "hero-mobile", "options": { "fit": "cover", "width": 828, "height": 1104, "metadata": "none" } },
+    { "id": "portfolio-large", "options": { "fit": "scale-down", "width": 2400, "metadata": "none" } },
+    { "id": "portfolio-card", "options": { "fit": "cover", "width": 1200, "height": 1500, "metadata": "none" } },
+    { "id": "service-card", "options": { "fit": "cover", "width": 1200, "height": 1500, "metadata": "none" } },
+    { "id": "gallery-grid", "options": { "fit": "cover", "width": 1200, "height": 1200, "metadata": "none" } },
+    { "id": "gallery-preview", "options": { "fit": "scale-down", "width": 2560, "metadata": "none" } },
+    { "id": "gallery-thumbnail", "options": { "fit": "cover", "width": 480, "height": 480, "metadata": "none" } },
+    { "id": "social-preview", "options": { "fit": "cover", "width": 1200, "height": 630, "metadata": "none" } }
+  ]
+}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Search } from "lucide-react";
 import { BOOKINGS, BOOKING_STATUS, type BookingStatusId } from "@/lib/sample-data";
 import { useToast } from "@/components/toast/toast-provider";
 import { cn } from "@/lib/utils";
@@ -18,14 +17,9 @@ const STATUS_FILTERS: { id: BookingStatusId | "all"; label: string }[] = [
 export default function PosBookingsPage() {
   const { fireToast } = useToast();
   const [statusFilter, setStatusFilter] = useState<BookingStatusId | "all">("all");
-  const [query, setQuery] = useState("");
 
   const filtered = BOOKINGS.filter((b) => {
     if (statusFilter !== "all" && b.status !== statusFilter) return false;
-    if (query) {
-      const q = query.toLowerCase();
-      if (!b.account.toLowerCase().includes(q) && !b.ref.toLowerCase().includes(q)) return false;
-    }
     return true;
   });
 
@@ -36,10 +30,6 @@ export default function PosBookingsPage() {
           <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">Bookings</h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">Select a booking to collect payment or view details</p>
         </div>
-        <label className="flex h-10 items-center gap-2 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3">
-          <Search className="h-4 w-4 text-[var(--color-text-muted)]" />
-          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search by name or ref…" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[var(--color-text-muted)]" />
-        </label>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-1.5">

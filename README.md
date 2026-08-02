@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Kahel Studio OS
 
-## Getting Started
+Kahel Studio OS is the internal operations platform for bookings, CRM, POS, projects, tasks, reporting, and client delivery portals.
 
-First, run the development server:
+## Local Development
 
 ```bash
+npm install
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The client portal persistence layer uses Supabase. Set `SUPABASE_URL` and `SUPABASE_SECRET_KEY` in `.env.local`, then apply `supabase/migrations/20260801000000_client_portals.sql` to the target project before using portal delivery features.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Useful checks:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run lint
+npx tsc --noEmit
+npm run test:visual
+npm run build
+```
 
-## Learn More
+## Deployment Architecture
 
-To learn more about Next.js, take a look at the following resources:
+- **GitLab CI** validates pull requests and deploys configured branches.
+- **Cloudflare Workers** runs the Next.js application through OpenNext.
+- **Supabase** provides Postgres persistence for client portal settings, activity, and expiring link tokens.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The Worker deployment configuration is in `wrangler.jsonc`. Staging is `kahel.studio` from `dev`; production is `kahelstudio.com` from `main` through protected manual jobs.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the complete GitLab variable checklist, Supabase and Cloudflare setup, branch and environment protections, rollout procedure, and rollback guidance. It intentionally contains no project references, credentials, or secret values.

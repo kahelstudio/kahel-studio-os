@@ -1,31 +1,25 @@
-"use client";
+import type { Metadata } from "next";
+import { MarketingSite } from "@/components/marketing/marketing-site";
 
-import { useEffect, useState } from "react";
-import { LauncherTopbar } from "@/components/launcher/launcher-topbar";
-import { CommandPalette } from "@/components/shell/command-palette";
-import { LauncherGrid } from "@/components/launcher/launcher-grid";
+// Avoid retaining a stale prerender shell across Cloudflare Worker deployments.
+export const dynamic = "force-dynamic";
 
-export default function LauncherPage() {
-  const [paletteOpen, setPaletteOpen] = useState(false);
+export const metadata: Metadata = {
+  title: "Kahel Studio | Creating Visual Experiences",
+  description: "Timeless portraits, studio sessions, and event photography by Kahel Studio in Tabaco City, Albay.",
+  metadataBase: new URL("https://kahel.studio"),
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "Kahel Studio | Creating Visual Experiences",
+    description: "Creating timeless photographs in Tabaco City, Albay.",
+    url: "/",
+    siteName: "Kahel Studio",
+    images: [{ url: "/Solo_Liza Burzon Bino_9A.jpg", alt: "Portrait by Kahel Studio" }],
+    locale: "en_PH",
+    type: "website",
+  },
+};
 
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setPaletteOpen((v) => !v);
-      }
-    }
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, []);
-
-  return (
-    <div className="h-dvh overflow-y-auto">
-      <div className="mx-auto flex min-h-full w-full max-w-[1512px] flex-col">
-        <LauncherTopbar onOpenCommandPalette={() => setPaletteOpen(true)} />
-        <LauncherGrid />
-      </div>
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-    </div>
-  );
+export default function HomePage() {
+  return <MarketingSite />;
 }

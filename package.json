@@ -6,9 +6,25 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:visual": "playwright test",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "preview:cloudflare": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy:staging": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --env staging",
+    "deploy:media:staging": "wrangler deploy --config wrangler.media.jsonc --env staging",
+    "deploy:production": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --env production",
+    "cf:typegen": "wrangler types --env staging --env-interface CloudflareEnv && wrangler types --config wrangler.media.jsonc --env staging --env-interface MediaProcessorEnv worker-media-configuration.d.ts",
+    "cf:check": "wrangler deploy --dry-run --env staging"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1101.0",
+    "@aws-sdk/s3-request-presigner": "^3.1101.0",
+    "@opennextjs/cloudflare": "^1.20.2",
+    "@supabase/supabase-js": "^2.111.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "better-sqlite3": "^13.0.2",
     "clsx": "^2.1.1",
     "lucide-react": "^1.26.0",
     "next": "16.2.11",
@@ -17,13 +33,17 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.11",
+    "supabase": "^2.111.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.118.0"
   }
 }

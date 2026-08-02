@@ -1,0 +1,355 @@
+.page {
+  min-height: 100dvh;
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  padding: 12px;
+}
+
+.shell {
+  width: min(100%, 1180px);
+  min-height: calc(100dvh - 24px);
+  margin: 0 auto;
+  overflow: hidden;
+  display: grid;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-modal);
+  box-shadow: var(--shadow-menu);
+}
+
+.brandPanel {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  background: #ff5300;
+  color: #141414;
+  padding: 48px;
+}
+
+.brandPanel::before,
+.brandPanel::after {
+  content: "";
+  position: absolute;
+  background: #141414;
+}
+
+.brandPanel::before {
+  width: 180px;
+  height: 180px;
+  right: -72px;
+  top: 18%;
+  border-radius: 50%;
+}
+
+.brandPanel::after {
+  width: 96px;
+  height: 12px;
+  left: 48px;
+  bottom: 48px;
+}
+
+.brandLink {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: inherit;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  text-decoration: none;
+}
+
+.brandCopy {
+  position: relative;
+  z-index: 1;
+  max-width: 390px;
+  margin-top: auto;
+  padding-bottom: 72px;
+}
+
+.brandCopy p:first-child {
+  font-family: var(--font-display);
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+.brandCopy p:last-child {
+  max-width: 320px;
+  margin-top: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.formPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px 40px;
+}
+
+.formWrap {
+  width: 100%;
+  max-width: 440px;
+}
+
+.mobileBrand {
+  margin-bottom: 42px;
+  color: var(--color-text-primary);
+}
+
+.eyebrow {
+  color: var(--color-kahel-700);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin-top: 10px;
+  font-family: var(--font-display);
+  font-size: clamp(32px, 8vw, 42px);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.description {
+  margin-top: 12px;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.content {
+  margin-top: 30px;
+}
+
+.field + .field {
+  margin-top: 18px;
+}
+
+.label {
+  display: block;
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.inputWrap {
+  position: relative;
+  display: block;
+  margin-top: 7px;
+}
+
+.input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  padding: 0 14px;
+  font: 400 16px/1.4 var(--font-sans);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.passwordInput {
+  padding-right: 52px;
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.input:focus {
+  border-color: #ff5300;
+  box-shadow: var(--shadow-focus-ring);
+}
+
+.passwordToggle {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.passwordToggle:hover {
+  color: var(--color-text-primary);
+}
+
+.passwordToggle:focus-visible,
+.textLink:focus-visible,
+.brandLink:focus-visible,
+.submit:focus-visible,
+.signOut:focus-visible {
+  outline: 3px solid rgba(255, 83, 0, 0.3);
+  outline-offset: 2px;
+}
+
+.formMeta {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.textLink {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  border-radius: var(--radius-control);
+  color: var(--color-kahel-700);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.textLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.policy {
+  margin-top: 10px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.message {
+  margin-top: 16px;
+  border-radius: var(--radius-control);
+  padding: 11px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.error {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
+.success {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.submit,
+.signOut {
+  min-height: 48px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: #ff5300;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 150ms ease, opacity 150ms ease;
+}
+
+.submit {
+  width: 100%;
+  margin-top: 22px;
+  padding: 0 18px;
+}
+
+.submit:hover,
+.signOut:hover {
+  background: var(--color-kahel-600);
+}
+
+.submit:disabled,
+.signOut:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.footer {
+  margin-top: 26px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.signOutWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.signOut {
+  padding: 0 18px;
+}
+
+.signOutError {
+  color: var(--color-danger-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@media (min-width: 640px) {
+  .page {
+    padding: 24px;
+  }
+
+  .shell {
+    min-height: calc(100dvh - 48px);
+  }
+
+  .formPanel {
+    padding: 56px;
+  }
+}
+
+@media (min-width: 960px) {
+  .page {
+    padding: 32px;
+  }
+
+  .shell {
+    min-height: calc(100dvh - 64px);
+    grid-template-columns: minmax(360px, 0.82fr) minmax(520px, 1.18fr);
+  }
+
+  .brandPanel {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobileBrand {
+    display: none;
+  }
+
+  .formPanel {
+    padding: 64px 72px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input,
+  .submit,
+  .signOut {
+    transition: none;
+  }
+}

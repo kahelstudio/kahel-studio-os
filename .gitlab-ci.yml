@@ -1,0 +1,233 @@
+image: node:22-bookworm
+
+stages:
+  - install
+  - quality
+  - test
+  - build
+  - database
+  - deploy
+  - verify
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH'
+    - when: never
+
+default:
+  interruptible: true
+  timeout: 20m
+  cache:
+    key:
+      files:
+        - package-lock.json
+    paths:
+      - .npm/
+    policy: pull-push
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+
+.validation_rules: &validation_rules
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH'
+
+.staging_rules: &staging_rules
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+
+.production_rules: &production_rules
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      when: manual
+    - when: never
+
+install_dependencies:
+  stage: install
+  script:
+    - npm ci --cache .npm --prefer-offline
+  <<: *validation_rules
+
+lint:
+  stage: quality
+  needs: ["install_dependencies"]
+  script:
+    - npm run lint
+  <<: *validation_rules
+
+typecheck:
+  stage: quality
+  needs: ["install_dependencies"]
+  script:
+    - npm run typecheck
+  <<: *validation_rules
+
+audit:
+  stage: quality
+  needs: ["install_dependencies"]
+  script:
+    - npm audit --audit-level=high
+  <<: *validation_rules
+
+visual_tests:
+  image: mcr.microsoft.com/playwright:v1.62.0-noble
+  stage: test
+  needs: ["install_dependencies"]
+  variables:
+    KAHEL_AUTH_DISABLED: "true"
+  script:
+    - npm run test:visual
+  artifacts:
+    when: on_failure
+    expire_in: 3 days
+    paths:
+      - test-results/
+      - playwright-report/
+  <<: *validation_rules
+
+build_worker:
+  stage: build
+  needs: ["lint", "typecheck", "visual_tests"]
+  script:
+    - npm run build
+    - npm run build:cloudflare
+    - npm run cf:check
+  artifacts:
+    expire_in: 1 day
+    paths:
+      - .open-next/
+  <<: *validation_rules
+
+validate_supabase_migrations:
+  image: node:22-bookworm
+  stage: database
+  needs: ["install_dependencies"]
+  services:
+    - name: docker:27.4-dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  timeout: 30m
+  before_script:
+    - npm ci --cache .npm --prefer-offline
+    - apt-get update && apt-get install -y --no-install-recommends docker.io
+  script:
+    - npx supabase start --ignore-health-check
+    - npx supabase migration list --local
+    - npx supabase db lint --local --fail-on error
+  <<: *validation_rules
+
+migrate_staging:
+  stage: database
+  needs: ["build_worker", "validate_supabase_migrations"]
+  environment:
+    name: staging
+    url: https://kahel.studio
+  resource_group: staging
+  interruptible: false
+  script:
+    - test -n "${SUPABASE_ACCESS_TOKEN:-}" && test -n "${STAGING_SUPABASE_PROJECT_REF:-}" && test -n "${STAGING_SUPABASE_DB_PASSWORD:-}" || (echo "Required staging Supabase CI/CD variable is missing." && exit 1)
+    - npx supabase link --project-ref "$STAGING_SUPABASE_PROJECT_REF" --password "$STAGING_SUPABASE_DB_PASSWORD"
+    - npx supabase db push --linked --password "$STAGING_SUPABASE_DB_PASSWORD"
+  <<: *staging_rules
+
+deploy_staging_functions:
+  stage: database
+  needs: ["migrate_staging"]
+  environment:
+    name: staging
+    url: https://kahel.studio
+  resource_group: staging
+  interruptible: false
+  script:
+    - test -n "${SUPABASE_ACCESS_TOKEN:-}" && test -n "${STAGING_SUPABASE_PROJECT_REF:-}" || (echo "Required staging Supabase CI/CD variable is missing." && exit 1)
+    - if [ -d supabase/functions ]; then npx supabase functions deploy --project-ref "$STAGING_SUPABASE_PROJECT_REF" --use-api; else echo "No Supabase Edge Functions to deploy."; fi
+  <<: *staging_rules
+
+deploy_staging_frontend:
+  stage: deploy
+  needs:
+    - job: build_worker
+      artifacts: true
+    - migrate_staging
+    - deploy_staging_functions
+  environment:
+    name: staging
+    url: https://kahel.studio
+  resource_group: staging
+  interruptible: false
+  script:
+    - test -n "${CLOUDFLARE_ACCOUNT_ID:-}" && test -n "${CLOUDFLARE_API_TOKEN:-}" && test -n "${STAGING_SUPABASE_URL:-}" && test -n "${STAGING_SUPABASE_PUBLISHABLE_KEY:-}" && test -n "${STAGING_CLOUDFLARE_WORKER_SECRETS_FILE:-}" || (echo "Required staging deployment CI/CD variable is missing." && exit 1)
+    - npx wrangler deploy --env staging --keep-vars --var "SUPABASE_URL:$STAGING_SUPABASE_URL" --var "SUPABASE_PUBLISHABLE_KEY:$STAGING_SUPABASE_PUBLISHABLE_KEY" --secrets-file "$STAGING_CLOUDFLARE_WORKER_SECRETS_FILE"
+  <<: *staging_rules
+
+migrate_production:
+  stage: database
+  needs: ["build_worker", "validate_supabase_migrations"]
+  environment:
+    name: production
+    url: https://kahelstudio.com
+  resource_group: production
+  interruptible: false
+  script:
+    - test -n "${SUPABASE_ACCESS_TOKEN:-}" && test -n "${PRODUCTION_SUPABASE_PROJECT_REF:-}" && test -n "${PRODUCTION_SUPABASE_DB_PASSWORD:-}" || (echo "Required production Supabase CI/CD variable is missing." && exit 1)
+    - npx supabase link --project-ref "$PRODUCTION_SUPABASE_PROJECT_REF" --password "$PRODUCTION_SUPABASE_DB_PASSWORD"
+    - npx supabase db push --linked --password "$PRODUCTION_SUPABASE_DB_PASSWORD"
+  <<: *production_rules
+
+deploy_production_functions:
+  stage: database
+  needs: ["migrate_production"]
+  environment:
+    name: production
+    url: https://kahelstudio.com
+  resource_group: production
+  interruptible: false
+  script:
+    - test -n "${SUPABASE_ACCESS_TOKEN:-}" && test -n "${PRODUCTION_SUPABASE_PROJECT_REF:-}" || (echo "Required production Supabase CI/CD variable is missing." && exit 1)
+    - if [ -d supabase/functions ]; then npx supabase functions deploy --project-ref "$PRODUCTION_SUPABASE_PROJECT_REF" --use-api; else echo "No Supabase Edge Functions to deploy."; fi
+  <<: *production_rules
+
+deploy_production_frontend:
+  stage: deploy
+  needs:
+    - job: build_worker
+      artifacts: true
+    - migrate_production
+    - deploy_production_functions
+  environment:
+    name: production
+    url: https://kahelstudio.com
+  resource_group: production
+  interruptible: false
+  script:
+    - test -n "${CLOUDFLARE_ACCOUNT_ID:-}" && test -n "${CLOUDFLARE_API_TOKEN:-}" && test -n "${PRODUCTION_SUPABASE_URL:-}" && test -n "${PRODUCTION_SUPABASE_PUBLISHABLE_KEY:-}" && test -n "${PRODUCTION_CLOUDFLARE_WORKER_SECRETS_FILE:-}" || (echo "Required production deployment CI/CD variable is missing." && exit 1)
+    - npx wrangler deploy --env production --keep-vars --var "SUPABASE_URL:$PRODUCTION_SUPABASE_URL" --var "SUPABASE_PUBLISHABLE_KEY:$PRODUCTION_SUPABASE_PUBLISHABLE_KEY" --secrets-file "$PRODUCTION_CLOUDFLARE_WORKER_SECRETS_FILE"
+  <<: *production_rules
+
+verify_staging:
+  stage: verify
+  needs: ["deploy_staging_frontend"]
+  environment:
+    name: staging
+    url: https://kahel.studio
+  resource_group: staging
+  interruptible: false
+  script:
+    - curl --fail --silent --show-error --max-time 20 https://kahel.studio/api/staff/session > /dev/null
+  <<: *staging_rules
+
+verify_production:
+  stage: verify
+  needs: ["deploy_production_frontend"]
+  environment:
+    name: production
+    url: https://kahelstudio.com
+  resource_group: production
+  interruptible: false
+  script:
+    - curl --fail --silent --show-error --max-time 20 https://kahelstudio.com/api/staff/session > /dev/null
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'

@@ -1,0 +1,12 @@
+KAHEL STUDIO
+
+You're invited
+
+You have been invited to Kahel Studio. Verify your email and choose a password to finish setting up your account.
+
+Verify email and set password:
+{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=invite
+
+This invitation expires in 24 hours. If it expires, ask a Kahel Studio administrator for a new invitation.
+
+If you were not expecting this invitation, you can safely ignore this email. No account access is granted unless the secure link is used.

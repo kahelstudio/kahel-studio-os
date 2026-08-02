@@ -32,6 +32,11 @@ export function AvatarMenu({ size = 38 }: { size?: number }) {
     };
   }, [open]);
 
+  async function signOut() {
+    await fetch("/api/staff/session", { method: "DELETE" });
+    window.location.href = "/login";
+  }
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -59,7 +64,7 @@ export function AvatarMenu({ size = 38 }: { size?: number }) {
             </Link>
           ))}
           <button
-            onClick={() => setOpen(false)}
+            onClick={signOut}
             className={cn(
               "flex h-[38px] w-full items-center gap-2.5 rounded-control px-3 text-left text-sm font-medium hover:bg-[var(--color-surface-muted)]",
               "text-[var(--color-kahel-500)]"

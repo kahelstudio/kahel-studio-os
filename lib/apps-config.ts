@@ -176,7 +176,7 @@ export const APPS: AppDef[] = [
       { id: "pre-production", label: "Pre-production", href: "/projects/pipeline?stage=pre" },
       { id: "production", label: "Production", href: "/projects/pipeline?stage=production" },
       { id: "post-production", label: "Post-production", href: "/projects/pipeline?stage=post" },
-      { id: "deliveries", label: "Delivery", href: "/projects/deliveries" },
+      { id: "deliveries", label: "Galleries", href: "/projects/deliveries" },
     ],
   },
   {
@@ -416,7 +416,6 @@ export const APPS: AppDef[] = [
       { id: "team", label: "Team & roles", href: "/settings/team" },
       { id: "billing", label: "Billing & BIR", href: "/settings/billing" },
       { id: "payroll", label: "Payroll", href: "/settings/payroll" },
-      { id: "audit", label: "Audit log", href: "/settings/audit" },
     ],
   },
   {

@@ -68,15 +68,20 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
       }
     }
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [open, onClose, filtered, activeIndex, router]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:items-start sm:p-4 sm:pt-[15dvh]" role="dialog" aria-modal="true" aria-label="Search and navigation">
       <div className="absolute inset-0 bg-[rgba(10,10,10,0.4)]" onClick={onClose} aria-hidden />
-      <div className="relative w-full max-w-lg rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-dialog)]">
+      <div className="relative max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-dialog)]">
         <div className="flex items-center gap-2.5 border-b border-[var(--color-border)] px-4 py-3.5">
           <Search className="h-4.5 w-4.5 text-[var(--color-text-muted)]" />
           <input
@@ -87,13 +92,13 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
               setActiveIndex(0);
             }}
             placeholder="Jump to an app or screen…"
-            className="flex-1 bg-transparent text-sm text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-muted)]"
+            className="min-w-0 flex-1 bg-transparent text-base text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-muted)] sm:text-sm"
           />
           <kbd className="rounded border border-[var(--color-border-strong)] px-1.5 py-0.5 text-[11px] font-medium text-[var(--color-text-muted)]">
             Esc
           </kbd>
         </div>
-        <div className="max-h-80 overflow-y-auto p-2">
+        <div className="max-h-[min(60dvh,28rem)] overflow-y-auto overscroll-contain p-2">
           {filtered.length === 0 && (
             <div className="px-3 py-8 text-center text-sm text-[var(--color-text-muted)]">
               No matches for &ldquo;{query}&rdquo;

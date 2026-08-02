@@ -74,11 +74,11 @@ function Section({ group, apps, indexOffset }: { group: LauncherGroup; apps: App
   return (
     <section className="mt-11 first:mt-3">
       <div className="mb-[22px] flex items-baseline justify-between border-b border-[var(--color-border)] pb-3">
-        <div className="flex items-baseline gap-3.5">
+        <div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3.5">
           <span className="font-display text-[13px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">
             {meta.title}
           </span>
-          <span className="text-[13px] text-[var(--color-text-muted)]">{meta.description}</span>
+          <span className="text-[13px] leading-5 text-[var(--color-text-muted)]">{meta.description}</span>
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -127,12 +127,12 @@ export function LauncherGrid() {
   const system = APPS.filter((a) => a.launcherGroup === "system");
 
   return (
-    <div className="px-12 pb-14 pt-6">
+    <div className="px-4 pb-8 pt-5 sm:px-6 sm:pb-10 sm:pt-6 xl:px-12 xl:pb-14">
       <div>
-        <div className="font-display text-[44px] font-semibold leading-[48px] tracking-[-0.025em] text-[var(--color-text-primary)]">
+        <div className="font-display text-[clamp(2rem,5vw,2.75rem)] font-semibold leading-[1.08] tracking-[-0.025em] text-[var(--color-text-primary)]">
           Good morning, Eusebio
         </div>
-        <div className="mt-2 text-base text-[var(--color-text-secondary)]">
+        <div className="mt-2 text-base leading-6 text-[var(--color-text-secondary)]">
           <span className="font-light">2 events and 3 studio sessions today</span>{" "}
           <span aria-hidden>|</span>{" "}
           <span className="font-medium text-[#FF5300]">₱71,000</span>{" "}
@@ -144,14 +144,14 @@ export function LauncherGrid() {
       <Section group="operations" apps={operations} indexOffset={live.length} />
       <Section group="system" apps={system} indexOffset={0} />
 
-      <div className="mt-14 flex items-center gap-6 border-t border-[var(--color-border)] pb-2 pt-[22px]">
+      <div className="mt-10 flex flex-col items-start gap-4 border-t border-[var(--color-border)] pb-2 pt-[22px] sm:mt-14 xl:flex-row xl:items-center xl:gap-6">
         <span className="inline-flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
           Kahel Studio v0.1
           <span className="inline-block h-3.5 w-px bg-[var(--color-border-strong)]" />
           <span className="h-2 w-2 rounded-full bg-[var(--color-success)]" />
           System Status
         </span>
-        <div className="ml-auto flex items-center gap-[22px]">
+        <div className="flex flex-wrap items-center gap-x-[22px] gap-y-3 xl:ml-auto">
           <Link
             href="/docs"
             className="flex items-center gap-1.5 text-[13px] font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-kahel-700)]"

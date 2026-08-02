@@ -1,0 +1,18 @@
+NEXTJS_ENV=development
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_replace_me
+SUPABASE_SECRET_KEY=sb_secret_replace_me
+KAHEL_STAFF_EMAIL=owner@example.com
+# Comma-separated allowlist. When set, this takes precedence over KAHEL_STAFF_EMAIL.
+KAHEL_STAFF_EMAILS=owner@example.com,staff@example.com
+AUTH_REDIRECT_URL=http://localhost:3000/reset-password
+CUSTOMER_AUTH_CALLBACK_URL=http://localhost:3000/auth/callback
+PUBLIC_SITE_URL=http://localhost:3000
+BOOKING_EMAIL_FROM=bookings@example.com
+BOOKING_EMAIL_REPLY_TO=hello@example.com
+KAHEL_AUTH_DISABLED=false
+TURNSTILE_SECRET=replace-with-your-private-secret-key
+# Google remains disabled until the Supabase Google provider and callback flow are configured.
+GOOGLE_AUTH_ENABLED=false
+# Server-only PayMongo test secret. Never prefix this variable with NEXT_PUBLIC_.
+PAYMONGO_SECRET_KEY=sk_test_replace_me

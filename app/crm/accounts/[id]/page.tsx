@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckCircle2, Lock } from "lucide-react";
+import { LoyaltyAdminPanel } from "@/components/loyalty/loyalty-admin-panel";
 import { ACCOUNTS_BY_ID, BOOKING_STATUS } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
 
@@ -212,6 +213,8 @@ export default async function CrmAccountDetailPage({
           </div>
         </div>
       </div>
+
+      <LoyaltyAdminPanel clientRef={account.id} />
     </div>
   );
 }

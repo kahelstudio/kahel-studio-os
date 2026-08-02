@@ -1,0 +1,10 @@
+KAHEL STUDIO
+
+New sign-in
+
+A new sign-in to your Kahel Studio account was detected.
+
+Review account security:
+{{ .SiteURL }}/profile/security
+
+If this was you, no action is needed. If you do not recognize this activity, contact your Kahel Studio administrator immediately and reset your password. This is a security notification; it does not contain a sign-in token.

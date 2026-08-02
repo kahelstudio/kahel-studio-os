@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kahel-media-processor",
+  "main": "workers/media-processor.ts",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "env": {
+    "staging": {
+      "name": "kahel-media-processor-staging",
+      "images": { "binding": "IMAGES" },
+      "r2_buckets": [
+        { "binding": "PUBLIC_MEDIA", "bucket_name": "kahel-public-media-staging" },
+        { "binding": "CLIENT_MEDIA", "bucket_name": "kahel-client-media-staging" }
+      ],
+      "send_email": [{ "name": "EMAIL" }],
+      "queues": {
+        "consumers": [{
+          "queue": "kahel-media-processing-staging",
+          "max_batch_size": 5,
+          "max_batch_timeout": 5,
+          "max_retries": 5,
+          "dead_letter_queue": "kahel-media-processing-staging-dlq"
+        }]
+      },
+      "vars": {
+        "APP_ENV": "staging",
+        "PUBLIC_SITE_URL": "https://kahel.studio",
+        "WATERMARK_R2_KEY": "system/kahelstudio-watermark.svg"
+      }
+    }
+  }
+}

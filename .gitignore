@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/.npm/
 /.pnp
 .pnp.*
 .yarn/*
@@ -32,6 +33,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+.dev.vars*
+!.dev.vars.example
 
 # vercel
 .vercel
@@ -39,3 +43,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local development database
+/data/*.db
+/.open-next/
+/.wrangler/
+/supabase/.temp/

@@ -1,0 +1,2 @@
+# This project ID is local-only; remote projects are selected by CI variables.
+project_id = "kahelstudio-os"

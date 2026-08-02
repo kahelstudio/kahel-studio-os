@@ -47,20 +47,20 @@ export default function BookingEmailsPage() {
   const internalTemplates = TRANSACTIONAL_EMAILS.filter((email) => email.audience === "Internal");
 
   return (
-    <div className="max-w-[1360px] p-10 pt-8">
+    <div className="max-w-[1360px] p-4 pt-6 sm:p-6 lg:p-8 xl:p-10 xl:pt-8">
       <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">Booking emails</h1>
       <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">{TRANSACTIONAL_EMAILS.length} transactional templates for client and studio notifications</p>
-      <div className="mt-6 grid grid-cols-[310px_minmax(0,1fr)] gap-5">
-        <aside className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-[310px_minmax(0,1fr)]">
+        <aside className="max-h-[360px] overflow-y-auto rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] xl:max-h-none xl:overflow-hidden">
           <TemplateGroup label="Client emails" templates={clientTemplates} selected={selected} onSelect={setSelected} />
           <TemplateGroup label="Internal alerts" templates={internalTemplates} selected={selected} onSelect={setSelected} />
         </aside>
-        <section className="min-w-0 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+        <section className="min-w-0 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:p-6">
           <div className="flex items-start justify-between gap-5">
             <div><div className="text-xs font-semibold uppercase tracking-[0.06em] text-[var(--color-text-muted)]">{selected.audience}</div><h2 className="mt-1 font-display text-2xl font-semibold">{selected.name}</h2><p className="mt-2 text-sm text-[var(--color-text-secondary)]">Trigger: {selected.trigger}</p></div>
             <div className="rounded-pill bg-[var(--color-kahel-50)] px-3 py-1.5 text-xs font-semibold text-[var(--color-kahel-700)]">Active template</div>
           </div>
-          <div className="mt-6 grid grid-cols-[minmax(0,1fr)_240px] gap-6">
+          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_240px]">
             <EmailPreview template={selected} />
             <div><h3 className="font-display text-sm font-semibold">Merge fields</h3><p className="mt-1 text-xs leading-5 text-[var(--color-text-secondary)]">Populate these values when sending this email.</p><div className="mt-3 flex flex-wrap gap-1.5">{selected.fields.map((field) => <code key={field} className="rounded bg-[var(--color-canvas)] px-2 py-1 text-[11px] text-[var(--color-text-secondary)]">{`{{ ${field} }}`}</code>)}</div></div>
           </div>
@@ -83,5 +83,5 @@ function EmailPreview({ template }: { template: TransactionalEmailTemplate }) {
     return previewValues[template.action] ?? `{{ ${template.action} }}`;
   }
 
-  return <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[#ECEAE4] p-5"><div className="mx-auto max-w-[620px] overflow-hidden rounded-xl bg-white shadow-sm"><div className={internal ? "bg-[var(--color-kahel-500)] px-8 py-6" : "bg-[#1A1916] px-8 py-6"}><Image src={internal ? "/kahelstudio-logo_b.svg" : "/kahelstudio-logo_w.svg"} alt="Kahel Studio" width={220} height={32} className="h-8 w-auto" /><div className={`mt-3 text-xs ${internal ? "text-white/75" : "text-[#B7B2A8]"}`}>Creating Visual Experiences</div></div><div className={`h-1 ${internal ? "bg-[#1A1916]" : "bg-[var(--color-kahel-500)]"}`} /><div className="p-8"><div className="text-xs text-[var(--color-text-muted)]">SUBJECT</div><div className="mt-1 text-sm font-semibold">{template.subject}</div><div className="mt-2 text-xs text-[var(--color-text-muted)]">{template.preheader}</div><h3 className="mt-6 font-display text-2xl font-semibold text-[#1A1916]">{template.heading}</h3><div className="mt-4 rounded-lg bg-[#F5F3EF] p-3"><div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#A8A69E]">Booking reference</div><div className="mt-1 text-sm font-bold text-[#1A1916]">{previewValues.booking_id}</div></div><p className="mt-5 text-sm leading-6 text-[#6B6860]">Hi <strong className="text-[#1A1916]">{previewValues.customer_name}</strong>, {template.message}</p>{(() => { const url = resolveAction(); return url ? <a href={url} className="mt-5 inline-block rounded-full bg-[var(--color-kahel-500)] px-5 py-3 text-sm font-bold text-white hover:bg-[var(--color-kahel-600)]">{template.actionLabel}</a> : null; })()}<div className="mt-7 border-t border-[#E4E2DC] pt-4 text-xs text-[#A8A69E]">Need help? <span className="text-[var(--color-kahel-500)]">booking@kahelstudio.com</span></div></div></div></div>;
+  return <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[#ECEAE4] p-5"><div className="mx-auto max-w-[620px] overflow-hidden rounded-xl bg-white shadow-sm"><div className={internal ? "bg-[var(--color-kahel-500)] px-8 py-6" : "bg-[#1A1916] px-8 py-6"}><Image src={internal ? "/kahelstudio-logo_b.svg" : "/kahelstudio-logo_w.svg"} alt="Kahel Studio" width={220} height={32} className="h-8 w-auto" /></div><div className={`h-1 ${internal ? "bg-[#1A1916]" : "bg-[var(--color-kahel-500)]"}`} /><div className="p-8"><div className="text-xs text-[var(--color-text-muted)]">SUBJECT</div><div className="mt-1 text-sm font-semibold">{template.subject}</div><div className="mt-2 text-xs text-[var(--color-text-muted)]">{template.preheader}</div><h3 className="mt-6 font-display text-2xl font-semibold text-[#1A1916]">{template.heading}</h3><div className="mt-4 rounded-lg bg-[#F5F3EF] p-3"><div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[#A8A69E]">Booking reference</div><div className="mt-1 text-sm font-bold text-[#1A1916]">{previewValues.booking_id}</div></div><p className="mt-5 text-sm leading-6 text-[#6B6860]">Hi <strong className="text-[#1A1916]">{previewValues.customer_name}</strong>, {template.message}</p>{(() => { const url = resolveAction(); return url ? <a href={url} className="mt-5 inline-block rounded-full bg-[var(--color-kahel-500)] px-5 py-3 text-sm font-bold text-white hover:bg-[var(--color-kahel-600)]">{template.actionLabel}</a> : null; })()}<div className="mt-7 border-t border-[#E4E2DC] pt-4 text-xs text-[#A8A69E]">Need help? <span className="text-[var(--color-kahel-500)]">booking@example.com</span></div></div></div></div>;
 }

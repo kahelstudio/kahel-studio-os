@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Set up your Kahel Studio account</title>
+  </head>
+  <body style="margin:0;background-color:#f5f3ef;color:#1d1d1f;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f5f3ef;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;background-color:#ffffff;border:1px solid #dedbd5;">
+            <tr>
+              <td style="padding:28px 32px;background-color:#171717;color:#ffffff;font-size:20px;font-weight:700;letter-spacing:0.4px;">KAHEL STUDIO</td>
+            </tr>
+            <tr>
+              <td style="padding:36px 32px;font-size:16px;line-height:1.6;">
+                <h1 style="margin:0 0 16px;color:#171717;font-size:28px;line-height:1.25;">You're invited</h1>
+                <p style="margin:0 0 20px;">You have been invited to Kahel Studio. Verify your email and choose a password to finish setting up your account.</p>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0;">
+                  <tr>
+                    <td bgcolor="#FF5300" style="background-color:#FF5300;border-radius:4px;">
+                       <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&amp;type=invite" style="display:inline-block;padding:14px 24px;color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;">Verify email and set password</a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:0 0 16px;color:#555555;">This invitation expires in 24 hours. If it expires, ask a Kahel Studio administrator for a new invitation.</p>
+                <p style="margin:0;color:#555555;">If you were not expecting this invitation, you can safely ignore this email. No account access is granted unless the secure link is used.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px;border-top:1px solid #e8e5df;color:#686868;font-size:14px;">Kahel Studio account security</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

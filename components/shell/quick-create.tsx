@@ -41,22 +41,27 @@ export function QuickCreateSheet({ open, onClose }: { open: boolean; onClose: ()
       if (e.key === "Escape") onClose();
     }
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
   }, [open, onClose]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
+    <div className="fixed inset-0 z-50 flex items-end justify-end sm:items-stretch" role="dialog" aria-modal="true" aria-label="Quick create">
       <div className="absolute inset-0 bg-[rgba(20,20,20,0.35)]" onClick={onClose} aria-hidden />
-      <div className="relative flex h-full w-full max-w-[440px] flex-col bg-[var(--color-surface)] shadow-[-20px_0_60px_-20px_rgba(10,10,10,0.4)]">
-        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-[22px]">
+      <div className="relative flex max-h-[92dvh] w-full max-w-[440px] flex-col overflow-y-auto rounded-t-modal bg-[var(--color-surface)] pb-[env(safe-area-inset-bottom)] shadow-[-20px_0_60px_-20px_rgba(10,10,10,0.4)] sm:h-full sm:max-h-none sm:rounded-none">
+        <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-4 sm:px-6 sm:py-[22px]">
           <h2 className="font-display text-xl font-semibold text-[var(--color-text-primary)]">
             Quick create
           </h2>
           <button
             onClick={onClose}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-control border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
+            className="flex h-11 w-11 items-center justify-center rounded-control border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
             aria-label="Close"
           >
             <X className="h-4 w-4" />

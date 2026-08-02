@@ -32,7 +32,7 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
   }
 
   return (
-    <div className="max-w-[1040px] p-10 pb-10 pt-6">
+    <div className="max-w-[1040px] p-4 pb-8 pt-5 sm:p-6 sm:pb-10 xl:p-10 xl:pt-6">
       <Link
         href="/booking/list"
         className="mb-4 inline-flex items-center gap-1.5 text-[13px] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
@@ -40,10 +40,10 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
         ‹ Bookings
       </Link>
 
-      <div className="flex items-center gap-4">
-        <div>
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+        <div className="min-w-0">
           <div className="text-sm text-[var(--color-text-secondary)]">{booking.ref}</div>
-          <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
+          <h1 className="font-display text-[clamp(1.5rem,6vw,1.75rem)] font-semibold leading-tight tracking-[-0.02em] text-[var(--color-text-primary)]">
             {booking.account} · {booking.type.split(" — ")[0].split(" / ")[0]}
           </h1>
         </div>
@@ -56,8 +56,8 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
       </div>
 
       {curIndex >= 0 && (
-        <div className="mt-5 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-[22px]">
-          <div className="flex items-center justify-between">
+        <div className="mt-5 overflow-x-auto rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-5 sm:px-6 sm:py-[22px]">
+          <div className="flex min-w-[680px] items-center justify-between">
             {BOOKING_STEPS_ORDER.map((step, i) => {
               const done = i < curIndex;
               const active = i === curIndex;
@@ -86,7 +86,7 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
         </div>
       )}
 
-      <div className="mt-5 grid grid-cols-[1.5fr_1fr] gap-5">
+      <div className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[1.5fr_1fr]">
         <div className="flex flex-col gap-4">
           {booking.sessionDetails && (
             <div className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-5">

@@ -40,26 +40,26 @@ export default function DocsPage() {
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-[var(--color-canvas)]">
-      <div className="flex h-[72px] shrink-0 items-center gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-12">
+      <div className="flex h-[64px] shrink-0 items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 sm:h-[72px] sm:px-6 lg:px-10 xl:px-12">
         <Link
-          href="/"
+          href="/os"
           className="flex items-center gap-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
         >
           ‹ All apps
         </Link>
         <span className="ml-auto text-xs tracking-[0.04em] text-[var(--color-text-muted)]">DOCS · v0.1</span>
-        <ThemeToggle size={40} />
+        <ThemeToggle size={44} />
       </div>
 
       <div className="flex min-h-0 flex-1">
-        <div className="w-[280px] shrink-0 overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+        <aside className="hidden w-[280px] shrink-0 overflow-y-auto border-r border-[var(--color-border)] bg-[var(--color-surface)] p-4 xl:block">
           <div className="relative mb-[18px]">
             <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[var(--color-text-muted)]" strokeWidth={1.75} />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search the docs…"
-              className="h-10 w-full rounded-control border border-[var(--color-border)] bg-[var(--color-canvas)] pl-[38px] pr-3.5 text-[13px] outline-none placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-kahel-500)]"
+              className="h-11 w-full rounded-control border border-[var(--color-border)] bg-[var(--color-canvas)] pl-[38px] pr-3.5 text-base outline-none placeholder:text-[var(--color-text-muted)] focus:border-[var(--color-kahel-500)] xl:text-sm"
             />
           </div>
           {(qEmpty ? DOCS_SECTIONS : filtered).map((d) => {
@@ -70,7 +70,7 @@ export default function DocsPage() {
                 key={d.key}
                 onClick={() => setActiveKey(d.key)}
                 className={cn(
-                  "mb-0.5 flex w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left hover:bg-[var(--color-surface-muted)]",
+                  "mb-0.5 flex min-h-11 w-full items-center gap-2.5 rounded-control px-2.5 py-2 text-left hover:bg-[var(--color-surface-muted)]",
                   on && "bg-[var(--color-surface-muted)]"
                 )}
               >
@@ -83,19 +83,25 @@ export default function DocsPage() {
               </button>
             );
           })}
-        </div>
+        </aside>
 
-        <div className="flex-1 overflow-y-auto px-14 pb-[72px] pt-12">
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 pb-10 pt-6 sm:px-6 sm:pb-14 sm:pt-8 lg:px-10 lg:pb-[72px] lg:pt-12 xl:px-14">
           <div className="mx-auto max-w-[720px]">
+            <label className="mb-6 block text-sm font-semibold text-[var(--color-text-secondary)] xl:hidden">
+              Documentation section
+              <select value={active.key} onChange={(event) => setActiveKey(event.target.value)} className="mt-2 h-12 w-full rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base text-[var(--color-text-primary)]">
+                {DOCS_SECTIONS.map((section) => <option key={section.key} value={section.key}>{section.title}</option>)}
+              </select>
+            </label>
             <div
               className="text-xs uppercase tracking-[0.06em]"
               style={{ color: ACCENTS[active.accent].text }}
             >
               {active.kicker}
             </div>
-            <div className="mt-2 font-display text-[36px] font-semibold leading-[42px] tracking-[-0.025em]">
+            <h1 className="mt-2 font-display text-[clamp(2rem,6vw,2.25rem)] font-semibold leading-[1.15] tracking-[-0.025em]">
               {active.title}
-            </div>
+            </h1>
             <div className="mt-2.5 text-base leading-6 text-[var(--color-text-secondary)]">{active.desc}</div>
             <div className="my-7 h-px bg-[var(--color-border)]" />
 
@@ -156,7 +162,7 @@ export default function DocsPage() {
               )}
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );

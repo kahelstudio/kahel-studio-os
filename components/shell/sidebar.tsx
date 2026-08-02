@@ -7,7 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import type { AppDef } from "@/lib/apps-config";
 import { cn } from "@/lib/utils";
 
-export function Sidebar({ app, onNavigate }: { app: AppDef; onNavigate?: () => void }) {
+export function Sidebar({ app, onNavigate, empty = false }: { app: AppDef; onNavigate?: () => void; empty?: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
@@ -28,6 +28,10 @@ export function Sidebar({ app, onNavigate }: { app: AppDef; onNavigate?: () => v
       window.localStorage.setItem(`ks_sidebar_expanded_${app.id}`, JSON.stringify(next));
       return next;
     });
+  }
+
+  if (empty) {
+    return <aside className="h-full w-60 shrink-0 border-r border-[var(--color-border)] bg-[var(--color-surface)]" />;
   }
 
   return (

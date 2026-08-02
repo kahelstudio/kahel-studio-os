@@ -14,12 +14,12 @@ const archivo = Archivo({
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Kahel Studio OS",
-  description: "Internal operations platform for Kahel Studio.",
+  title: "Kahel Studio",
+  description: "Photography studio in Tabaco City, Albay.",
 };
 
 export default function RootLayout({
