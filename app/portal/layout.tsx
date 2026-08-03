@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { CustomerSignOutButton } from "@/components/customer-auth/customer-sign-out-button";
 import { requireCustomerIdentity } from "@/lib/server/customer-auth";
 
@@ -17,7 +18,9 @@ const links = [
 ] as const;
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const customer = await requireCustomerIdentity("/portal");
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") ?? "/portal";
+  const customer = await requireCustomerIdentity(pathname);
   return <div className="min-h-dvh bg-canvas text-text-primary">
     <header className="border-b border-border bg-surface">
       <div className="mx-auto flex min-h-16 max-w-7xl items-center gap-5 px-4 sm:px-6">

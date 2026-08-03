@@ -21,13 +21,14 @@ export async function middleware(request: NextRequest) {
   }
 
   const { pathname, search } = request.nextUrl;
-  if (pathname !== "/login" && isPublicPath(pathname)) return NextResponse.next();
+  const withPathname = { request: { headers: new Headers({ ...Object.fromEntries(request.headers), "x-pathname": pathname }) } };
+  if (pathname !== "/login" && isPublicPath(pathname)) return NextResponse.next(withPathname);
   const authenticated = await hasValidSession(request);
 
   if (pathname === "/login") {
     return authenticated ? NextResponse.redirect(new URL("/os", request.url)) : NextResponse.next();
   }
-  if (isPublicPath(pathname) || authenticated) return NextResponse.next();
+  if (isPublicPath(pathname) || authenticated) return NextResponse.next(withPathname);
 
   const login = new URL("/login", request.url);
   const destination = `${pathname}${search}`;

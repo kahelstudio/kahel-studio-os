@@ -4,6 +4,7 @@ export default defineConfig({
   testDir: "./tests/visual",
   fullyParallel: true,
   reporter: "list",
+  snapshotPathTemplate: "{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}{ext}",
   use: {
     baseURL: "http://127.0.0.1:3000",
     screenshot: "only-on-failure",
