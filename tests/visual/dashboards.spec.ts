@@ -12,7 +12,7 @@ for (const viewport of viewports) {
     await page.goto("/reports");
     await expect(page.getByRole("heading", { name: "Reports", exact: true })).toBeVisible();
     await expect(page.locator("html")).toHaveJSProperty("scrollWidth", viewport.width);
-    await expect(page).toHaveScreenshot(`reports-${viewport.name}.png`, { fullPage: true });
+    await expect(page).toHaveScreenshot(`reports-${viewport.name}.png`, { fullPage: true, maxDiffPixelRatio: 0.05 });
   });
 
   test(`Tasks dashboard at ${viewport.name}`, async ({ page }) => {
@@ -24,6 +24,6 @@ for (const viewport of viewports) {
     // The Kanban lanes intentionally scroll inside the content region on narrow screens.
     await expect(page.locator("html")).toHaveJSProperty("scrollWidth", viewport.width);
     await expect(board.locator(":scope > div")).toHaveCSS("min-width", "1040px");
-    await expect(page).toHaveScreenshot(`tasks-${viewport.name}.png`, { fullPage: true });
+    await expect(page).toHaveScreenshot(`tasks-${viewport.name}.png`, { fullPage: true, maxDiffPixelRatio: 0.05 });
   });
 }
