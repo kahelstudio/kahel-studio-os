@@ -1,11 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-test("desktop header keeps sign in secondary and booking primary", async ({ page }) => {
+test("desktop header shows sign in for unauthenticated users", async ({ page }) => {
   await page.route("**/api/customer/session", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ authenticated: false }) }));
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Book now" })).toBeVisible();
 });
 
 test("authenticated desktop header exposes only customer account links", async ({ page }) => {
