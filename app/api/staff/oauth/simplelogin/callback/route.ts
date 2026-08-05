@@ -13,20 +13,18 @@ function loginRedirect(request: Request, error: string) {
   return NextResponse.redirect(url.toString());
 }
 
-function parsedStateCookie(request: Request): { state: string; redirectUri: string } | null {
+function stateCookie(request: Request): string | null {
   const raw = request.headers.get("cookie")?.split(";").map((p) => p.trim()).find((p) => p.startsWith(`${OAUTH_STATE_COOKIE}=`))?.slice(OAUTH_STATE_COOKIE.length + 1);
-  if (!raw) return null;
-  try { return JSON.parse(decodeURIComponent(raw)) as { state: string; redirectUri: string }; } catch { return null; }
+  return raw ? decodeURIComponent(raw) : null;
 }
 
-async function exchangeCodeForToken(code: string, redirectUri: string): Promise<string | null> {
+async function exchangeCodeForToken(code: string): Promise<string | null> {
   const response = await fetch(SIMPLELOGIN_TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       grant_type: "authorization_code",
       code,
-      redirect_uri: redirectUri,
       client_id: process.env.SIMPLELOGIN_CLIENT_ID!,
       client_secret: process.env.SIMPLELOGIN_CLIENT_SECRET!,
     }),
@@ -65,12 +63,12 @@ export async function GET(request: Request) {
     return loginRedirect(request, "SimpleLogin sign-in was cancelled.");
   }
 
-  const stored = parsedStateCookie(request);
-  if (!stored || stored.state !== returnedState) {
+  const storedState = stateCookie(request);
+  if (!storedState || storedState !== returnedState) {
     return loginRedirect(request, "OAuth session expired or invalid. Please try again.");
   }
 
-  const slToken = await exchangeCodeForToken(code, stored.redirectUri);
+  const slToken = await exchangeCodeForToken(code);
   if (!slToken) {
     return loginRedirect(request, "Unable to complete SimpleLogin sign-in. Please try again.");
   }
