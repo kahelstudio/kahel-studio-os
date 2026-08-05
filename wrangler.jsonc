@@ -22,7 +22,7 @@
         "producers": [{ "binding": "MEDIA_PROCESSING", "queue": "kahel-media-processing-staging" }]
       },
       "routes": [{ "pattern": "kahel.studio/*", "zone_name": "kahel.studio" }],
-      "vars": { "APP_ENV": "staging", "MEDIA_INFRASTRUCTURE_ENABLED": "true", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "true", "CLIENT_MEDIA_BUCKET_NAME": "kahel-client-media-staging", "AUTH_REDIRECT_URL": "https://kahel.studio/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "https://kahel.studio/auth/callback", "PUBLIC_SITE_URL": "https://kahel.studio", "SIMPLELOGIN_REDIRECT_URI": "https://kahel.studio/api/staff/oauth/simplelogin/callback" }
+      "vars": { "APP_ENV": "staging", "MEDIA_INFRASTRUCTURE_ENABLED": "true", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "true", "CLIENT_MEDIA_BUCKET_NAME": "kahel-client-media-staging", "AUTH_REDIRECT_URL": "https://kahel.studio/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "https://kahel.studio/auth/callback", "PUBLIC_SITE_URL": "https://kahel.studio" }
     },
     "production": {
       "name": "kahelstudio-os-production",
