@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   }
 
   const state = crypto.randomUUID();
-  const redirectUri = new URL("/api/staff/oauth/simplelogin/callback", request.url).toString();
+  const redirectUri = process.env.SIMPLELOGIN_REDIRECT_URI ?? new URL("/api/staff/oauth/simplelogin/callback", request.url).toString();
 
   const authUrl = new URL(SIMPLELOGIN_AUTHORIZE_URL);
   authUrl.searchParams.set("client_id", process.env.SIMPLELOGIN_CLIENT_ID!);

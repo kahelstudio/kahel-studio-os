@@ -18,5 +18,8 @@ GOOGLE_AUTH_ENABLED=false
 # Redirect URI to register: https://your-domain.com/api/staff/oauth/simplelogin/callback
 SIMPLELOGIN_CLIENT_ID=replace-with-your-client-id
 SIMPLELOGIN_CLIENT_SECRET=replace-with-your-client-secret
+# Override the redirect URI sent to SimpleLogin — required for local HTTPS dev.
+# Leave unset in staging/production (it is derived from the request URL).
+# SIMPLELOGIN_REDIRECT_URI=https://localhost:3000/api/staff/oauth/simplelogin/callback
 # Server-only PayMongo test secret. Never prefix this variable with NEXT_PUBLIC_.
 PAYMONGO_SECRET_KEY=sk_test_replace_me
