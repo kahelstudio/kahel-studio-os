@@ -49,3 +49,5 @@ next-env.d.ts
 /.open-next/
 /.wrangler/
 /supabase/.temp/
+
+certificates

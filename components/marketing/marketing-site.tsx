@@ -52,15 +52,15 @@ const eventPackages: Package[] = [
 ];
 
 const gallery = [
-  { ref: "34A", category: "Weddings", label: "J & R", place: "Antipolo", position: "50% 18%" },
-  { ref: "12", category: "Prenup", label: "A & M", place: "La Mesa", position: "66% 30%" },
-  { ref: "07", category: "Debut", label: "Bea, 18", place: "Makati", position: "34% 33%" },
-  { ref: "21B", category: "Family", label: "The Cruz", place: "Tagaytay", position: "74% 42%" },
-  { ref: "29", category: "Weddings", label: "K & P", place: "Batangas", position: "22% 46%" },
-  { ref: "03", category: "Prenup", label: "D & L", place: "Baler", position: "62% 56%" },
-  { ref: "16", category: "Brand", label: "Alon Co.", place: "Studio", position: "38% 66%" },
-  { ref: "41", category: "Family", label: "The Reyes", place: "Rizal", position: "75% 69%" },
-  { ref: "55", category: "Weddings", label: "M & N", place: "Tayabas", position: "30% 25%" },
+  { ref: "34A", category: "Weddings", label: "J & R", place: "Antipolo", position: "50% 18%", src: "/Duo_De Luna Edmon_7.jpg" },
+  { ref: "12", category: "Family", label: "A & M", place: "La Mesa", position: "66% 30%", src: "/Duo_Gus Borja_12.jpg" },
+  { ref: "07", category: "Debut", label: "Bea, 18", place: "Makati", position: "30% 20%", src: "/Event_Takashi Zhander_176.jpg" },
+  { ref: "21B", category: "Family", label: "The Cruz", place: "Tagaytay", position: "74% 42%", src: "/Mini Session_Gerladine Ceneta Pongan_5.jpg" },
+  { ref: "29", category: "Brand", label: "K & P", place: "Batangas", position: "45% 25%", src: "/IMG_ 107.jpg" },
+  { ref: "03", category: "Brand", label: "D & L", place: "Baler", position: "50% 18%", src: "/Solo_Mariella_4.jpg" },
+  { ref: "16", category: "Brand", label: "Alon Co.", place: "Studio", position: "38% 66%", src: "/Solo_Abbiyaah Gail_10.jpg" },
+  { ref: "41", category: "Brand", label: "The Reyes", place: "Rizal", position: "75% 69%", src: "/BU Nursing_3.jpg" },
+  { ref: "55", category: "Brand", label: "M & N", place: "Tayabas", position: "22% 46%", src: "/Valentines_Duo_Marycris Celendro_10.jpg" },
 ];
 
 const categories = ["All", "Weddings", "Prenup", "Debut", "Brand", "Family"];
@@ -122,7 +122,7 @@ function Gallery({ filter, home = false }: { filter: string; home?: boolean }) {
   const frames = (filter === "All" ? gallery : gallery.filter((frame) => frame.category === filter)).slice(0, home ? 9 : undefined);
   if (!frames.length) return <div className={styles.emptyState}><div className={styles.filmIcon} /><h3>No frames in this roll yet.</h3><p>New work from this category is still developing. View the full sheet.</p></div>;
   return <div className={`${styles.gallery} ${home ? styles.homeGallery : ""}`}>{frames.map((frame, index) => <figure key={frame.ref} className={home && (index === 0 || index === 5 || index === 8) ? styles.wideFrame : ""}>
-    <Photo alt={`${frame.label}, ${frame.category} photography in ${frame.place}`} position={frame.position} />
+    <Photo alt={`${frame.label}, ${frame.category} photography in ${frame.place}`} src={frame.src} position={frame.position} />
     <span className={styles.corner} />
     <span className={styles.frameRef}>{frame.ref}</span>
     <figcaption><span>{frame.label}</span><span>{home ? frame.category : frame.place}</span></figcaption>
