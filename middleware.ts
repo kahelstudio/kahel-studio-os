@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { hasStaffSession } from "@/lib/server/staff-auth";
 
-const PUBLIC_PATHS = ["/", "/terms", "/privacy", "/health-safety", "/login", "/reset-password", "/sign-in", "/sign-up", "/forgot-password", "/set-password", "/auth", "/portal", "/media", "/images", "/api/customer", "/api/paymongo/checkout", "/api/staff/session", "/api/staff/password-reset", "/client-portal"];
+const PUBLIC_PATHS = ["/", "/terms", "/privacy", "/health-safety", "/login", "/reset-password", "/sign-in", "/sign-up", "/forgot-password", "/set-password", "/auth", "/portal", "/media", "/images", "/api/customer", "/api/paymongo/checkout", "/api/staff/session", "/api/staff/password-reset", "/api/staff/oauth", "/client-portal"];
 
 async function hasValidSession(request: NextRequest) {
   return hasStaffSession(request);

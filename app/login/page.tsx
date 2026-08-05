@@ -21,6 +21,7 @@ type LoginConfig = {
   turnstileRequired: boolean;
   turnstileConfigured: boolean;
   googleConfigured: boolean;
+  simpleLoginConfigured: boolean;
 };
 
 const TURNSTILE_SITE_KEY = "0x4AAAAAAEDc-FdHAx_QAhyZ";
@@ -47,6 +48,15 @@ function GoogleMark() {
   );
 }
 
+function SimpleLoginMark() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none">
+      <path d="M12 2L3 6.5V12c0 4.97 3.8 9.63 9 10.93C17.2 21.63 21 16.97 21 12V6.5L12 2Z" fill="#E8521A" />
+      <path d="M8.5 9.5h7M8.5 12h5M8.5 14.5h4" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -59,6 +69,11 @@ export default function LoginPage() {
   const [turnstileToken, setTurnstileToken] = useState("");
   const turnstileContainer = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
+
+  useEffect(() => {
+    const urlError = new URLSearchParams(window.location.search).get("error");
+    if (urlError) setError(decodeURIComponent(urlError).replace(/_/g, " "));
+  }, []);
 
   useEffect(() => {
     fetch("/api/staff/session")
@@ -161,6 +176,14 @@ export default function LoginPage() {
     setError(config?.googleConfigured ? "Google sign-in is not available yet." : "Google sign-in needs to be configured by your administrator.");
   }
 
+  function continueWithSimpleLogin() {
+    if (!config?.simpleLoginConfigured) {
+      setError("SimpleLogin sign-in needs to be configured by your administrator.");
+      return;
+    }
+    window.location.href = "/api/staff/oauth/simplelogin";
+  }
+
   return (
     <main className="min-h-dvh bg-[#eeece8] p-3 text-[#171513] sm:p-6 lg:p-8">
       {config?.turnstileRequired && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="afterInteractive" onLoad={() => setScriptReady(true)} />}
@@ -212,7 +235,10 @@ export default function LoginPage() {
             </form>
 
             <div className="my-7 flex items-center gap-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#aaa49e] before:h-px before:flex-1 before:bg-[#e5e1dd] after:h-px after:flex-1 after:bg-[#e5e1dd]">or</div>
-            <button type="button" onClick={continueWithGoogle} className="flex h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#d8d4cf] bg-[#faf9f7] font-display text-sm font-semibold transition hover:border-[#aaa49e] hover:bg-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#e5e1dd]"><GoogleMark />Continue with Google</button>
+            <div className="flex flex-col gap-3">
+              <button type="button" onClick={continueWithGoogle} className="flex h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#d8d4cf] bg-[#faf9f7] font-display text-sm font-semibold transition hover:border-[#aaa49e] hover:bg-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#e5e1dd]"><GoogleMark />Continue with Google</button>
+              <button type="button" onClick={continueWithSimpleLogin} className="flex h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#d8d4cf] bg-[#faf9f7] font-display text-sm font-semibold transition hover:border-[#aaa49e] hover:bg-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#e5e1dd]"><SimpleLoginMark />Continue with SimpleLogin</button>
+            </div>
             <p className="mt-8 text-center text-xs leading-5 text-[#8a847e]">Need staff access? Contact your Kahel Studio administrator.</p>
           </div>
         </div>

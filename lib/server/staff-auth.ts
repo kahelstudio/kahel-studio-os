@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "./supabase-admin";
 
@@ -116,6 +118,29 @@ export async function updateStaffPassword(accessToken: string, password: string)
   if (error || !isStaffEmail(data.user?.email, settings)) return false;
   const { error: updateError } = await supabase.auth.updateUser({ password });
   return !updateError;
+}
+
+export function simpleLoginConfigured() {
+  return Boolean(process.env.SIMPLELOGIN_CLIENT_ID && process.env.SIMPLELOGIN_CLIENT_SECRET);
+}
+
+export async function signInStaffWithVerifiedEmail(email: string) {
+  const settings = config();
+  if (!settings || !isStaffEmail(email, settings)) return null;
+  const admin = getSupabaseAdmin();
+  const normalized = email.trim().toLowerCase();
+  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+    type: "magiclink",
+    email: normalized,
+  });
+  if (linkError || !linkData?.properties?.hashed_token) return null;
+  const { data: sessionData, error: sessionError } = await client(settings).auth.verifyOtp({
+    token_hash: linkData.properties.hashed_token,
+    type: "magiclink",
+  });
+  if (sessionError || !sessionData.session) return null;
+  if (!isStaffEmail(sessionData.session.user?.email, settings)) return null;
+  return sessionData.session;
 }
 
 export async function hasStaffSession(request: Request) {

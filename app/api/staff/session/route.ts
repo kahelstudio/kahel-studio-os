@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { hasStaffSession, signInStaff, staffAuthConfigured, STAFF_SESSION_COOKIE } from "@/lib/server/staff-auth";
+import { hasStaffSession, signInStaff, staffAuthConfigured, simpleLoginConfigured, STAFF_SESSION_COOKIE } from "@/lib/server/staff-auth";
 import { turnstileConfigured, turnstileRequired, verifyTurnstile } from "@/lib/server/turnstile";
 
 export const runtime = "nodejs";
@@ -11,6 +11,7 @@ export async function GET(request: Request) {
     turnstileRequired: turnstileRequired(),
     turnstileConfigured: turnstileConfigured(),
     googleConfigured: process.env.GOOGLE_AUTH_ENABLED === "true",
+    simpleLoginConfigured: simpleLoginConfigured(),
   });
 }
 
