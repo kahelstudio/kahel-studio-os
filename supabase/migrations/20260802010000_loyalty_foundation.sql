@@ -694,11 +694,12 @@ begin
   insert into public.bookings (
     client_id, client_profile_id, idempotency_key, reference, service_type, service_id,
     service_date, service_time, location, payment_type, subtotal_amount_php,
-    total_amount_php, paid_amount_php, status, payment_status, kind, reward_id
+    total_amount_php, paid_amount_php, status, payment_status, kind, reward_id, request_fingerprint
   ) values (
     requested_client_id, requested_profile_id, btrim(requested_idempotency_key), btrim(requested_reference),
     service_name, reward.service_id, requested_date, requested_time, btrim(requested_location),
-    'loyalty_reward', 0, 0, 0, 'inquiry', 'paid', 'reward', reward.id
+    'loyalty_reward', 0, 0, 0, 'inquiry', 'paid', 'reward', reward.id,
+    encode(sha256((requested_idempotency_key || requested_reference)::bytea), 'hex')
   ) returning * into result;
   update public.loyalty_rewards set status = 'reserved', reserved_at = now(), updated_at = now()
   where id = reward.id;

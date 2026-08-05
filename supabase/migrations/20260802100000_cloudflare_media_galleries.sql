@@ -163,7 +163,7 @@ create table public.gallery_selections (
   gallery_asset_id uuid not null,
   client_id uuid not null,
   client_profile_id uuid not null,
-  submission_status text not null default 'draft' check (submission_status in ('draft', 'submitted')),
+  submission_status text not null default 'draft',
   note text check (note is null or length(note) <= 2000),
   submitted_at timestamptz,
   created_at timestamptz not null default now(),
@@ -175,7 +175,8 @@ create table public.gallery_selections (
     references public.gallery_assets(id, gallery_id, client_id) on delete cascade,
   constraint gallery_selections_profile_client_fkey foreign key (client_profile_id, client_id)
     references public.client_profiles(id, client_id) on delete cascade,
-  constraint gallery_selections_submission_check check (
+  constraint gallery_selections_submission_check check (submission_status in ('draft', 'submitted')),
+  constraint gallery_selections_submitted_at_check check (
     (submission_status = 'draft' and submitted_at is null)
     or (submission_status = 'submitted' and submitted_at is not null)
   )

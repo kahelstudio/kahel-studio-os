@@ -137,7 +137,7 @@ create table if not exists public.customer_messages (
   client_id uuid not null references public.clients(id) on delete restrict,
   sender_profile_id uuid,
   project_id uuid,
-  sender text not null check (sender in ('customer', 'staff', 'system')),
+  sender text not null,
   body text not null check (length(btrim(body)) between 1 and 10000),
   read_at timestamptz,
   created_at timestamptz not null default now(),
@@ -146,7 +146,8 @@ create table if not exists public.customer_messages (
   constraint customer_messages_project_client_fkey foreign key (project_id, client_id)
     references public.projects(id, client_id) on delete restrict,
   constraint customer_messages_sender_check check (
-    (sender = 'customer' and sender_profile_id is not null) or sender <> 'customer'
+    sender in ('customer', 'staff', 'system') and
+    ((sender = 'customer' and sender_profile_id is not null) or sender <> 'customer')
   )
 );
 
