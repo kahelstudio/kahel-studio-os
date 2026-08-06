@@ -13,6 +13,10 @@ export function turnstileRequired() {
   return Boolean(process.env.TURNSTILE_SECRET);
 }
 
+export function turnstileSiteKey() {
+  return process.env.TURNSTILE_SITE_KEY ?? "";
+}
+
 export async function verifyTurnstile(request: Request, token: string) {
   if (!turnstileRequired()) return true;
   const secret = process.env.TURNSTILE_SECRET;

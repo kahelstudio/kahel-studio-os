@@ -20,11 +20,9 @@ declare global {
 type LoginConfig = {
   turnstileRequired: boolean;
   turnstileConfigured: boolean;
+  turnstileSiteKey: string;
   googleConfigured: boolean;
-  simpleLoginConfigured: boolean;
 };
-
-const TURNSTILE_SITE_KEY = "0x4AAAAAAEDc-FdHAx_QAhyZ";
 
 function safeStaffRedirect(raw: string | null) {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/os";
@@ -48,15 +46,6 @@ function GoogleMark() {
   );
 }
 
-function SimpleLoginMark() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none">
-      <path d="M12 2L3 6.5V12c0 4.97 3.8 9.63 9 10.93C17.2 21.63 21 16.97 21 12V6.5L12 2Z" fill="#E8521A" />
-      <path d="M8.5 9.5h7M8.5 12h5M8.5 14.5h4" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,7 +61,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     const urlError = new URLSearchParams(window.location.search).get("error");
-    if (urlError) setError(decodeURIComponent(urlError).replace(/_/g, " "));
+    if (urlError) queueMicrotask(() => setError(decodeURIComponent(urlError).replace(/_/g, " ")));
   }, []);
 
   useEffect(() => {
@@ -83,9 +72,9 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    if (!scriptReady || !config?.turnstileRequired || !turnstileContainer.current || !window.turnstile || widgetId.current) return;
+    if (!scriptReady || !config?.turnstileRequired || !config.turnstileSiteKey || !turnstileContainer.current || !window.turnstile || widgetId.current) return;
     widgetId.current = window.turnstile.render(turnstileContainer.current, {
-      sitekey: TURNSTILE_SITE_KEY,
+      sitekey: config.turnstileSiteKey,
       action: "turnstile-spin-v2",
       appearance: "always",
       size: "flexible",
@@ -104,7 +93,7 @@ export default function LoginPage() {
       if (widgetId.current && window.turnstile) window.turnstile.remove(widgetId.current);
       widgetId.current = null;
     };
-  }, [config?.turnstileRequired, scriptReady]);
+  }, [config?.turnstileRequired, config?.turnstileSiteKey, scriptReady]);
 
   function resetTurnstile() {
     setTurnstileToken("");
@@ -173,15 +162,8 @@ export default function LoginPage() {
   }
 
   function continueWithGoogle() {
-    setError(config?.googleConfigured ? "Google sign-in is not available yet." : "Google sign-in needs to be configured by your administrator.");
-  }
-
-  function continueWithSimpleLogin() {
-    if (!config?.simpleLoginConfigured) {
-      setError("SimpleLogin sign-in needs to be configured by your administrator.");
-      return;
-    }
-    window.location.href = "/api/staff/oauth/simplelogin";
+    if (config?.googleConfigured) window.location.href = "/api/staff/oauth/google";
+    else setError("Google sign-in needs to be configured by your administrator.");
   }
 
   return (
@@ -226,7 +208,7 @@ export default function LoginPage() {
                 <button type="button" onClick={requestPasswordReset} disabled={submitting} className="text-[13px] font-semibold text-[var(--color-kahel-600)] transition hover:text-[var(--color-kahel-700)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-kahel-100)] disabled:opacity-55">Forgot password?</button>
               </div>
 
-              <div ref={turnstileContainer} className="cf-turnstile mt-5 min-h-[1px] w-full" data-sitekey={TURNSTILE_SITE_KEY} data-action="turnstile-spin-v2" />
+              <div ref={turnstileContainer} className="cf-turnstile mt-5 min-h-[1px] w-full" data-sitekey={config?.turnstileSiteKey ?? ""} data-action="turnstile-spin-v2" />
               {config?.turnstileRequired && !config.turnstileConfigured && <p className="mt-4 rounded-[10px] bg-[#fff3ed] px-4 py-3 text-sm font-medium text-[#9b3508]" role="alert">Security verification is not configured.</p>}
               {error && <p className="mt-4 text-sm font-medium text-[var(--color-danger-text)]" role="alert">{error}</p>}
               {notice && <p className="mt-4 text-sm font-medium text-[var(--color-success-text)]" role="status">{notice}</p>}
@@ -237,7 +219,6 @@ export default function LoginPage() {
             <div className="my-7 flex items-center gap-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#aaa49e] before:h-px before:flex-1 before:bg-[#e5e1dd] after:h-px after:flex-1 after:bg-[#e5e1dd]">or</div>
             <div className="flex flex-col gap-3">
               <button type="button" onClick={continueWithGoogle} className="flex h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#d8d4cf] bg-[#faf9f7] font-display text-sm font-semibold transition hover:border-[#aaa49e] hover:bg-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#e5e1dd]"><GoogleMark />Continue with Google</button>
-              <button type="button" onClick={continueWithSimpleLogin} className="flex h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#d8d4cf] bg-[#faf9f7] font-display text-sm font-semibold transition hover:border-[#aaa49e] hover:bg-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#e5e1dd]"><SimpleLoginMark />Continue with SimpleLogin</button>
             </div>
             <p className="mt-8 text-center text-xs leading-5 text-[#8a847e]">Need staff access? Contact your Kahel Studio administrator.</p>
           </div>

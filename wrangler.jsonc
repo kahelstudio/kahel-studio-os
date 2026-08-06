@@ -22,14 +22,14 @@
         "producers": [{ "binding": "MEDIA_PROCESSING", "queue": "kahel-media-processing-staging" }]
       },
       "routes": [{ "pattern": "kahel.studio/*", "zone_name": "kahel.studio" }],
-      "vars": { "APP_ENV": "staging", "MEDIA_INFRASTRUCTURE_ENABLED": "true", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "true", "CLIENT_MEDIA_BUCKET_NAME": "kahel-client-media-staging", "AUTH_REDIRECT_URL": "https://kahel.studio/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "https://kahel.studio/auth/callback", "PUBLIC_SITE_URL": "https://kahel.studio" }
+      "vars": { "APP_ENV": "staging", "MEDIA_INFRASTRUCTURE_ENABLED": "true", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "true", "PAYMONGO_SECRET_KEY": "sk_test_VskPBpon6TKgxAC1T8TVhDbL", "PAYMONGO_WEBHOOK_SECRET": "whsk_uXX7xfHqbCNhH19CbdgmJuY9", "CLIENT_MEDIA_BUCKET_NAME": "kahel-client-media-staging", "AUTH_REDIRECT_URL": "https://kahel.studio/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "https://kahel.studio/auth/callback", "PUBLIC_SITE_URL": "https://kahel.studio", "TURNSTILE_SITE_KEY": "0x4AAAAAAEDc-FdHAx_QAhyZ" }
     },
     "production": {
       "name": "kahelstudio-os-production",
       "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "kahelstudio-os-production" }],
       "send_email": [{ "name": "EMAIL" }],
       "routes": [{ "pattern": "kahelstudio.com", "custom_domain": true }],
-      "vars": { "APP_ENV": "production", "MEDIA_INFRASTRUCTURE_ENABLED": "false", "KAHEL_AUTH_DISABLED": "false", "AUTH_REDIRECT_URL": "https://kahelstudio.com/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "https://kahelstudio.com/auth/callback", "PUBLIC_SITE_URL": "https://kahelstudio.com" }
+      "vars": { "APP_ENV": "production", "MEDIA_INFRASTRUCTURE_ENABLED": "false", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "false", "AUTH_REDIRECT_URL": "https://kahelstudio.com/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "https://kahelstudio.com/auth/callback", "PUBLIC_SITE_URL": "https://kahelstudio.com", "TURNSTILE_SITE_KEY": "REPLACE_WITH_KAHELSTUDIO_COM_SITE_KEY" }
     }
   }
 }
