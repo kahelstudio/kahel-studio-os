@@ -162,8 +162,7 @@ export default function LoginPage() {
   }
 
   function continueWithGoogle() {
-    if (config?.googleConfigured) window.location.href = "/api/staff/oauth/google";
-    else setError("Google sign-in needs to be configured by your administrator.");
+    window.location.href = "/api/staff/oauth/google";
   }
 
   return (
@@ -173,7 +172,7 @@ export default function LoginPage() {
         <aside className="relative hidden min-h-[720px] overflow-hidden bg-[#211c19] lg:block">
           <Image src="/Solo_Liza Burzon Bino_9A.jpg" alt="Portrait photographed at Kahel Studio" fill sizes="(min-width: 1024px) 42vw, 0px" className="object-cover object-[52%_40%]" priority />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(17,13,11,0.28)_0%,transparent_38%,rgba(17,13,11,0.84)_100%)]" />
-          <Image src="/kahelstudio-logo_w.svg" alt="Kahel Studio" width={190} height={29} className="absolute left-10 top-10 h-7 w-auto xl:left-12 xl:top-12" priority />
+          <a href="https://kahelstudio.com" className="absolute left-10 top-10 xl:left-12 xl:top-12"><Image src="/kahelstudio-logo_w.svg" alt="Kahel Studio" width={190} height={29} className="h-7 w-auto" priority /></a>
           <div className="absolute inset-x-10 bottom-10 text-white xl:inset-x-12 xl:bottom-12">
             <p className="max-w-[470px] font-display text-[32px] font-semibold leading-[1.16] tracking-[-0.03em] xl:text-[40px]">Every shoot, booking, and delivery in one place.</p>
             <div className="mt-6 h-1 w-12 rounded-full bg-[var(--color-kahel-500)]" />
@@ -183,7 +182,7 @@ export default function LoginPage() {
 
         <div className="flex min-h-[680px] items-center justify-center px-6 py-12 sm:px-12 lg:min-h-0 lg:px-16 xl:px-24">
           <div className="w-full max-w-[470px]">
-            <Image src="/kahelstudio-logo_b.svg" alt="Kahel Studio" width={180} height={27} className="mb-12 h-7 w-auto lg:hidden" priority />
+            <a href="https://kahelstudio.com"><Image src="/kahelstudio-logo_b.svg" alt="Kahel Studio" width={180} height={27} className="mb-12 h-7 w-auto lg:hidden" priority /></a>
             <div className="mb-9 text-center">
               <p className="mb-3 font-display text-xs font-semibold uppercase tracking-[0.22em] text-[var(--color-kahel-600)]">Studio operations</p>
               <h1 className="font-display text-[34px] font-semibold leading-tight tracking-[-0.035em] sm:text-[40px]">Welcome back</h1>
@@ -216,10 +215,12 @@ export default function LoginPage() {
               <button disabled={submitting || !config || (config.turnstileRequired && !config.turnstileConfigured)} className="mt-6 h-13 w-full rounded-[10px] bg-[var(--color-kahel-500)] font-display text-sm font-semibold text-white transition hover:bg-[var(--color-kahel-600)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-kahel-200)] disabled:cursor-not-allowed disabled:opacity-55">{submitting ? "Signing in..." : "Sign in"}</button>
             </form>
 
-            <div className="my-7 flex items-center gap-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#aaa49e] before:h-px before:flex-1 before:bg-[#e5e1dd] after:h-px after:flex-1 after:bg-[#e5e1dd]">or</div>
-            <div className="flex flex-col gap-3">
-              <button type="button" onClick={continueWithGoogle} className="flex h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#d8d4cf] bg-[#faf9f7] font-display text-sm font-semibold transition hover:border-[#aaa49e] hover:bg-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#e5e1dd]"><GoogleMark />Continue with Google</button>
-            </div>
+            {config?.googleConfigured && (
+              <><div className="my-7 flex items-center gap-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#aaa49e] before:h-px before:flex-1 before:bg-[#e5e1dd] after:h-px after:flex-1 after:bg-[#e5e1dd]">or</div>
+              <div className="flex flex-col gap-3">
+                <button type="button" onClick={continueWithGoogle} className="flex h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#d8d4cf] bg-[#faf9f7] font-display text-sm font-semibold transition hover:border-[#aaa49e] hover:bg-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#e5e1dd]"><GoogleMark />Continue with Google</button>
+              </div></>
+            )}
             <p className="mt-8 text-center text-xs leading-5 text-[#8a847e]">Need staff access? Contact your Kahel Studio administrator.</p>
           </div>
         </div>
