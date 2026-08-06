@@ -20,12 +20,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(secureUrl, 308);
   }
 
-  if (request.nextUrl.hostname === "www.kahelstudio.com") {
-    const canonical = request.nextUrl.clone();
-    canonical.hostname = "kahelstudio.com";
-    return NextResponse.redirect(canonical, 301);
-  }
-
   const { pathname, search } = request.nextUrl;
   const withPathname = { request: { headers: new Headers({ ...Object.fromEntries(request.headers), "x-pathname": pathname }) } };
   if (pathname !== "/login" && isPublicPath(pathname)) return NextResponse.next(withPathname);
