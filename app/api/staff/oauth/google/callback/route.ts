@@ -4,6 +4,8 @@ import { signInStaffWithVerifiedEmail, STAFF_SESSION_COOKIE } from "@/lib/server
 
 export const runtime = "nodejs";
 
+const IS_PRODUCTION = (process.env.APP_ENV as string) === "production" || process.env.NODE_ENV === "production";
+
 export async function GET(request: Request) {
   const { origin, searchParams } = new URL(request.url);
   const code = searchParams.get("code");
@@ -32,7 +34,7 @@ export async function GET(request: Request) {
   response.cookies.set(STAFF_SESSION_COOKIE, session.access_token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: IS_PRODUCTION,
     maxAge: session.expires_in,
     path: "/",
   });

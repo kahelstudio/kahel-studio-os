@@ -4,6 +4,8 @@ import { turnstileConfigured, turnstileRequired, turnstileSiteKey, verifyTurnsti
 
 export const runtime = "nodejs";
 
+const IS_PRODUCTION = (process.env.APP_ENV as string) === "production" || process.env.NODE_ENV === "production";
+
 export async function GET(request: Request) {
   return NextResponse.json({
     authenticated: await hasStaffSession(request),
@@ -24,12 +26,12 @@ export async function POST(request: Request) {
   const session = await signInStaff(email, password);
   if (!session) return NextResponse.json({ error: staffAuthConfigured() ? "Invalid email or password." : "Staff authentication is not configured." }, { status: staffAuthConfigured() ? 401 : 503 });
   const response = NextResponse.json({ authenticated: true });
-  response.cookies.set(STAFF_SESSION_COOKIE, session.access_token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: session.expires_in, path: "/" });
+  response.cookies.set(STAFF_SESSION_COOKIE, session.access_token, { httpOnly: true, sameSite: "lax", secure: IS_PRODUCTION, maxAge: session.expires_in, path: "/" });
   return response;
 }
 
 export async function DELETE() {
   const response = NextResponse.json({ authenticated: false });
-  response.cookies.set(STAFF_SESSION_COOKIE, "", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: 0, path: "/" });
+  response.cookies.set(STAFF_SESSION_COOKIE, "", { httpOnly: true, sameSite: "lax", secure: IS_PRODUCTION, maxAge: 0, path: "/" });
   return response;
 }

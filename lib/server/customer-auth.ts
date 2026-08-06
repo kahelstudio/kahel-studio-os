@@ -32,10 +32,12 @@ type CustomerProfile = {
   email_verified_at: string | null;
 };
 
+const IS_PRODUCTION = (process.env.APP_ENV as string) === "production" || process.env.NODE_ENV === "production";
+
 const cookieOptions = {
   httpOnly: true,
   sameSite: "lax" as const,
-  secure: process.env.NODE_ENV === "production",
+  secure: IS_PRODUCTION,
   path: "/",
   priority: "high" as const,
 };
@@ -68,7 +70,7 @@ export function isSafePortalPath(value: string | null | undefined) {
 
 export function hasTrustedOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  if (!origin) return process.env.NODE_ENV !== "production";
+  if (!origin) return !IS_PRODUCTION;
   return origin === new URL(request.url).origin;
 }
 
@@ -76,7 +78,7 @@ export function customerCallbackUrl() {
   const configured = process.env.CUSTOMER_AUTH_CALLBACK_URL;
   if (!configured) throw new Error("Customer Auth callback is not configured.");
   const url = new URL(configured);
-  if (process.env.NODE_ENV === "production" && url.protocol !== "https:") throw new Error("Customer Auth callback must use HTTPS.");
+  if (IS_PRODUCTION && url.protocol !== "https:") throw new Error("Customer Auth callback must use HTTPS.");
   return url.toString();
 }
 
