@@ -101,7 +101,7 @@ function mapApiShift(s: ApiShiftRow): ShiftEntry {
 }
 
 export default function ShiftboardPage() {
-  const [shifts, setShifts] = useState<ShiftEntry[]>(SHIFT_DEFAULT);
+  const [shifts, setShifts] = useState<ShiftEntry[]>([]);
   const [dayMeta, setDayMeta] = useState<[string, string, boolean][]>([]);
   const [dragId, setDragId] = useState<string | null>(null);
   const [view, setView] = useState<"shift" | "production">("shift");
