@@ -1,11 +1,7 @@
+export const dynamic = "force-dynamic";
+
 import { Lock } from "lucide-react";
-import {
-  PROFILE_GOV,
-  PROFILE_INFO,
-  PROFILE_META,
-  PROFILE_SIZES,
-  PROFILE_STATS,
-} from "@/lib/sample-data";
+import { getMyProfile } from "@/lib/server/profile-data";
 
 function SectionLabel({
   children,
@@ -27,19 +23,59 @@ function SectionLabel({
   );
 }
 
-export default function ProfileMePage() {
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-[15px] last:border-b-0">
+      <span className="text-sm text-[var(--color-text-secondary)]">{label}</span>
+      <span className="text-sm font-semibold">{value}</span>
+    </div>
+  );
+}
+
+function GovRow({ label, value, audit }: { label: string; value: string; audit: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] px-5 py-[15px] last:border-b-0">
+      <div className="min-w-0">
+        <div className="text-sm text-[var(--color-text-secondary)]">{label}</div>
+        <div className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">{audit}</div>
+      </div>
+      <span className="text-sm font-semibold text-[var(--color-text-primary)]">{value}</span>
+    </div>
+  );
+}
+
+export default async function ProfileMePage() {
+  const profile = await getMyProfile();
+
+  if (!profile) {
+    return (
+      <div className="flex h-64 items-center justify-center text-sm text-[var(--color-text-muted)]">
+        Unable to load profile.
+      </div>
+    );
+  }
+
+  const adminRoleLabel =
+    profile.adminRole === "super_admin"
+      ? "Super admin"
+      : profile.adminRole === "admin"
+        ? "Admin"
+        : "Staff";
+
+  const govComplete = !!(profile.gov.sss || profile.gov.tin || profile.gov.philhealth || profile.gov.pagibig);
+
   return (
     <div className="max-w-[900px] p-12 pt-9">
       <div className="flex items-center gap-5">
         <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[16px] bg-[var(--color-indigo-100)] font-display text-3xl font-semibold text-[var(--color-indigo-800)]">
-          EB
+          {profile.initials}
         </div>
         <div className="min-w-0">
           <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
-            Eusebio Barrun
+            {profile.displayName}
           </h1>
           <p className="mt-0.5 text-[15px] text-[var(--color-text-secondary)]">
-            Owner · Lead photographer · Quezon City
+            {profile.jobTitle} · {adminRoleLabel}
           </p>
         </div>
         <button className="ml-auto flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
@@ -47,40 +83,31 @@ export default function ProfileMePage() {
         </button>
       </div>
 
-      <div className="mt-7 flex overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        {PROFILE_STATS.map((s, i) => (
-          <div key={s.label} className="flex-1 px-[22px] py-5" style={{ borderLeft: i === 0 ? "none" : "1px solid var(--color-border)" }}>
-            <div className="text-[13px] text-[var(--color-text-secondary)]">{s.label}</div>
-            <div className="mt-1.5 font-display text-[30px] font-semibold tracking-[-0.02em]">{s.value}</div>
-          </div>
-        ))}
-      </div>
-
       <SectionLabel>Contact</SectionLabel>
       <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        {PROFILE_INFO.map((r) => (
-          <div key={r.label} className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-[15px] last:border-b-0">
-            <span className="text-sm text-[var(--color-text-secondary)]">{r.label}</span>
-            <span className="text-sm font-semibold">{r.value}</span>
-          </div>
-        ))}
+        <Row label="Full name" value={profile.displayName} />
+        <Row label="Email" value={profile.email} />
       </div>
 
       <SectionLabel>Account</SectionLabel>
       <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        {PROFILE_META.map((r) => (
-          <div key={r.label} className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-[15px] last:border-b-0">
-            <span className="text-sm text-[var(--color-text-secondary)]">{r.label}</span>
-            <span className="text-sm font-semibold">{r.value}</span>
-          </div>
-        ))}
+        <Row label="Role" value={`${profile.jobTitle} · ${adminRoleLabel}`} />
+        {profile.hiredAt && <Row label="Member since" value={profile.hiredAt} />}
+        {profile.employeeRef && <Row label="Employee ID" value={profile.employeeRef} />}
+        <Row label="User ID" value={profile.userId.slice(0, 8).toUpperCase()} />
       </div>
 
       <SectionLabel
         trailing={
-          <span className="rounded-pill bg-[var(--color-success-bg)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-success-text)]">
-            Complete
-          </span>
+          govComplete ? (
+            <span className="rounded-pill bg-[var(--color-success-bg)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-success-text)]">
+              Complete
+            </span>
+          ) : (
+            <span className="rounded-pill bg-[var(--color-surface-muted)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-text-muted)]">
+              Incomplete
+            </span>
+          )
         }
         action={
           <span className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-muted)]">
@@ -91,40 +118,15 @@ export default function ProfileMePage() {
         Government information
       </SectionLabel>
       <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        {PROFILE_GOV.map((r) => (
-          <div key={r.label} className="flex items-center justify-between gap-4 border-b border-[var(--color-border)] px-5 py-[15px] last:border-b-0">
-            <div className="min-w-0">
-              <div className="text-sm text-[var(--color-text-secondary)]">{r.label}</div>
-              <div className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">{r.audit}</div>
-            </div>
-            <span className="text-sm font-semibold text-[var(--color-text-primary)]">{r.value}</span>
-          </div>
-        ))}
+        <GovRow label="SSS number" value={profile.gov.sss ?? "—"} audit="Linked from payroll record" />
+        <GovRow label="TIN" value={profile.gov.tin ?? "—"} audit="Linked from payroll record" />
+        <GovRow label="PhilHealth number" value={profile.gov.philhealth ?? "—"} audit="Linked from payroll record" />
+        <GovRow label="Pag-IBIG MID number" value={profile.gov.pagibig ?? "—"} audit="Linked from payroll record" />
+        {profile.employeeRef && <GovRow label="Employee ID" value={profile.employeeRef} audit="System-assigned" />}
       </div>
       <p className="mt-2.5 text-xs text-[var(--color-text-muted)]">
         Numbers are masked by default — full values require authorised Admin or Super Admin access. Changes here
         need administrator verification.
-      </p>
-
-      <SectionLabel
-        action={
-          <button className="h-[30px] rounded-control border border-[var(--color-border-strong)] px-3 text-xs font-semibold text-[var(--color-text-primary)] hover:border-[var(--color-kahel-500)] hover:text-[var(--color-kahel-700)]">
-            Edit sizes
-          </button>
-        }
-      >
-        Uniform &amp; clothing sizes
-      </SectionLabel>
-      <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        {PROFILE_SIZES.map((r) => (
-          <div key={r.label} className="flex items-center justify-between border-b border-[var(--color-border)] px-5 py-[15px] last:border-b-0">
-            <span className="text-sm text-[var(--color-text-secondary)]">{r.label}</span>
-            <span className="text-sm font-semibold">{r.value}</span>
-          </div>
-        ))}
-      </div>
-      <p className="mt-2.5 text-xs text-[var(--color-text-muted)]">
-        Used for uniforms, production clothing and protective equipment. You can update your own sizes anytime.
       </p>
     </div>
   );

@@ -1,6 +1,21 @@
-import { SECURITY_ITEMS, SECURITY_SESSIONS } from "@/lib/sample-data";
+export const dynamic = "force-dynamic";
 
-export default function ProfileSecurityPage() {
+import { getMyProfile } from "@/lib/server/profile-data";
+
+export default async function ProfileSecurityPage() {
+  const profile = await getMyProfile();
+  const email = profile?.email ?? "—";
+
+  const securityItems = [
+    { label: "Password", sub: "Manage your account password", action: "Change" },
+    { label: "Two-factor authentication", sub: "Add an extra layer of security", action: "Manage" },
+    { label: "Recovery email", sub: email, action: "Edit" },
+  ];
+
+  const sessions = [
+    { device: "Current session", meta: "Your active sign-in", current: true },
+  ];
+
   return (
     <div className="max-w-[820px] p-12 pt-9">
       <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
@@ -11,7 +26,7 @@ export default function ProfileSecurityPage() {
       </p>
 
       <div className="mt-6 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        {SECURITY_ITEMS.map((s) => (
+        {securityItems.map((s) => (
           <div key={s.label} className="flex items-center gap-4 border-b border-[var(--color-border)] px-5 py-4 last:border-b-0">
             <div>
               <div className="text-sm font-semibold">{s.label}</div>
@@ -28,7 +43,7 @@ export default function ProfileSecurityPage() {
         Active sessions
       </div>
       <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        {SECURITY_SESSIONS.map((s) => (
+        {sessions.map((s) => (
           <div key={s.device} className="flex items-center gap-4 border-b border-[var(--color-border)] px-5 py-4 last:border-b-0">
             <div>
               <div className="text-sm font-semibold">{s.device}</div>
