@@ -55,122 +55,137 @@ function getProjectStage(status: string): ProjectPipelineItem["stage"] {
 }
 
 export async function getProjectPipeline(): Promise<{ pre: ProjectPipelineItem[]; production: ProjectPipelineItem[]; post: ProjectPipelineItem[] }> {
-  const admin = getSupabaseAdmin();
+  try {
+    const admin = getSupabaseAdmin();
 
-  const { data, error } = await admin
-    .from("projects")
-    .select(`
-      id,
-      reference,
-      title,
-      status,
-      starts_at,
-      completed_at,
-      client_id,
-      clients:client_id ( name )
-    `)
-    .order("created_at", { ascending: false })
-    .limit(200);
+    const { data, error } = await admin
+      .from("projects")
+      .select(`
+        id,
+        reference,
+        title,
+        status,
+        starts_at,
+        completed_at,
+        client_id,
+        clients:client_id ( name )
+      `)
+      .order("created_at", { ascending: false })
+      .limit(200);
 
-  if (error) throw error;
+    if (error) throw error;
 
-  const all: ProjectPipelineItem[] = (data ?? []).map((p: any) => ({
-    id: p.id,
-    reference: p.reference,
-    title: p.title,
-    client: p.clients?.name ?? "Unknown",
-    status: p.status,
-    stage: getProjectStage(p.status),
-    startsAt: p.starts_at,
-    completedAt: p.completed_at,
-  }));
+    const all: ProjectPipelineItem[] = (data ?? []).map((p: any) => ({
+      id: p.id,
+      reference: p.reference,
+      title: p.title,
+      client: p.clients?.name ?? "Unknown",
+      status: p.status,
+      stage: getProjectStage(p.status),
+      startsAt: p.starts_at,
+      completedAt: p.completed_at,
+    }));
 
-  return {
-    pre: all.filter((p) => p.stage === "pre"),
-    production: all.filter((p) => p.stage === "production"),
-    post: all.filter((p) => p.stage === "post"),
-  };
+    return {
+      pre: all.filter((p) => p.stage === "pre"),
+      production: all.filter((p) => p.stage === "production"),
+      post: all.filter((p) => p.stage === "post"),
+    };
+  } catch (error) {
+    console.error("getProjectPipeline: table not available", (error as Error).message);
+    return { pre: [], production: [], post: [] };
+  }
 }
 
 export async function getProjectGroups(): Promise<{ editing: ProjectGroupItem[]; review: ProjectGroupItem[]; culling: ProjectGroupItem[]; delivered: ProjectGroupItem[] }> {
-  const admin = getSupabaseAdmin();
+  try {
+    const admin = getSupabaseAdmin();
 
-  const { data, error } = await admin
-    .from("projects")
-    .select(`
-      id,
-      reference,
-      title,
-      status,
-      starts_at,
-      completed_at,
-      client_id,
-      clients:client_id ( name )
-    `)
-    .in("status", ["editing", "review", "culling", "completed", "delivered"])
-    .order("created_at", { ascending: false })
-    .limit(200);
+    const { data, error } = await admin
+      .from("projects")
+      .select(`
+        id,
+        reference,
+        title,
+        status,
+        starts_at,
+        completed_at,
+        client_id,
+        clients:client_id ( name )
+      `)
+      .in("status", ["editing", "review", "culling", "completed", "delivered"])
+      .order("created_at", { ascending: false })
+      .limit(200);
 
-  if (error) throw error;
+    if (error) throw error;
 
-  const all: ProjectGroupItem[] = (data ?? []).map((p: any) => ({
-    id: p.id,
-    reference: p.reference,
-    title: p.title,
-    client: p.clients?.name ?? "Unknown",
-    status: p.status,
-    postStage: POST_STATUSES[p.status] ?? "editing",
-    startsAt: p.starts_at,
-    completedAt: p.completed_at,
-  }));
+    const all: ProjectGroupItem[] = (data ?? []).map((p: any) => ({
+      id: p.id,
+      reference: p.reference,
+      title: p.title,
+      client: p.clients?.name ?? "Unknown",
+      status: p.status,
+      postStage: POST_STATUSES[p.status] ?? "editing",
+      startsAt: p.starts_at,
+      completedAt: p.completed_at,
+    }));
 
-  return {
-    editing: all.filter((p) => p.postStage === "editing"),
-    review: all.filter((p) => p.postStage === "review"),
-    culling: all.filter((p) => p.postStage === "culling"),
-    delivered: all.filter((p) => p.postStage === "delivered"),
-  };
+    return {
+      editing: all.filter((p) => p.postStage === "editing"),
+      review: all.filter((p) => p.postStage === "review"),
+      culling: all.filter((p) => p.postStage === "culling"),
+      delivered: all.filter((p) => p.postStage === "delivered"),
+    };
+  } catch (error) {
+    console.error("getProjectGroups: table not available", (error as Error).message);
+    return { editing: [], review: [], culling: [], delivered: [] };
+  }
 }
 
 export async function getProjectByRef(ref: string): Promise<ProjectDetail | null> {
-  const admin = getSupabaseAdmin();
+  try {
+    const admin = getSupabaseAdmin();
 
-  const { data, error } = await admin
-    .from("projects")
-    .select(`
-      id,
-      reference,
-      title,
-      description,
-      status,
-      client_id,
-      booking_id,
-      starts_at,
-      completed_at,
-      created_at,
-      updated_at,
-      clients:client_id ( name ),
-      bookings:booking_id ( reference )
-    `)
-    .eq("reference", ref)
-    .maybeSingle();
+    const { data, error } = await admin
+      .from("projects")
+      .select(`
+        id,
+        reference,
+        title,
+        description,
+        status,
+        client_id,
+        booking_id,
+        starts_at,
+        completed_at,
+        created_at,
+        updated_at,
+        clients:client_id ( name ),
+        bookings:booking_id ( reference )
+      `)
+      .eq("reference", ref)
+      .maybeSingle();
 
-  if (error || !data) return null;
+    if (error || !data) return null;
 
-  const p = data as any;
-  return {
-    id: p.id,
-    reference: p.reference,
-    title: p.title,
-    description: p.description,
-    status: p.status,
-    client: p.clients?.name ?? "Unknown",
-    clientId: p.client_id,
-    bookingId: p.booking_id,
-    bookingRef: p.bookings?.reference ?? null,
-    startsAt: p.starts_at,
-    completedAt: p.completed_at,
-    createdAt: p.created_at,
-    updatedAt: p.updated_at,
-  };
+    const p = data as any;
+    return {
+      id: p.id,
+      reference: p.reference,
+      title: p.title,
+      description: p.description,
+      status: p.status,
+      client: p.clients?.name ?? "Unknown",
+      clientId: p.client_id,
+      bookingId: p.booking_id,
+      bookingRef: p.bookings?.reference ?? null,
+      startsAt: p.starts_at,
+      completedAt: p.completed_at,
+      createdAt: p.created_at,
+      updatedAt: p.updated_at,
+    };
+  } catch (error) {
+    console.error("getProjectByRef: table not available", (error as Error).message);
+    return null;
+  }
 }

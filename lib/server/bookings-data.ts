@@ -86,91 +86,106 @@ function mapBookingRow(row: BookingRow): RealBookingRow {
 }
 
 export async function getRealBookings(): Promise<RealBookingRow[]> {
-  const admin = getSupabaseAdmin();
-  const { data, error } = await admin.from("bookings").select(`
-    id,
-    reference,
-    service_type,
-    service_date,
-    service_time,
-    location,
-    status,
-    payment_status,
-    payment_type,
-    subtotal_amount_php,
-    total_amount_php,
-    paid_amount_php,
-    paymongo_checkout_url,
-    paymongo_checkout_session_id,
-    client_id,
-    clients:client_id ( id, name )
-  `).order("created_at", { ascending: false }).limit(200);
+  try {
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin.from("bookings").select(`
+      id,
+      reference,
+      service_type,
+      service_date,
+      service_time,
+      location,
+      status,
+      payment_status,
+      payment_type,
+      subtotal_amount_php,
+      total_amount_php,
+      paid_amount_php,
+      paymongo_checkout_url,
+      paymongo_checkout_session_id,
+      client_id,
+      clients:client_id ( id, name )
+    `).order("created_at", { ascending: false }).limit(200);
 
-  if (error) throw error;
-  return (data as unknown as BookingRow[]).map(mapBookingRow);
+    if (error) throw error;
+    return (data as unknown as BookingRow[]).map(mapBookingRow);
+  } catch (error) {
+    console.error("getRealBookings: table not available", (error as Error).message);
+    return [];
+  }
 }
 
 export async function getRealBookingByRef(ref: string): Promise<RealBookingRow | null> {
-  const admin = getSupabaseAdmin();
-  const { data, error } = await admin.from("bookings").select(`
-    id,
-    reference,
-    service_type,
-    service_date,
-    service_time,
-    location,
-    status,
-    payment_status,
-    payment_type,
-    subtotal_amount_php,
-    total_amount_php,
-    paid_amount_php,
-    paymongo_checkout_url,
-    paymongo_checkout_session_id,
-    client_id,
-    clients:client_id ( id, name )
-  `).eq("reference", ref).maybeSingle();
+  try {
+    const admin = getSupabaseAdmin();
+    const { data, error } = await admin.from("bookings").select(`
+      id,
+      reference,
+      service_type,
+      service_date,
+      service_time,
+      location,
+      status,
+      payment_status,
+      payment_type,
+      subtotal_amount_php,
+      total_amount_php,
+      paid_amount_php,
+      paymongo_checkout_url,
+      paymongo_checkout_session_id,
+      client_id,
+      clients:client_id ( id, name )
+    `).eq("reference", ref).maybeSingle();
 
-  if (error || !data) return null;
-  return mapBookingRow(data as unknown as BookingRow);
+    if (error || !data) return null;
+    return mapBookingRow(data as unknown as BookingRow);
+  } catch (error) {
+    console.error("getRealBookingByRef: table not available", (error as Error).message);
+    return null;
+  }
 }
 
 export type CalendarEvent = { title: string; time: string; accent: "ink" | "orange" | "indigo" | "teal" };
 
 export async function getCalendarEvents(month: number, year: number): Promise<Record<number, CalendarEvent[]>> {
-  const admin = getSupabaseAdmin();
-  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
-  const endDate = `${year}-${String(month).padStart(2, "0")}-31`;
-  const { data, error } = await admin.from("bookings").select(`
-    reference,
-    service_type,
-    service_date,
-    service_time,
-    status,
-    clients:client_id ( name )
-  `).gte("service_date", startDate).lte("service_date", endDate).order("service_date", { ascending: true });
+  try {
+    const admin = getSupabaseAdmin();
+    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+    const endDate = `${year}-${String(month).padStart(2, "0")}-31`;
+    const { data, error } = await admin.from("bookings").select(`
+      reference,
+      service_type,
+      service_date,
+      service_time,
+      status,
+      clients:client_id ( name )
+    `).gte("service_date", startDate).lte("service_date", endDate).order("service_date", { ascending: true });
 
-  if (error) throw error;
-  const bookings = data as unknown as Array<{
-    reference: string; service_type: string; service_date: string; service_time: string;
-    status: string; clients: { name: string } | null;
-  }>;
+    if (error) throw error;
+    const bookings = data as unknown as Array<{
+      reference: string; service_type: string; service_date: string; service_time: string;
+      status: string; clients: { name: string } | null;
+    }>;
 
-  const accentByStatus: Record<string, CalendarEvent["accent"]> = {
-    confirmed: "orange", inquiry: "ink", quoted: "indigo", progress: "teal",
-    completed: "teal", cancelled: "ink",
-  };
+    const accentByStatus: Record<string, CalendarEvent["accent"]> = {
+      confirmed: "orange", inquiry: "ink", quoted: "indigo", progress: "teal",
+      completed: "teal", cancelled: "ink",
+    };
 
-  const grouped: Record<number, CalendarEvent[]> = {};
-  for (const b of bookings) {
-    const day = parseInt(b.service_date.split("-")[2] ?? "0", 10);
-    if (!day) continue;
-    if (!grouped[day]) grouped[day] = [];
-    grouped[day].push({
-      title: `${b.clients?.name ?? b.reference}: ${b.service_type}`,
-      time: b.service_time.slice(0, 5),
-      accent: accentByStatus[b.status] ?? "ink",
-    });
+    const grouped: Record<number, CalendarEvent[]> = {};
+    for (const b of bookings) {
+      const day = parseInt(b.service_date.split("-")[2] ?? "0", 10);
+      if (!day) continue;
+      if (!grouped[day]) grouped[day] = [];
+      grouped[day].push({
+        title: `${b.clients?.name ?? b.reference}: ${b.service_type}`,
+        time: b.service_time.slice(0, 5),
+        accent: accentByStatus[b.status] ?? "ink",
+      });
+    }
+    return grouped;
+  } catch (error) {
+    console.error("getCalendarEvents: table not available", (error as Error).message);
+    return {};
   }
-  return grouped;
 }

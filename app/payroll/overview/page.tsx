@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Download, TrendingUp, TriangleAlert, Plus } from "lucide-react";
 import { getPayrollOverview } from "@/lib/server/payroll-data";
 

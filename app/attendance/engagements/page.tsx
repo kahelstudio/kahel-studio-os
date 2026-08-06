@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { TriangleAlert } from "lucide-react";
 import { getRealBookings } from "@/lib/server/bookings-data";
 import { getPayrollEmployees } from "@/lib/server/payroll-data";
