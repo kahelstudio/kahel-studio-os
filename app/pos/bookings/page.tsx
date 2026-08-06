@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { BOOKING_STATUS, type BookingStatusId } from "@/lib/sample-data";
 import { useToast } from "@/components/toast/toast-provider";

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Plus } from "lucide-react";
 import { getRecruitmentCandidates } from "@/lib/server/recruitment-data";
 

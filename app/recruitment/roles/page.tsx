@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getRecruitmentRoles } from "@/lib/server/recruitment-data";
 
 export default async function RecruitmentRolesPage() {

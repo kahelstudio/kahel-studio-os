@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Info } from "lucide-react";
 import { getComplianceSummary } from "@/lib/server/compliance-data";
 

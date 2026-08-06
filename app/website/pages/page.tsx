@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getPages } from "@/lib/server/website-data";
 
 const WEB_STATUS: Record<string, { bg: string; c: string; label: string }> = {

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getCampaigns } from "@/lib/server/marketing-data";
 
 function formatPHP(n: number) {

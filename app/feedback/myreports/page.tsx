@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { FeedbackReportsClient } from "./feedback-reports-client";
 import { getFeedbackReports } from "@/lib/server/feedback-data";
 

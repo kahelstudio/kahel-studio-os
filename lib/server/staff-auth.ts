@@ -115,8 +115,9 @@ export async function updateStaffPassword(accessToken: string, password: string)
   if (!settings) return false;
   const supabase = client(settings, accessToken);
   const { data, error } = await supabase.auth.getUser();
-  if (error || !isStaffEmail(data.user?.email, settings)) return false;
-  const { error: updateError } = await supabase.auth.updateUser({ password });
+  if (error || !data.user || !isStaffEmail(data.user.email, settings)) return false;
+  const admin = getSupabaseAdmin();
+  const { error: updateError } = await admin.auth.admin.updateUserById(data.user.id, { password });
   return !updateError;
 }
 

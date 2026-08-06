@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Download } from "lucide-react";
 import { getAuditLog } from "@/lib/server/audit-log-data";
 

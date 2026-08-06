@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { RewardBookingForm } from "@/components/client-portal/reward-booking-form";
 import { requireCustomerIdentity } from "@/lib/server/customer-auth";

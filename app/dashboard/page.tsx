@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Camera, Coins, CreditCard, TrendingUp } from "lucide-react";
 import {
   getDashboardKpis,

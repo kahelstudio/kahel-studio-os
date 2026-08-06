@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getCalendarEvents, type CalendarEvent } from "@/lib/server/bookings-data";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];

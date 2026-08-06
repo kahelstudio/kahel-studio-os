@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getQuotations } from "@/lib/server/quotation-data";
 import { QuotationTable } from "@/components/quotation/quotation-table";
 

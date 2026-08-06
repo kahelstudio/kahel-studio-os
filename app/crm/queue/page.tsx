@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { CheckCircle2, Clock, TriangleAlert } from "lucide-react";
 import { getCrmQueue } from "@/lib/server/crm-data";
 

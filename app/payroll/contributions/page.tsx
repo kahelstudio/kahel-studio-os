@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { ContributionsClient } from "./contributions-client";
 import { getPayrollContributions } from "@/lib/server/payroll-data";
 

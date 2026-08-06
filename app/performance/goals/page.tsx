@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getPerformanceGoals } from "@/lib/server/performance-data";
 
 export default async function PerformanceGoalsPage() {

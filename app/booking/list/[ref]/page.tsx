@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { notFound } from "next/navigation";
 import { getRealBookingByRef } from "@/lib/server/bookings-data";
 import { BookingDetailClient } from "./booking-detail-client";

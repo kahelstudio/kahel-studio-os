@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getPerformanceReviews, getPerformanceGoals } from "@/lib/server/performance-data";
 
 const KPIS = [

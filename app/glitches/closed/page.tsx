@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getGlitches } from "@/lib/server/glitches-data";
 import { GlitchesTable } from "@/components/glitches/glitches-table";
 

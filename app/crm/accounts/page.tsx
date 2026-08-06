@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { ACCENTS } from "@/lib/apps-config";

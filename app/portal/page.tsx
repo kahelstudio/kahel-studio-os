@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { getPortalOverview } from "@/lib/server/customer-portal-data";
 

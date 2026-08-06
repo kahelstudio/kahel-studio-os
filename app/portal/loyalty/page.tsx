@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { LoyaltyDashboard, type LoyaltySummary } from "@/components/client-portal/loyalty-dashboard";
 import { requireCustomerIdentity } from "@/lib/server/customer-auth";
 import { getLoyaltySummary } from "@/lib/server/loyalty";

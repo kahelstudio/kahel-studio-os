@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getPerformanceReviews } from "@/lib/server/performance-data";
 
 export default async function PerformanceReviewsPage() {

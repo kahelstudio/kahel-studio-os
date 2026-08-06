@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getPayrollEmployees } from "@/lib/server/payroll-data";
 import { getRealBookings } from "@/lib/server/bookings-data";
 import { AttendanceClockCard } from "./attendance-clock-card";

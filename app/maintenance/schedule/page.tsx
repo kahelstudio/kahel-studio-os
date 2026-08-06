@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getMaintenanceRecords } from "@/lib/server/maintenance-data";
 import { MaintenanceTable } from "@/components/maintenance/maintenance-table";
 

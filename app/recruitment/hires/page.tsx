@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Plus } from "lucide-react";
 import { getHires } from "@/lib/server/recruitment-data";
 import { ONBOARDING_CHECKLIST } from "@/lib/sample-data";

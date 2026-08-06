@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Plus } from "lucide-react";
 import { getInvoices, getFinanceKpis } from "@/lib/server/finance-data";
 import { KpiStrip } from "@/components/finance/kpi-strip";

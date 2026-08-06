@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getPayments, getPaymentCounts } from "@/lib/server/payments-data";
 import { KpiStrip } from "@/components/finance/kpi-strip";
 

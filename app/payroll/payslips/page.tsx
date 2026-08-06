@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getLatestPayrollRunId, getPayrollPayslips } from "@/lib/server/payroll-data";
 
 function formatPHP(n: number) {

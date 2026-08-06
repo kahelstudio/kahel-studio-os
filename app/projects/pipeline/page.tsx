@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getProjectPipeline } from "@/lib/server/projects-data";
 import { type PipelineProject, type PipelineStage, ProjectsPipelinePageClient } from "./pipeline-content";
 

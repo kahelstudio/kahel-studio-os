@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useMemo, useState } from "react";
 import { Package } from "lucide-react";
 import { cn, formatPeso } from "@/lib/utils";

@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { BOOKING_STATUS } from "@/lib/sample-data";
