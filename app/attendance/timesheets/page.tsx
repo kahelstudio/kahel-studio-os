@@ -1,7 +1,44 @@
-import { ATTENDANCE_KPIS, ATTENDANCE_ROWS } from "@/lib/sample-data";
+import { getPayrollEmployees } from "@/lib/server/payroll-data";
+import { getRealBookings } from "@/lib/server/bookings-data";
 import { AttendanceClockCard } from "./attendance-clock-card";
 
-export default function AttendanceTimesheetsPage() {
+const STATUS_META: Record<string, { bg: string; c: string; label: string }> = {
+  active: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "Active" },
+  pending: { bg: "var(--color-attention-bg)", c: "var(--color-attention-text)", label: "Unsubmitted" },
+  inactive: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)", label: "Inactive" },
+};
+
+export default async function AttendanceTimesheetsPage() {
+  const [employees, bookings] = await Promise.all([getPayrollEmployees(), getRealBookings()]);
+
+  const activeBookings = bookings.filter((b) => b.status === "confirmed" || b.status === "progress");
+  const employeeCount = employees.length;
+  const activeCount = activeBookings.length;
+  const pendingCount = employees.filter((e) => e.status === "pending").length;
+
+  const kpis = [
+    { label: "Active staff", value: String(employeeCount) },
+    { label: "Active engagements", value: String(activeCount) },
+    { label: "Unsubmitted", value: String(pendingCount) },
+  ];
+
+  const rows = employees.map((e) => {
+    const st = e.status === "active" ? "active" : e.status === "pending" ? "pending" : "inactive";
+    const meta = STATUS_META[st];
+    const booking = activeBookings.find((b) => b.accountId === (e as any).clientId);
+    return {
+      ini: e.initials,
+      name: e.name,
+      role: e.role,
+      hours: "—",
+      engagement: booking ? `${booking.account} — ${booking.type}` : "No active engagement",
+      st,
+      stBg: meta.bg,
+      stColor: meta.c,
+      stLabel: meta.label,
+    };
+  });
+
   return (
     <div className="p-12 pt-9">
       <div className="flex items-end justify-between">
@@ -19,7 +56,7 @@ export default function AttendanceTimesheetsPage() {
       <AttendanceClockCard />
 
       <div className="mt-6 grid grid-cols-3 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        {ATTENDANCE_KPIS.map((k, i) => (
+        {kpis.map((k, i) => (
           <div key={k.label} className="px-6 py-5" style={{ borderLeft: i === 0 ? "none" : "1px solid var(--color-border)" }}>
             <div className="text-xs font-medium uppercase tracking-[0.02em] text-[var(--color-text-secondary)]">
               {k.label}
@@ -38,7 +75,7 @@ export default function AttendanceTimesheetsPage() {
           <div>Engagement</div>
           <div className="text-right">Hours</div>
         </div>
-        {ATTENDANCE_ROWS.map((r) => (
+        {rows.map((r) => (
           <div
             key={r.name}
             className="grid h-14 grid-cols-[1.6fr_1.4fr_1.6fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"

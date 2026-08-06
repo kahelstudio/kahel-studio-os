@@ -1,7 +1,34 @@
 import { Info } from "lucide-react";
-import { COMPLIANCE_SUMMARY } from "@/lib/sample-data";
+import { getComplianceSummary } from "@/lib/server/compliance-data";
 
-export default function ComplianceDashboardPage() {
+export default async function ComplianceDashboardPage() {
+  const summary = await getComplianceSummary();
+  const actionNeeded = summary.expired + summary.action > 0;
+
+  const cards = [
+    {
+      label: "Overall status",
+      value: actionNeeded ? "Action needed" : "On track",
+      tone: actionNeeded ? "var(--color-attention-text)" : "var(--color-success-text)",
+      sub: `${summary.total} requirements tracked`,
+    },
+    { label: "Expired", value: String(summary.expired), tone: "var(--color-danger-text)", sub: "Renew immediately" },
+    {
+      label: "Due within 30 days",
+      value: String(summary.dueSoon + summary.action),
+      tone: "var(--color-warning-text)",
+      sub: "Action required soon",
+    },
+    {
+      label: "Pending applications",
+      value: String(summary.submitted + summary.review),
+      tone: "var(--color-info-text)",
+      sub: "Submitted / under review",
+    },
+    { label: "Estimated fees due", value: "—", tone: "var(--color-text-primary)", sub: "Planning estimate" },
+    { label: "Actual fees paid (YTD)", value: "—", tone: "var(--color-text-primary)", sub: "2026 to date" },
+  ];
+
   return (
     <div className="max-w-[1240px] p-12 pt-9">
       <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
@@ -18,7 +45,7 @@ export default function ComplianceDashboardPage() {
       </div>
 
       <div className="mt-6 grid grid-cols-3 gap-4">
-        {COMPLIANCE_SUMMARY.map((s) => (
+        {cards.map((s) => (
           <div key={s.label} className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-[22px]">
             <div className="text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
               {s.label}

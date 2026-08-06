@@ -2,8 +2,22 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckCircle2, Lock } from "lucide-react";
 import { LoyaltyAdminPanel } from "@/components/loyalty/loyalty-admin-panel";
-import { ACCOUNTS_BY_ID, BOOKING_STATUS } from "@/lib/sample-data";
+import { getAccountById } from "@/lib/server/crm-data";
+import { BOOKING_STATUS } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 3)
+    .toUpperCase();
+}
+
+function formatPHP(n: number) {
+  return `₱${n.toLocaleString("en-PH")}`;
+}
 
 export default async function CrmAccountDetailPage({
   params,
@@ -11,8 +25,51 @@ export default async function CrmAccountDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const account = ACCOUNTS_BY_ID[id];
-  if (!account) notFound();
+  const detail = await getAccountById(id);
+  if (!detail) notFound();
+
+  const account = {
+    id: detail.id,
+    name: detail.name,
+    ini: initials(detail.name),
+    type: detail.status === "corporate" ? "Corporate" as const : "Consumer" as const,
+    accent: "indigo" as const,
+    source: detail.externalRef ?? "",
+    last: "",
+    ltv: "",
+    phone: "",
+    since: detail.createdAt
+      ? new Date(detail.createdAt).toLocaleDateString("en-GB", { month: "short", year: "numeric" })
+      : undefined,
+    nextAction: undefined as { label: string; due: string } | undefined,
+    bookings: detail.bookings.map((b) => ({
+      ref: b.ref,
+      type: b.type,
+      date: b.date ? new Date(b.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "",
+      status: b.status as keyof typeof BOOKING_STATUS,
+      total: formatPHP(b.total),
+    })),
+    payments: detail.payments.map((p) => ({
+      label: p.ref,
+      date: p.date ? new Date(p.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "Pending",
+      method: p.status,
+      amount: formatPHP(p.amount),
+    })),
+    contacts: detail.contacts.map((c) => ({
+      ini: initials(`${c.firstName} ${c.lastName}`),
+      name: `${c.firstName} ${c.lastName}`,
+      tag: c.status,
+      email: c.email,
+    })),
+    notes: "",
+    identity: {
+      primaryMobile: detail.contacts[0]?.mobile ?? "—",
+      primaryVerified: false,
+      altMobile: undefined as string | undefined,
+      clientId: detail.externalRef ?? detail.id.slice(0, 8),
+      numberHistory: [] as { number: string; note: string }[],
+    },
+  };
 
   return (
     <div className="p-4 pb-10 pt-6 sm:p-10 sm:pb-10 sm:pt-6">
@@ -35,12 +92,7 @@ export default async function CrmAccountDetailPage({
             <span className="rounded-pill bg-[var(--color-surface-muted)] px-2.5 py-1 text-xs font-semibold text-[var(--color-text-primary)]">
               {account.type}
             </span>
-            {account.referredBy && (
-              <span className="text-sm text-[var(--color-text-secondary)]">
-                Referred by {account.referredBy} · since {account.since}
-              </span>
-            )}
-            {!account.referredBy && account.since && (
+            {account.since && (
               <span className="text-sm text-[var(--color-text-secondary)]">Client since {account.since}</span>
             )}
           </div>
@@ -57,25 +109,6 @@ export default async function CrmAccountDetailPage({
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <div className="flex flex-col gap-4">
-          {account.nextAction && (
-            <div className="rounded-card border border-[#FADBB0] bg-[var(--color-kahel-50)] px-[18px] py-4">
-              <div className="mb-1.5 text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-kahel-700)]">
-                Next action
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="text-[15px] font-semibold text-[var(--color-text-primary)]">
-                  {account.nextAction.label}
-                </div>
-                <span className="rounded-pill bg-[var(--color-kahel-100)] px-2.5 py-0.5 text-[13px] text-[var(--color-kahel-700)]">
-                  {account.nextAction.due}
-                </span>
-                <button className="ml-auto h-8 rounded-control border border-[#FCE6D3] bg-[var(--color-surface)] px-3 text-[13px] font-semibold text-[var(--color-kahel-700)]">
-                  Mark done
-                </button>
-              </div>
-            </div>
-          )}
-
           <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
             <div className="border-b border-[var(--color-border)] px-[18px] py-3.5 font-display text-[15px] font-semibold">
               Bookings
@@ -174,20 +207,22 @@ export default async function CrmAccountDetailPage({
               </div>
               <span className="text-[11px] text-[var(--color-text-muted)]">Immutable key</span>
             </div>
-            <div className="mt-2 border-t border-[var(--color-border)] pt-2.5">
-              <div className="mb-1 text-xs text-[var(--color-text-muted)]">Number history</div>
-              {account.identity.numberHistory.map((h, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "text-xs",
-                    i === 0 ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-muted)]"
-                  )}
-                >
-                  {h.number} · {h.note}
-                </div>
-              ))}
-            </div>
+            {account.identity.numberHistory.length > 0 && (
+              <div className="mt-2 border-t border-[var(--color-border)] pt-2.5">
+                <div className="mb-1 text-xs text-[var(--color-text-muted)]">Number history</div>
+                {account.identity.numberHistory.map((h, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      "text-xs",
+                      i === 0 ? "text-[var(--color-text-secondary)]" : "text-[var(--color-text-muted)]"
+                    )}
+                  >
+                    {h.number} · {h.note}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-[18px]">

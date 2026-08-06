@@ -14,7 +14,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { useTheme } from "@/components/theme/theme-provider";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
+
 import { AvatarMenu } from "@/components/shell/avatar-menu";
 import { QuickCreateSheet } from "@/components/shell/quick-create";
 import { cn } from "@/lib/utils";
@@ -131,7 +131,7 @@ export function LauncherTopbar({ onOpenCommandPalette }: { onOpenCommandPalette:
       </button>
 
       <div className="flex items-center gap-0.5">
-        <span className="hidden sm:block"><ThemeToggle size={44} /></span>
+
 
         <div ref={notificationsRef} className="relative">
           <button

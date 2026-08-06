@@ -120,10 +120,6 @@ export async function updateStaffPassword(accessToken: string, password: string)
   return !updateError;
 }
 
-export function simpleLoginConfigured() {
-  return Boolean(process.env.SIMPLELOGIN_CLIENT_ID && process.env.SIMPLELOGIN_CLIENT_SECRET);
-}
-
 export async function signInStaffWithVerifiedEmail(email: string) {
   const settings = config();
   if (!settings || !isStaffEmail(email, settings)) return null;

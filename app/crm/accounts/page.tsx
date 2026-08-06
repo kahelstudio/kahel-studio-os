@@ -1,14 +1,42 @@
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { ACCENTS } from "@/lib/apps-config";
-import { ACCOUNTS } from "@/lib/sample-data";
+import { getAccounts } from "@/lib/server/crm-data";
 import { cn } from "@/lib/utils";
 
 const FILTERS = ["All", "Corporate", "Consumer", "Referral source"];
 
-export default function CrmAccountsPage() {
-  const corporate = ACCOUNTS.filter((a) => a.type === "Corporate").length;
-  const consumer = ACCOUNTS.filter((a) => a.type === "Consumer").length;
+function initials(name: string) {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 3)
+    .toUpperCase();
+}
+
+function formatPHP(n: number) {
+  return `₱${n.toLocaleString("en-PH")}`;
+}
+
+export default async function CrmAccountsPage() {
+  const rows = await getAccounts();
+  const accounts = rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    ini: initials(r.name),
+    type: r.status === "corporate" ? "Corporate" as const : "Consumer" as const,
+    accent: "indigo" as const,
+    source: r.externalRef ?? "",
+    last: r.lastBooking
+      ? new Date(r.lastBooking).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+      : "—",
+    ltv: formatPHP(r.totalSpent),
+    phone: r.externalRef ?? "",
+  }));
+
+  const corporate = accounts.filter((a) => a.type === "Corporate").length;
+  const consumer = accounts.filter((a) => a.type === "Consumer").length;
 
   return (
     <div className="p-4 pt-6 sm:p-10 sm:pt-8">
@@ -18,7 +46,7 @@ export default function CrmAccountsPage() {
             Accounts
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
-            {ACCOUNTS.length} accounts · {corporate} corporate · {consumer} consumer
+            {accounts.length} accounts · {corporate} corporate · {consumer} consumer
           </p>
         </div>
         <button className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
@@ -61,7 +89,7 @@ export default function CrmAccountsPage() {
           <div>Last booking</div>
           <div className="text-right">Lifetime</div>
         </div>
-        {ACCOUNTS.map((a) => {
+        {accounts.map((a) => {
           const accent = ACCENTS[a.accent];
           return (
             <Link

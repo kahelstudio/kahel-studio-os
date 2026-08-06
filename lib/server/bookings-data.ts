@@ -1,0 +1,176 @@
+import { getSupabaseAdmin } from "./supabase-admin";
+import type { BookingStatusId } from "@/lib/sample-data";
+
+export type RealBookingRow = {
+  ref: string;
+  accountId: string;
+  account: string;
+  type: string;
+  date: string;
+  status: BookingStatusId;
+  total: string;
+  payment_status: string;
+  sessionDetails?: {
+    dateTime: string;
+    location: string;
+    sessionType: string;
+  };
+  payment?: {
+    total: string;
+    deposit: string;
+    balance: string;
+  };
+  paymongo_checkout_url: string | null;
+  paymongo_checkout_session_id: string | null;
+};
+
+function formatDate(date: string, time: string) {
+  const d = new Date(`${date}T${time}`);
+  return d.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function formatDateLong(date: string, time: string) {
+  const d = new Date(`${date}T${time}`);
+  return d.toLocaleDateString("en-PH", { day: "numeric", month: "short", year: "numeric" }) + ` \u00b7 ${d.toLocaleTimeString("en-PH", { hour: "numeric", minute: "numeric", hour12: true })}`;
+}
+
+function formatCurrency(centavos: number) {
+  return `\u20B1${(centavos / 100).toLocaleString("en-PH", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
+type BookingRow = {
+  id: string;
+  reference: string;
+  service_type: string;
+  service_date: string;
+  service_time: string;
+  location: string;
+  status: string;
+  payment_status: string;
+  payment_type: string;
+  subtotal_amount_php: number;
+  total_amount_php: number;
+  paid_amount_php: number;
+  paymongo_checkout_url: string | null;
+  paymongo_checkout_session_id: string | null;
+  client_id: string;
+  clients: { id: string; name: string } | null;
+};
+
+function mapBookingRow(row: BookingRow): RealBookingRow {
+  const deposit = Math.round(row.subtotal_amount_php * 0.5);
+  const balance = row.subtotal_amount_php - row.paid_amount_php;
+  const status = (row.status as BookingStatusId) || "inquiry";
+  return {
+    ref: row.reference,
+    accountId: row.client_id,
+    account: row.clients?.name || "Unknown",
+    type: row.service_type,
+    date: formatDate(row.service_date, row.service_time),
+    status,
+    total: formatCurrency(row.subtotal_amount_php),
+    payment_status: row.payment_status,
+    sessionDetails: {
+      dateTime: formatDateLong(row.service_date, row.service_time),
+      location: row.location,
+      sessionType: row.service_type,
+    },
+    payment: {
+      total: formatCurrency(row.subtotal_amount_php),
+      deposit: row.payment_type === "deposit" ? formatCurrency(deposit) : formatCurrency(row.subtotal_amount_php),
+      balance: formatCurrency(balance),
+    },
+    paymongo_checkout_url: row.paymongo_checkout_url,
+    paymongo_checkout_session_id: row.paymongo_checkout_session_id,
+  };
+}
+
+export async function getRealBookings(): Promise<RealBookingRow[]> {
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin.from("bookings").select(`
+    id,
+    reference,
+    service_type,
+    service_date,
+    service_time,
+    location,
+    status,
+    payment_status,
+    payment_type,
+    subtotal_amount_php,
+    total_amount_php,
+    paid_amount_php,
+    paymongo_checkout_url,
+    paymongo_checkout_session_id,
+    client_id,
+    clients:client_id ( id, name )
+  `).order("created_at", { ascending: false }).limit(200);
+
+  if (error) throw error;
+  return (data as unknown as BookingRow[]).map(mapBookingRow);
+}
+
+export async function getRealBookingByRef(ref: string): Promise<RealBookingRow | null> {
+  const admin = getSupabaseAdmin();
+  const { data, error } = await admin.from("bookings").select(`
+    id,
+    reference,
+    service_type,
+    service_date,
+    service_time,
+    location,
+    status,
+    payment_status,
+    payment_type,
+    subtotal_amount_php,
+    total_amount_php,
+    paid_amount_php,
+    paymongo_checkout_url,
+    paymongo_checkout_session_id,
+    client_id,
+    clients:client_id ( id, name )
+  `).eq("reference", ref).maybeSingle();
+
+  if (error || !data) return null;
+  return mapBookingRow(data as unknown as BookingRow);
+}
+
+export type CalendarEvent = { title: string; time: string; accent: "ink" | "orange" | "indigo" | "teal" };
+
+export async function getCalendarEvents(month: number, year: number): Promise<Record<number, CalendarEvent[]>> {
+  const admin = getSupabaseAdmin();
+  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+  const endDate = `${year}-${String(month).padStart(2, "0")}-31`;
+  const { data, error } = await admin.from("bookings").select(`
+    reference,
+    service_type,
+    service_date,
+    service_time,
+    status,
+    clients:client_id ( name )
+  `).gte("service_date", startDate).lte("service_date", endDate).order("service_date", { ascending: true });
+
+  if (error) throw error;
+  const bookings = data as unknown as Array<{
+    reference: string; service_type: string; service_date: string; service_time: string;
+    status: string; clients: { name: string } | null;
+  }>;
+
+  const accentByStatus: Record<string, CalendarEvent["accent"]> = {
+    confirmed: "orange", inquiry: "ink", quoted: "indigo", progress: "teal",
+    completed: "teal", cancelled: "ink",
+  };
+
+  const grouped: Record<number, CalendarEvent[]> = {};
+  for (const b of bookings) {
+    const day = parseInt(b.service_date.split("-")[2] ?? "0", 10);
+    if (!day) continue;
+    if (!grouped[day]) grouped[day] = [];
+    grouped[day].push({
+      title: `${b.clients?.name ?? b.reference}: ${b.service_type}`,
+      time: b.service_time.slice(0, 5),
+      accent: accentByStatus[b.status] ?? "ink",
+    });
+  }
+  return grouped;
+}

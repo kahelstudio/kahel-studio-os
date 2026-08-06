@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Package } from "lucide-react";
-import { PRODUCTS } from "@/lib/sample-data";
 import { cn, formatPeso } from "@/lib/utils";
 import { useToast } from "@/components/toast/toast-provider";
+import type { ProductRow } from "@/lib/server/pos-data";
 
 const CATEGORIES = ["All", "Prints", "Frames", "Albums"] as const;
 
@@ -12,15 +12,23 @@ export default function PosSalePage() {
   const { fireToast } = useToast();
   const [category, setCategory] = useState<(typeof CATEGORIES)[number]>("All");
   const [cart, setCart] = useState<Record<string, number>>({});
+  const [products, setProducts] = useState<ProductRow[]>([]);
 
-  const filtered = PRODUCTS.filter((p) => category === "All" || p.category === category);
+  useEffect(() => {
+    fetch("/api/products")
+      .then((r) => r.json() as Promise<ProductRow[]>)
+      .then(setProducts)
+      .catch(() => setProducts([]));
+  }, []);
+
+  const filtered = products.filter((p) => category === "All" || p.category === category);
 
   const cartLines = useMemo(
     () =>
       Object.entries(cart)
         .filter(([, qty]) => qty > 0)
-        .map(([id, qty]) => ({ product: PRODUCTS.find((p) => p.id === id)!, qty })),
-    [cart]
+        .map(([id, qty]) => ({ product: products.find((p) => p.id === id)!, qty })),
+    [cart, products]
   );
 
   const subtotalCentavos = cartLines.reduce((sum, l) => sum + l.product.price * 100 * l.qty, 0);

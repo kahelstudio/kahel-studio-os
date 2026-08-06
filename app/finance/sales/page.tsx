@@ -1,8 +1,38 @@
 import { Download } from "lucide-react";
-import { FINANCE_SALES, FINANCE_SALES_KPIS } from "@/lib/sample-data";
+import { getSales } from "@/lib/server/finance-data";
 import { KpiStrip } from "@/components/finance/kpi-strip";
 
-export default function FinanceSalesPage() {
+function formatPhp(amount: number) {
+  return `\u20B1${Number(amount).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+}
+
+function formatDate(dateStr: string) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+export default async function FinanceSalesPage() {
+  const sales = await getSales();
+
+  const total = sales.reduce((s, r) => s + Number(r.total), 0);
+  const count = sales.length;
+  const avg = count > 0 ? total / count : 0;
+
+  const kpis = [
+    { label: "Sales total", value: formatPhp(total) },
+    { label: "Transactions", value: String(count) },
+    { label: "Average sale", value: formatPhp(avg) },
+    { label: "Recorded", value: String(count) },
+  ];
+
+  const displayRows = sales.map((s) => ({
+    ref: s.reference,
+    desc: s.client ?? `Sale · ${s.items} item${s.items !== 1 ? "s" : ""}`,
+    method: s.method,
+    date: formatDate(s.recordedAt),
+    amt: formatPhp(Number(s.total)),
+  }));
+
   return (
     <div className="p-12 pt-9">
       <div className="flex items-end justify-between gap-4">
@@ -19,7 +49,7 @@ export default function FinanceSalesPage() {
         </button>
       </div>
 
-      <KpiStrip kpis={FINANCE_SALES_KPIS} />
+      <KpiStrip kpis={kpis} />
 
       <div className="mt-5 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="grid h-11 grid-cols-[1.1fr_1.8fr_1fr_1fr_1fr] items-center bg-[var(--color-canvas)] px-5 text-[11px] font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
@@ -29,7 +59,7 @@ export default function FinanceSalesPage() {
           <div>Date</div>
           <div className="text-right">Amount</div>
         </div>
-        {FINANCE_SALES.map((r) => (
+        {displayRows.map((r) => (
           <div
             key={r.ref}
             className="grid h-[54px] grid-cols-[1.1fr_1.8fr_1fr_1fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"

@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { BOOKING_STATUS, BOOKINGS } from "@/lib/sample-data";
+import { BOOKING_STATUS } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
+import { getRealBookings } from "@/lib/server/bookings-data";
 
 const FILTERS = ["All", "Quoted", "Confirmed", "In progress", "This month"];
 
-export default function BookingListPage() {
-  const active = BOOKINGS.filter((b) => b.status !== "cancelled").length;
-  const awaiting = BOOKINGS.filter((b) => b.status === "quoted" || b.status === "inquiry").length;
+export default async function BookingListPage() {
+  let bookings = await getRealBookings().catch(() => []);
+  const active = bookings.filter((b) => b.status !== "cancelled").length;
+  const awaiting = bookings.filter((b) => b.status === "quoted" || b.status === "inquiry").length;
 
   return (
     <div className="p-10 pt-8">
@@ -49,8 +51,13 @@ export default function BookingListPage() {
           <div>Status</div>
           <div className="text-right">Total</div>
         </div>
-        {BOOKINGS.map((b) => {
-          const status = BOOKING_STATUS[b.status];
+        {bookings.length === 0 && (
+          <div className="px-[18px] py-12 text-center text-sm text-[var(--color-text-muted)]">
+            No bookings yet. The checkout form will populate this list.
+          </div>
+        )}
+        {bookings.map((b) => {
+          const status = BOOKING_STATUS[b.status] ?? BOOKING_STATUS.quoted;
           return (
             <Link
               key={b.ref}

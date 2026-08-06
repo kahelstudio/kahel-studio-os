@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { BOOKINGS_BY_REF } from "@/lib/sample-data";
+import { getRealBookingByRef } from "@/lib/server/bookings-data";
 import { BookingDetailClient } from "./booking-detail-client";
 
 export default async function BookingDetailPage({
@@ -8,8 +8,8 @@ export default async function BookingDetailPage({
   params: Promise<{ ref: string }>;
 }) {
   const { ref } = await params;
-  const booking = BOOKINGS_BY_REF[ref];
+  const booking = await getRealBookingByRef(ref);
   if (!booking) notFound();
 
-  return <BookingDetailClient booking={booking} />;
+  return <BookingDetailClient booking={booking as any} />;
 }

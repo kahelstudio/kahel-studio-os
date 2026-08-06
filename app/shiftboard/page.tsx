@@ -26,17 +26,16 @@ const LEGEND = [
   { label: "Remote Work", color: "#3B82C4" },
 ] as const;
 
-function loadShifts(): ShiftEntry[] {
-  if (typeof window === "undefined") return SHIFT_DEFAULT;
+function loadLocalShifts(): ShiftEntry[] | null {
+  if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return SHIFT_DEFAULT;
+    if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || !parsed.length) return SHIFT_DEFAULT;
-    const migrated = parsed.map(migrateTime);
-    return migrated;
+    if (!Array.isArray(parsed) || !parsed.length) return null;
+    return parsed.map(migrateTime);
   } catch {
-    return SHIFT_DEFAULT;
+    return null;
   }
 }
 
@@ -57,15 +56,57 @@ function migrateTime(shift: ShiftEntry): ShiftEntry {
   return { ...shift, time: `${fmt(startH, startM)} – ${fmt(endH, endM)}` };
 }
 
+type ApiShiftRow = {
+  id: string;
+  dayOfWeek: number;
+  initials: string;
+  name: string;
+  role: string;
+  timeDescription: string | null;
+  location: string;
+  weekStart: string;
+};
+
+function mapApiShift(s: ApiShiftRow): ShiftEntry {
+  return {
+    id: s.id,
+    d: s.dayOfWeek,
+    ini: s.initials,
+    who: s.name,
+    role: s.role,
+    time: s.timeDescription ?? "—",
+    loc: s.location as "studio" | "location",
+  };
+}
+
 export default function ShiftboardPage() {
   const [shifts, setShifts] = useState<ShiftEntry[]>(SHIFT_DEFAULT);
   const [dragId, setDragId] = useState<string | null>(null);
   const [view, setView] = useState<"shift" | "production">("shift");
 
   useEffect(() => {
-    // Hydrate the client-only persisted shift board after the initial render.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setShifts(loadShifts());
+    const local = loadLocalShifts();
+    if (local) {
+      setShifts(local);
+      return;
+    }
+
+    fetch("/api/shifts")
+      .then((res) => res.json())
+      .then((data) => {
+        const rows = data as ApiShiftRow[];
+        if (Array.isArray(rows) && rows.length > 0) {
+          const mapped = rows.map(mapApiShift);
+          setShifts(mapped);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
+        } else {
+          setShifts(SHIFT_DEFAULT);
+        }
+      })
+      .catch(() => {
+        const fallback = loadLocalShifts() ?? SHIFT_DEFAULT;
+        setShifts(fallback);
+      });
   }, []);
 
   function moveToDay(dayIndex: number) {

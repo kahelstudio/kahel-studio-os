@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { BOOKINGS, BOOKING_STATUS, type BookingStatusId } from "@/lib/sample-data";
+import { useEffect, useState } from "react";
+import { BOOKING_STATUS, type BookingStatusId } from "@/lib/sample-data";
 import { useToast } from "@/components/toast/toast-provider";
 import { cn } from "@/lib/utils";
+import type { RealBookingRow } from "@/lib/server/bookings-data";
 
 const STATUS_FILTERS: { id: BookingStatusId | "all"; label: string }[] = [
   { id: "all", label: "All" },
@@ -17,8 +18,18 @@ const STATUS_FILTERS: { id: BookingStatusId | "all"; label: string }[] = [
 export default function PosBookingsPage() {
   const { fireToast } = useToast();
   const [statusFilter, setStatusFilter] = useState<BookingStatusId | "all">("all");
+  const [bookings, setBookings] = useState<RealBookingRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filtered = BOOKINGS.filter((b) => {
+  useEffect(() => {
+    fetch("/api/bookings")
+      .then((r) => r.json() as Promise<RealBookingRow[]>)
+      .then(setBookings)
+      .catch(() => setBookings([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = bookings.filter((b) => {
     if (statusFilter !== "all" && b.status !== statusFilter) return false;
     return true;
   });
@@ -41,15 +52,18 @@ export default function PosBookingsPage() {
         ))}
       </div>
 
+      {loading && (
+        <div className="mt-6 py-16 text-center text-sm text-[var(--color-text-muted)]">Loading bookings...</div>
+      )}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
-        {filtered.length === 0 ? (
+        {!loading && filtered.length === 0 ? (
           <div className="col-span-full py-16 text-center">
             <p className="text-sm text-[var(--color-text-muted)]">No bookings match this filter</p>
           </div>
         ) : filtered.map((booking) => {
-          const status = BOOKING_STATUS[booking.status];
+          const status = BOOKING_STATUS[booking.status] ?? BOOKING_STATUS.quoted;
           const balance = booking.payment?.balance;
-          const canCollect = balance && balance !== "₱0.00";
+          const canCollect = balance && balance !== "\u20B10" && balance !== "\u20B10.00";
 
           return (
             <article key={booking.ref} className="flex min-h-[280px] flex-col rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
@@ -59,35 +73,34 @@ export default function PosBookingsPage() {
                   {status.label}
                 </span>
               </div>
-              <div className="mt-4 flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <h2 className="truncate font-display text-xl font-semibold text-[var(--color-text-primary)]">{booking.account}</h2>
-                  <p className="mt-2 text-[15px] text-[var(--color-text-secondary)]">{booking.type} · {booking.date}</p>
-                  {booking.sessionDetails && (
-                    <p className="mt-1 text-[13px] text-[var(--color-text-muted)]">{booking.sessionDetails.location} · {booking.sessionDetails.sessionType}</p>
-                  )}
+              <h2 className="mt-3 font-display text-[20px] font-semibold text-[var(--color-text-primary)] leading-tight">
+                {booking.account}
+              </h2>
+              <div className="mt-2.5 flex-1 space-y-1.5 text-sm text-[var(--color-text-secondary)]">
+                <p>{booking.type}</p>
+                <p>{booking.date}</p>
+              </div>
+              {booking.payment && (
+                <div className="mt-4 space-y-1 rounded-lg bg-[var(--color-canvas)] p-3 text-[13px]">
+                  <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Total</span><span className="font-semibold">{booking.payment.total}</span></div>
+                  <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Deposit</span><span>{booking.payment.deposit}</span></div>
+                  <div className="flex justify-between"><span className="text-[var(--color-text-muted)]">Balance</span><span className={canCollect ? "font-bold text-[var(--color-danger-text)]" : ""}>{balance}</span></div>
                 </div>
-                <span className="shrink-0 font-display text-[26px] font-bold tabular-nums text-[var(--color-text-primary)]">
-                  {balance ?? "—"}
-                </span>
-              </div>
-              <p className="mt-3 text-[15px] text-[var(--color-text-muted)]">
-                {booking.payment ? `${booking.payment.total} total · ${booking.payment.deposit} paid` : "Quote pending"}
-              </p>
-              <div className="mt-auto flex gap-2 pt-5">
-                {booking.linkedProjectRef && (
-                  <span className="text-xs text-[var(--color-text-muted)]">Project {booking.linkedProjectRef}</span>
-                )}
-                {canCollect && (
-                  <button
-                    type="button"
-                    onClick={() => fireToast(`Collecting ${balance} from ${booking.account}`, "success")}
-                    className="ml-auto h-10 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]"
-                  >
-                    Collect {balance}
-                  </button>
-                )}
-              </div>
+              )}
+              {canCollect && (
+                <button
+                  onClick={() => {
+                    if (booking.paymongo_checkout_url) {
+                      window.open(booking.paymongo_checkout_url, "_blank");
+                    } else {
+                      fireToast("No checkout link available.", "danger");
+                    }
+                  }}
+                  className="mt-3 flex h-10 w-full items-center justify-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]"
+                >
+                  Collect {balance}
+                </button>
+              )}
             </article>
           );
         })}

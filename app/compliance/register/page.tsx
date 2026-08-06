@@ -1,7 +1,19 @@
 import { Plus } from "lucide-react";
-import { COMPLIANCE_REGISTER } from "@/lib/sample-data";
+import { getComplianceRegister } from "@/lib/server/compliance-data";
 
-export default function ComplianceRegisterPage() {
+const COMP_ST: Record<string, { bg: string; c: string; l: string }> = {
+  expired: { bg: "var(--color-danger-bg)", c: "var(--color-danger-text)", l: "Expired" },
+  action: { bg: "var(--color-attention-bg)", c: "var(--color-attention-text)", l: "Action required" },
+  duesoon: { bg: "var(--color-warning-bg)", c: "var(--color-warning-text)", l: "Due soon" },
+  submitted: { bg: "var(--color-info-bg)", c: "var(--color-info-text)", l: "Submitted" },
+  review: { bg: "var(--color-info-bg)", c: "var(--color-info-text)", l: "Under review" },
+  compliant: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", l: "Compliant" },
+  na: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)", l: "N/A" },
+};
+
+export default async function ComplianceRegisterPage() {
+  const register = await getComplianceRegister();
+
   return (
     <div className="p-12 pt-9">
       <div className="flex items-end justify-between gap-4">
@@ -27,36 +39,39 @@ export default function ComplianceRegisterPage() {
           <div>Est. fee</div>
           <div>Status</div>
         </div>
-        {COMPLIANCE_REGISTER.map((c) => (
-          <div
-            key={c.req}
-            className="grid min-h-[62px] grid-cols-[2fr_1.3fr_1.1fr_1fr_1.1fr_1.2fr] items-center border-b border-[var(--color-border)] px-5 text-[13px] last:border-b-0 hover:bg-[var(--color-canvas)]"
-          >
-            <div>
-              <div className="font-semibold" style={{ color: c.stColor }}>
-                {c.req}
+        {register.map((c) => {
+          const st = COMP_ST[c.status] ?? COMP_ST.compliant;
+          return (
+            <div
+              key={c.id}
+              className="grid min-h-[62px] grid-cols-[2fr_1.3fr_1.1fr_1fr_1.1fr_1.2fr] items-center border-b border-[var(--color-border)] px-5 text-[13px] last:border-b-0 hover:bg-[var(--color-canvas)]"
+            >
+              <div>
+                <div className="font-semibold" style={{ color: st.c }}>
+                  {c.requirement}
+                </div>
+                <div className="text-xs text-[var(--color-text-muted)]">
+                  {c.category} · {c.frequency} · {c.responsiblePerson}
+                </div>
               </div>
-              <div className="text-xs text-[var(--color-text-muted)]">
-                {c.cat} · {c.freq} · {c.who}
+              <div className="text-[var(--color-text-primary)]">{c.agency}</div>
+              <div className="text-xs text-[var(--color-text-muted)]">{c.referenceNumber ?? "—"}</div>
+              <div className="text-xs text-[var(--color-text-primary)]">{c.expiresOn ?? "—"}</div>
+              <div>
+                <div className="text-xs text-[var(--color-text-primary)]">{c.estimatedCost ?? "—"}</div>
+                <div className="text-[11px] text-[var(--color-text-muted)]">Actual {c.actualCost ?? "—"}</div>
+              </div>
+              <div>
+                <span
+                  className="rounded-pill px-2.5 py-1 text-[11px] font-semibold"
+                  style={{ background: st.bg, color: st.c }}
+                >
+                  {st.l}
+                </span>
               </div>
             </div>
-            <div className="text-[var(--color-text-primary)]">{c.agency}</div>
-            <div className="text-xs text-[var(--color-text-muted)]">{c.num}</div>
-            <div className="text-xs text-[var(--color-text-primary)]">{c.expiry}</div>
-            <div>
-              <div className="text-xs text-[var(--color-text-primary)]">{c.est}</div>
-              <div className="text-[11px] text-[var(--color-text-muted)]">Actual {c.act}</div>
-            </div>
-            <div>
-              <span
-                className="rounded-pill px-2.5 py-1 text-[11px] font-semibold"
-                style={{ background: c.stBg, color: c.stColor }}
-              >
-                {c.stL}
-              </span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       <p className="mt-3 text-xs text-[var(--color-text-muted)]">
         Fees are a planning estimate — confirm with the issuing agency. Tabaco City computes business-permit

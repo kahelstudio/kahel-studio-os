@@ -1,7 +1,16 @@
-import { FINANCE_PAYMENTS, FINANCE_PAYMENT_KPIS } from "@/lib/sample-data";
+import { getPayments, getPaymentCounts } from "@/lib/server/payments-data";
 import { KpiStrip } from "@/components/finance/kpi-strip";
 
-export default function FinancePaymentsPage() {
+export default async function FinancePaymentsPage() {
+  const [payments, counts] = await Promise.all([getPayments(), getPaymentCounts()]);
+
+  const kpis = [
+    { label: "Total received", value: payments.kpis[0].value, change: payments.kpis[0].change },
+    { label: "Pending", value: `${counts.pending} bookings`, change: "Awaiting payment" },
+    { label: "Paid", value: `${counts.paid} bookings`, change: `of ${counts.total}` },
+    { label: "Payment rate", value: counts.total ? `${Math.round((counts.paid / counts.total) * 100)}%` : "—", change: "Paid / total" },
+  ];
+
   return (
     <div className="p-12 pt-9">
       <div>
@@ -13,7 +22,7 @@ export default function FinancePaymentsPage() {
         </p>
       </div>
 
-      <KpiStrip kpis={FINANCE_PAYMENT_KPIS} />
+      <KpiStrip kpis={kpis} />
 
       <div className="mt-5 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="grid h-11 grid-cols-[1.1fr_1.7fr_0.8fr_1.3fr_1fr_1fr] items-center bg-[var(--color-canvas)] px-5 text-[11px] font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
@@ -24,7 +33,12 @@ export default function FinancePaymentsPage() {
           <div>Status</div>
           <div className="text-right">Amount</div>
         </div>
-        {FINANCE_PAYMENTS.map((r) => (
+        {payments.rows.length === 0 && (
+          <div className="px-5 py-12 text-center text-sm text-[var(--color-text-muted)]">
+            No payments received yet. Paid bookings will appear here.
+          </div>
+        )}
+        {payments.rows.map((r) => (
           <div
             key={r.ref}
             className="grid h-[54px] grid-cols-[1.1fr_1.7fr_0.8fr_1.3fr_1fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"

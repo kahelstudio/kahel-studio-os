@@ -1,22 +1,34 @@
-import { CALENDAR_EVENTS, CALENDAR_TODAY, CALENDAR_WEEKDAYS } from "@/lib/sample-data";
+import { getCalendarEvents, type CalendarEvent } from "@/lib/server/bookings-data";
 
-const EVENT_TINT: Record<string, { bg: string; c: string }> = {
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+const EVENT_TINT: Record<CalendarEvent["accent"], { bg: string; c: string }> = {
   ink: { bg: "var(--color-surface-muted)", c: "var(--color-text-primary)" },
   orange: { bg: "var(--color-kahel-50)", c: "var(--color-kahel-700)" },
   indigo: { bg: "var(--color-indigo-100)", c: "var(--color-indigo-800)" },
   teal: { bg: "var(--color-teal-100)", c: "var(--color-teal-800)" },
 };
 
-export default function BookingCalendarPage() {
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+export default async function BookingCalendarPage() {
+  const now = new Date();
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
+  const today = now.getDate();
+
+  const events = await getCalendarEvents(month, year);
+  const firstDay = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+
   const days = Array.from({ length: 35 }, (_, i) => {
-    const day = i - 2;
-    const inMonth = day >= 1 && day <= 31;
-    const today = day === CALENDAR_TODAY;
+    const day = i - firstDay + 1;
+    const inMonth = day >= 1 && day <= daysInMonth;
     return {
       day: inMonth ? day : null,
-      today,
+      today: inMonth && day === today,
       inMonth,
-      events: inMonth ? CALENDAR_EVENTS[day] ?? [] : [],
+      events: inMonth ? (events[day] ?? []) : [],
     };
   });
 
@@ -24,7 +36,7 @@ export default function BookingCalendarPage() {
     <div className="p-10 pt-8">
       <div className="mb-5 flex items-center gap-4">
         <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
-          July 2026
+          {MONTHS[month - 1]} {year}
         </h1>
         <div className="flex gap-1">
           <button className="flex h-[34px] w-[34px] items-center justify-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]">
@@ -46,7 +58,7 @@ export default function BookingCalendarPage() {
 
       <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="grid grid-cols-7 border-b border-[var(--color-border)] bg-[var(--color-canvas)]">
-          {CALENDAR_WEEKDAYS.map((d) => (
+          {WEEKDAYS.map((d) => (
             <div key={d} className="px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
               {d}
             </div>
@@ -73,18 +85,22 @@ export default function BookingCalendarPage() {
                   </span>
                 )}
               </div>
-              {c.events.map((ev, j) => {
+              {c.events.slice(0, 3).map((ev, j) => {
                 const tint = EVENT_TINT[ev.accent];
                 return (
                   <div
                     key={j}
-                    className="mt-1 truncate rounded-[5px] px-1.5 py-0.5 text-[11px] font-semibold"
+                    className="mb-0.5 truncate rounded-[4px] px-1.5 py-px text-[11px] font-medium"
                     style={{ background: tint.bg, color: tint.c }}
+                    title={`${ev.title} at ${ev.time}`}
                   >
-                    {ev.label}
+                    {ev.time} {ev.title.length > 24 ? `${ev.title.slice(0, 24)}\u2026` : ev.title}
                   </div>
                 );
               })}
+              {(c.events.length > 3) && (
+                <div className="text-[11px] font-medium text-[var(--color-text-muted)]">+{c.events.length - 3} more</div>
+              )}
             </div>
           ))}
         </div>

@@ -166,7 +166,7 @@ export async function createCustomerProfile(input: { firstName: string; lastName
   const existing = await getProfileByEmail(email);
   if (existing) return existing;
   const { data: client, error: clientError } = await admin.from("clients")
-    .insert({ name: `${input.firstName} ${input.lastName}`.trim() }).select("id").single<{ id: string }>();
+    .insert({ name: `${input.firstName} ${input.lastName}`.trim(), external_ref: `cus-${crypto.randomUUID().slice(0, 12)}` }).select("id").single<{ id: string }>();
   if (clientError) throw clientError;
   const { data: profile, error: profileError } = await admin.from("client_profiles").insert({
     client_id: client.id,

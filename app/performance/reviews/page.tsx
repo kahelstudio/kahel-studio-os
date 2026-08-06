@@ -1,6 +1,8 @@
-import { PERFORMANCE_REVIEWS } from "@/lib/sample-data";
+import { getPerformanceReviews } from "@/lib/server/performance-data";
 
-export default function PerformanceReviewsPage() {
+export default async function PerformanceReviewsPage() {
+  const reviews = await getPerformanceReviews();
+
   return (
     <div className="p-12 pt-9">
       <div className="flex items-end justify-between">
@@ -22,32 +24,43 @@ export default function PerformanceReviewsPage() {
           <div>Status</div>
           <div className="text-right">Rating</div>
         </div>
-        {PERFORMANCE_REVIEWS.map((r) => (
-          <div
-            key={r.name}
-            className="grid h-[58px] grid-cols-[2fr_1.4fr_1fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[var(--color-indigo-100)] font-display text-xs font-semibold text-[var(--color-indigo-800)]">
-                {r.ini}
+        {reviews.map((r) => {
+          const statusColors: Record<string, { bg: string; color: string; label: string }> = {
+            completed: { bg: "var(--color-success-bg)", color: "var(--color-success-text)", label: "Completed" },
+            in_progress: { bg: "var(--color-attention-bg)", color: "var(--color-attention-text)", label: "In progress" },
+            pending: { bg: "var(--color-info-bg)", color: "var(--color-info-text)", label: "Pending" },
+            draft: { bg: "var(--color-surface-muted)", color: "var(--color-text-secondary)", label: "Draft" },
+          };
+          const st = statusColors[r.status] ?? { bg: "var(--color-surface-muted)", color: "var(--color-text-secondary)", label: r.status };
+          return (
+            <div
+              key={r.id}
+              className="grid h-[58px] grid-cols-[2fr_1.4fr_1fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-[var(--color-indigo-100)] font-display text-xs font-semibold text-[var(--color-indigo-800)]">
+                  {r.initials}
+                </div>
+                <div>
+                  <div className="font-semibold">{r.name}</div>
+                  <div className="text-xs text-[var(--color-text-secondary)]">{r.role}</div>
+                </div>
               </div>
+              <div className="text-[var(--color-text-primary)]">{r.cycle}</div>
               <div>
-                <div className="font-semibold">{r.name}</div>
-                <div className="text-xs text-[var(--color-text-secondary)]">{r.role}</div>
+                <span
+                  className="rounded-pill px-2.5 py-1 text-xs font-semibold"
+                  style={{ background: st.bg, color: st.color }}
+                >
+                  {st.label}
+                </span>
+              </div>
+              <div className="text-right font-display text-base font-semibold">
+                {r.rating != null ? r.rating : "—"}
               </div>
             </div>
-            <div className="text-[var(--color-text-primary)]">{r.cycle}</div>
-            <div>
-              <span
-                className="rounded-pill px-2.5 py-1 text-xs font-semibold"
-                style={{ background: r.stBg, color: r.stColor }}
-              >
-                {r.stLabel}
-              </span>
-            </div>
-            <div className="text-right font-display text-base font-semibold">{r.rating}</div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -12,8 +12,6 @@ import {
   ChevronRight,
   Clock3,
   Menu,
-  Moon,
-  Sun,
   X,
 } from "lucide-react";
 import styles from "./marketing-site.module.css";
@@ -129,7 +127,7 @@ function Gallery({ filter, home = false }: { filter: string; home?: boolean }) {
   </figure>)}</div>;
 }
 
-function Header({ page, theme, customer, setTheme, go, openMenu, signOut }: { page: Page; theme: Theme; customer: CustomerHeaderState; setTheme: (theme: Theme) => void; go: (page: Page, category?: ServiceCategory) => void; openMenu: () => void; signOut: () => void }) {
+function Header({ page, customer, go, openMenu, signOut }: { page: Page; customer: CustomerHeaderState; go: (page: Page, category?: ServiceCategory) => void; openMenu: () => void; signOut: () => void }) {
   return <header className={`${styles.header} ${page === "home" ? styles.homeHeader : ""}`}><div className={styles.container}>
     <button type="button" className={styles.logoButton} onClick={() => go("home")} aria-label="Kahel Studio home"><span className={styles.lightLogo}><Logo /></span><span className={styles.darkLogo}><Logo white /></span></button>
     <nav className={styles.desktopNav} aria-label="Primary">
@@ -137,7 +135,8 @@ function Header({ page, theme, customer, setTheme, go, openMenu, signOut }: { pa
       <div className={styles.servicesMenu}><button type="button" aria-current={page === "services" ? "page" : undefined} onClick={() => go("services")}>Services</button><div className={styles.dropdown}><button type="button" onClick={() => go("services")}><strong>Studio sessions</strong><span>Portraits, branding & mini shoots</span></button><button type="button" onClick={() => go("services", "events")}><strong>Events</strong><span>Debut, christening, celebrations</span></button></div></div>
       <button type="button" aria-current={page === "about" ? "page" : undefined} onClick={() => go("about")}>About</button>
     </nav>
-    <div className={styles.headerActions}><button type="button" className={styles.themeButton} onClick={() => setTheme(theme === "light" ? "dark" : "light")} aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}>{theme === "light" ? <Moon size={18} /> : <Sun size={18} />}</button>{customer.authenticated ? <div className={styles.accountMenu}><button type="button" className={styles.headerSignIn} aria-haspopup="menu">My account</button><div role="menu" className={styles.accountDropdown}><Link role="menuitem" href="/portal">Client Portal</Link><Link role="menuitem" href="/portal/profile">Profile</Link><button role="menuitem" type="button" onClick={signOut}>Sign out</button></div></div> : <Link className={styles.headerSignIn} href="/sign-in">Sign in</Link>}<button type="button" className={styles.mobileMenuButton} onClick={openMenu} aria-label="Open menu"><Menu size={21} /></button></div>
+    <div className={styles.headerActions}>
+{customer.authenticated ? <div className={styles.accountMenu}><button type="button" className={styles.headerSignIn} aria-haspopup="menu">My account</button><div role="menu" className={styles.accountDropdown}><Link role="menuitem" href="/portal">Client Portal</Link><Link role="menuitem" href="/portal/profile">Profile</Link><button role="menuitem" type="button" onClick={signOut}>Sign out</button></div></div> : <Link className={styles.headerSignIn} href="/sign-in">Sign in</Link>}<button type="button" className={styles.mobileMenuButton} onClick={openMenu} aria-label="Open menu"><Menu size={21} /></button></div>
   </div></header>;
 }
 
@@ -339,5 +338,5 @@ export function MarketingSite({ initialPage = "home" }: { initialPage?: Page }) 
   const go = (next: Page, category?: ServiceCategory) => { if (category) setServiceCategory(category); setPage(next); setMenuOpen(false); document.body.style.overflow = ""; window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); };
   const closeMenu = () => { setMenuOpen(false); requestAnimationFrame(() => menuTrigger.current?.focus()); };
   const signOut = () => { void fetch("/api/customer/session", { method: "DELETE" }).finally(() => { setCustomer({ authenticated: false }); setMenuOpen(false); }); };
-  return <div className={styles.site} data-theme={theme}><a href="#marketing-main" className={styles.skipLink}>Skip to main content</a><Header page={page} theme={theme} customer={customer} setTheme={setTheme} go={go} signOut={signOut} openMenu={() => { menuTrigger.current = document.activeElement as HTMLElement; setMenuOpen(true); }} />{menuOpen && <MobileMenu page={page} customer={customer} close={closeMenu} go={go} signOut={signOut} />}<div id="marketing-main">{page === "home" && <Home go={go} />}{page === "portfolio" && <Portfolio />}{page === "services" && <Services category={serviceCategory} setCategory={setServiceCategory} goBook={() => go("book")} />}{page === "about" && <About />}{page === "book" && <Booking goHome={() => go("home")} />}{page === "privacy" && <Privacy />}{page === "terms" && <Terms />}{page === "health-safety" && <HealthSafety />}</div>{page !== "book" && page !== "privacy" && page !== "terms" && page !== "health-safety" && <FinalCta goBook={() => go("book")} />}<Footer go={go} /></div>;
+  return <div className={styles.site} data-theme={theme}><a href="#marketing-main" className={styles.skipLink}>Skip to main content</a><Header page={page} customer={customer} go={go} signOut={signOut} openMenu={() => { menuTrigger.current = document.activeElement as HTMLElement; setMenuOpen(true); }} />{menuOpen && <MobileMenu page={page} customer={customer} close={closeMenu} go={go} signOut={signOut} />}<div id="marketing-main">{page === "home" && <Home go={go} />}{page === "portfolio" && <Portfolio />}{page === "services" && <Services category={serviceCategory} setCategory={setServiceCategory} goBook={() => go("book")} />}{page === "about" && <About />}{page === "book" && <Booking goHome={() => go("home")} />}{page === "privacy" && <Privacy />}{page === "terms" && <Terms />}{page === "health-safety" && <HealthSafety />}</div>{page !== "book" && page !== "privacy" && page !== "terms" && page !== "health-safety" && <FinalCta goBook={() => go("book")} />}<Footer go={go} /></div>;
 }

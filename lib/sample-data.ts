@@ -695,6 +695,219 @@ export const PROJECT_GROUPS = [
   items: g.items,
 }));
 
+// ── Projects Pipeline ─────────────────────────────────────────────────
+export type PipelineStage = "pre" | "production" | "post";
+
+export interface PipelineProject {
+  ref: string;
+  client: string;
+  service: string;
+  stage: PipelineStage;
+  status: string;
+  schedule: string;
+  team?: string;
+  location?: string;
+  progress?: number;
+  due?: string;
+  quick?: "overdue" | "week" | "completed" | "archived";
+  history: { event: string; by: string; when: string }[];
+}
+
+export const PROJECT_PIPELINE_STAGES: {
+  id: PipelineStage;
+  name: string;
+  description: string;
+  statuses: string[];
+}[] = [
+  {
+    id: "pre",
+    name: "Pre-production",
+    description: "Prepare the brief, shoot plan and team.",
+    statuses: [
+      "New project",
+      "Client briefing",
+      "Concept development",
+      "Shot list",
+      "Schedule confirmed",
+      "Location preparation",
+      "Equipment preparation",
+      "Team assigned",
+      "Awaiting client approval",
+      "Ready for production",
+    ],
+  },
+  {
+    id: "production",
+    name: "Production",
+    description: "Capture photography, video and audio.",
+    statuses: [
+      "Ready for production",
+      "In production",
+      "Shoot paused",
+      "Additional shoot required",
+      "Production completed",
+    ],
+  },
+  {
+    id: "post",
+    name: "Post-production",
+    description: "Back up, edit, review and deliver work.",
+    statuses: [
+      "File backup",
+      "Culling",
+      "Photo editing",
+      "Video editing",
+      "Audio editing",
+      "Internal review",
+      "Client review",
+      "Revisions",
+      "Ready for delivery",
+      "Delivered",
+      "Completed",
+      "Archived",
+    ],
+  },
+];
+
+export const PROJECT_PIPELINE_ROWS: PipelineProject[] = [
+  {
+    ref: "KS-2026-0142",
+    client: "Amma's Bistro",
+    service: "Food photography",
+    stage: "pre",
+    status: "Shot list",
+    schedule: "Aug 2, 2026",
+    team: "Eusebio, Luiz",
+    history: [
+      { event: "Moved to shot list", by: "Eusebio Barrun", when: "24 Jul 2026, 09:15" },
+      { event: "Project created from confirmed booking", by: "System", when: "20 Jul 2026, 14:32" },
+    ],
+  },
+  {
+    ref: "KS-2026-0145",
+    client: "Bicol Medical Center",
+    service: "Corporate interview",
+    stage: "pre",
+    status: "Awaiting client approval",
+    schedule: "Aug 5, 2026",
+    team: "Eusebio, Jose",
+    history: [
+      { event: "Brief sent for approval", by: "Jose Ramos", when: "23 Jul 2026, 16:08" },
+      { event: "Project created from confirmed booking", by: "System", when: "22 Jul 2026, 11:20" },
+    ],
+  },
+  {
+    ref: "KS-2026-0148",
+    client: "Reyes family",
+    service: "Family portrait",
+    stage: "pre",
+    status: "Equipment preparation",
+    schedule: "Aug 7, 2026",
+    team: "Joanne, Luiz",
+    history: [
+      { event: "Equipment preparation assigned", by: "Joanne Cruz", when: "24 Jul 2026, 08:42" },
+    ],
+  },
+  {
+    ref: "KS-2026-0138",
+    client: "Cafe Basilio",
+    service: "Monthly content",
+    stage: "production",
+    status: "In production",
+    schedule: "Jul 25, 9:00 AM",
+    location: "Tabaco City",
+    quick: "week",
+    history: [
+      { event: "Production started", by: "Eusebio Barrun", when: "25 Jul 2026, 09:03" },
+      { event: "Schedule confirmed", by: "Marisol Reyes", when: "21 Jul 2026, 13:42" },
+    ],
+  },
+  {
+    ref: "KS-2026-0139",
+    client: "Santos wedding",
+    service: "Wedding coverage",
+    stage: "production",
+    status: "In production",
+    schedule: "Jul 25, 1:00 PM",
+    location: "Legazpi City",
+    quick: "week",
+    history: [
+      { event: "Production started", by: "Eusebio Barrun", when: "25 Jul 2026, 13:07" },
+      { event: "Team assigned", by: "Marisol Reyes", when: "18 Jul 2026, 10:15" },
+    ],
+  },
+  {
+    ref: "KS-2026-0140",
+    client: "La Wela",
+    service: "Campaign video",
+    stage: "production",
+    status: "Ready for production",
+    schedule: "Jul 26, 10:00 AM",
+    location: "Client location",
+    quick: "week",
+    history: [
+      { event: "Moved to production", by: "Eusebio Barrun", when: "24 Jul 2026, 17:20" },
+    ],
+  },
+  {
+    ref: "KS-2026-0126",
+    client: "Sea & Smoke",
+    service: "Menu photography",
+    stage: "post",
+    status: "Photo editing",
+    schedule: "Jul 18, 2026",
+    progress: 75,
+    due: "Jul 27, 2026",
+    quick: "week",
+    history: [
+      { event: "Moved to photo editing", by: "Luiz Santos", when: "23 Jul 2026, 15:34" },
+      { event: "Files backed up", by: "Luiz Santos", when: "19 Jul 2026, 11:24" },
+    ],
+  },
+  {
+    ref: "KS-2026-0129",
+    client: "Kapihan",
+    service: "Social content",
+    stage: "post",
+    status: "Video editing",
+    schedule: "Jul 19, 2026",
+    progress: 60,
+    due: "Jul 28, 2026",
+    quick: "week",
+    history: [
+      { event: "Moved to video editing", by: "Eusebio Barrun", when: "22 Jul 2026, 10:18" },
+    ],
+  },
+  {
+    ref: "KS-2026-0132",
+    client: "Cruz family",
+    service: "Studio portrait",
+    stage: "post",
+    status: "Client review",
+    schedule: "Jul 15, 2026",
+    progress: 90,
+    due: "Jul 26, 2026",
+    quick: "week",
+    history: [
+      { event: "Gallery shared for client review", by: "Joanne Cruz", when: "24 Jul 2026, 14:10" },
+    ],
+  },
+  {
+    ref: "KS-2026-0135",
+    client: "Pacific Construction",
+    service: "Corporate interview",
+    stage: "post",
+    status: "Ready for delivery",
+    schedule: "Jul 14, 2026",
+    progress: 100,
+    due: "Jul 25, 2026",
+    quick: "overdue",
+    history: [
+      { event: "Deliverables approved internally", by: "Eusebio Barrun", when: "24 Jul 2026, 16:31" },
+    ],
+  },
+];
+
 // ── Glitches ─────────────────────────────────────────────────────────
 const GLITCH_ST: Record<string, { bg: string; c: string; l: string }> = {
   open: { bg: "var(--color-danger-bg)", c: "var(--color-danger-text)", l: "Open" },
@@ -1365,6 +1578,38 @@ export const USAGE_BARS = [
   { label: "Team seats", sub: "6 of 10 used", pct: 60, bar: "#FF5300" },
   { label: "Email quota (July)", sub: "1,284 of 5,000", pct: 26, bar: "#00A15C" },
 ];
+
+export const USAGE_RESOURCES = [
+  ["File storage", "684 GB", "1 TB", "316 GB remaining", 68.4, "Normal", "31 Aug 2026"],
+  ["Monthly bandwidth", "1.7 TB", "2 TB", "300 GB remaining", 85, "Approaching limit", "31 Jul 2026"],
+  ["Email sends", "1,264", "5,000", "3,736 remaining", 25.3, "Normal", "31 Jul 2026"],
+  ["SMS sends", "186", "500", "314 remaining", 37.2, "Normal", "31 Jul 2026"],
+  ["Automation runs", "3,842", "10,000", "6,158 remaining", 38.4, "Normal", "31 Jul 2026"],
+  ["API requests", "48,920", "No configured limit", "Estimated ₱1,120", 0, "No configured limit", "31 Jul 2026"],
+  ["Database storage", "5.8 GB", "10 GB", "4.2 GB remaining", 58, "Normal", "31 Aug 2026"],
+  ["Backup storage", "18 GB", "50 GB", "32 GB remaining", 36, "Normal", "31 Aug 2026"],
+  ["Active user seats", "5", "10 seats", "5 available", 50, "Normal", "31 Jul 2026"],
+] as const;
+
+export const USAGE_MODULES = [
+  ["CRM", "4", "126", "2.8 GB", "284", "4,820", "5 minutes ago", "+8%"],
+  ["Booking", "5", "68", "620 MB", "412", "8,340", "8 minutes ago", "+12%"],
+  ["Projects", "5", "42", "486 GB", "1,126", "11,602", "2 minutes ago", "+18%"],
+  ["Files", "5", "2,486", "684 GB", "318", "15,888", "1 minute ago", "+23%"],
+  ["POS", "3", "384", "94 MB", "522", "4,362", "14 minutes ago", "+5%"],
+  ["Staff Hub", "5", "218", "1.3 GB", "436", "2,104", "22 minutes ago", "+4%"],
+  ["Reports", "2", "37", "460 MB", "144", "1,804", "1 hour ago", "+9%"],
+] as const;
+
+export const USAGE_ALERTS = [
+  ["Approaching", "Project storage", "Project storage reached 82% of its configured warning threshold.", "25 Jul, 22:10", "684 GB", "835 GB", "Review storage", "New"],
+  ["Warning", "Email delivery", "Email delivery failures increased by 18% compared with the previous week.", "25 Jul, 20:46", "24 failed", "20 failed", "Investigate provider", "Investigating"],
+  ["Info", "Cost forecast", "Monthly forecast is ₱11,380 against the ₱12,000 budget.", "25 Jul, 18:00", "₱11,380", "₱12,000", "Review budget", "Acknowledged"],
+  ["High", "Backup", "One scheduled backup failed and requires review.", "25 Jul, 03:10", "1 failed", "0 failed", "Review backup", "New"],
+  ["Normal", "SMS allowance", "314 messages remain in the current allowance.", "24 Jul, 09:00", "186 sent", "500 allowance", "View channel", "Resolved"],
+] as const;
+
+export const USAGE_TREND = [38, 44, 42, 49, 52, 58, 61, 64, 67, 65, 71, 76];
 
 export const BILLING_ROWS = [
   { label: "Active booklet ATP", value: "ATP-0AU-2026-0142" },

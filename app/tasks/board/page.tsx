@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CalendarDays, Ellipsis, LayoutList, ListChecks, Plus, Share2, Users, X } from "lucide-react";
-import { TASKS_BOARD } from "@/lib/sample-data";
 import { useToast } from "@/components/toast/toast-provider";
 
 const views = [["Kanban", LayoutList], ["Calendar", CalendarDays], ["List", ListChecks]] as const;
@@ -24,24 +23,37 @@ type Status = (typeof statuses)[number]["key"];
 type Task = { id: string; title: string; context: string; assignee: string; dueDate: string; priority: (typeof priorities)[number]; category: string; status: Status };
 type TaskDraft = Omit<Task, "id">;
 
-const initialTasks: Task[] = TASKS_BOARD.flatMap((column) => column.items.map((task, index) => ({
-  id: `${column.label}-${index}`,
-  title: task.title,
-  context: task.meta.split(" · ")[0],
-  assignee: task.meta.split(" · ").at(-1) ?? "Unassigned",
-  dueDate: `2026-07-${task.due.match(/\d+/)?.[0]?.padStart(2, "0") ?? "31"}`,
-  priority: task.prio as Task["priority"],
-  category: task.cat,
-  status: statuses.find((status) => status.label === column.label)?.key ?? "todo",
-})));
+function mapBoardToTasks(data: { todo?: unknown[]; doing?: unknown[]; blocked?: unknown[]; done?: unknown[] }): Task[] {
+  const columns: [Status, string][] = [["todo", "To do"], ["doing", "In progress"], ["blocked", "Blocked"], ["done", "Done"]];
+  return columns.flatMap(([key]) => {
+    const rows = (data[key] ?? []) as Array<{ id: string; title: string; category: string; assignee: string | null; dueDate: string | null; priority: string }>;
+    return rows.map((task) => ({
+      id: task.id,
+      title: task.title,
+      context: task.category,
+      assignee: task.assignee ?? "Unassigned",
+      dueDate: task.dueDate ?? "",
+      priority: (task.priority === "High" || task.priority === "Med" || task.priority === "Low" ? task.priority : "Med") as Task["priority"],
+      category: task.category,
+      status: key,
+    }));
+  });
+}
 
 const emptyDraft = (status: Status = "todo"): TaskDraft => ({ title: "", context: "Studio operations", assignee: "Unassigned", dueDate: "", priority: "Med", category: "General", status });
 
 export default function TasksBoardPage() {
   const { fireToast } = useToast();
   const [view, setView] = useState("Kanban");
-  const [tasks, setTasks] = useState(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [editor, setEditor] = useState<{ task?: Task; draft: TaskDraft } | null>(null);
+
+  useEffect(() => {
+    fetch("/api/tasks")
+      .then((res) => res.json())
+      .then((data) => setTasks(mapBoardToTasks(data as { todo?: unknown[]; doing?: unknown[]; blocked?: unknown[]; done?: unknown[] })))
+      .catch(() => {});
+  }, []);
 
   function saveTask(draft: TaskDraft) {
     if (!draft.title.trim()) return;

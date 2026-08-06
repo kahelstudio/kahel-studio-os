@@ -1,6 +1,15 @@
-import { PERFORMANCE_ME_CYCLES, PERFORMANCE_ME_KPIS, PERFORMANCE_GOALS } from "@/lib/sample-data";
+import { getPerformanceReviews, getPerformanceGoals } from "@/lib/server/performance-data";
 
-export default function PerformanceMePage() {
+const KPIS = [
+  { label: "Shoots delivered", value: "23", delta: "▲ 4 vs H2 2025", positive: true },
+  { label: "Avg delivery time", value: "10.5d", delta: "▼ 1.5d faster", positive: true },
+  { label: "Client rating", value: "4.8", delta: "Across 19 reviews", positive: null },
+  { label: "Revenue owned", value: "₱1.42M", delta: "▲ 22% YoY", positive: true },
+];
+
+export default async function PerformanceMePage() {
+  const [reviews, goals] = await Promise.all([getPerformanceReviews(), getPerformanceGoals()]);
+
   return (
     <div className="max-w-[1100px] p-12 pt-9">
       <div className="flex items-center gap-4">
@@ -19,7 +28,7 @@ export default function PerformanceMePage() {
       </div>
 
       <div className="mt-6 grid grid-cols-4 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        {PERFORMANCE_ME_KPIS.map((k, i) => (
+        {KPIS.map((k, i) => (
           <div key={k.label} className="px-6 py-[22px]" style={{ borderLeft: i === 0 ? "none" : "1px solid var(--color-border)" }}>
             <div className="text-xs font-medium uppercase tracking-[0.02em] text-[var(--color-text-secondary)]">
               {k.label}
@@ -44,16 +53,18 @@ export default function PerformanceMePage() {
               Review history
             </span>
           </div>
-          {PERFORMANCE_ME_CYCLES.map((c) => (
-            <div key={c.cycle} className="flex items-center gap-4 border-b border-[var(--color-border)] px-[22px] py-[15px] last:border-b-0">
+          {reviews.map((c) => (
+            <div key={c.id} className="flex items-center gap-4 border-b border-[var(--color-border)] px-[22px] py-[15px] last:border-b-0">
               <span className="w-[72px] shrink-0 text-[13px] text-[var(--color-text-secondary)]">{c.cycle}</span>
               <div className="min-w-0">
-                <div className="text-sm font-semibold">{c.note}</div>
-                <span className="mt-0.5 inline-block rounded-pill bg-[var(--color-success-bg)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-success-text)]">
-                  Completed
-                </span>
+                <div className="text-sm font-semibold">{c.notes ?? c.name}</div>
+                {c.status === "done" && (
+                  <span className="mt-0.5 inline-block rounded-pill bg-[var(--color-success-bg)] px-2 py-0.5 text-[11px] font-semibold text-[var(--color-success-text)]">
+                    Completed
+                  </span>
+                )}
               </div>
-              <span className="ml-auto font-display text-xl font-bold text-[var(--color-text-primary)]">{c.rating}</span>
+              <span className="ml-auto font-display text-xl font-bold text-[var(--color-text-primary)]">{c.rating ?? "—"}</span>
             </div>
           ))}
         </div>
@@ -61,14 +72,14 @@ export default function PerformanceMePage() {
           <div className="border-b border-[var(--color-border)] pb-3.5 font-display text-[13px] font-semibold uppercase tracking-[0.16em]">
             My goals
           </div>
-          {PERFORMANCE_GOALS.map((g) => (
-            <div key={g.label}>
+          {goals.map((g) => (
+            <div key={g.id}>
               <div className="mb-2 flex items-baseline justify-between">
                 <span className="text-[13px] font-semibold">{g.label}</span>
-                <span className="text-xs text-[var(--color-text-secondary)]">{g.val}</span>
+                <span className="text-xs text-[var(--color-text-secondary)]">{g.detail ?? `${g.progressPct}%`}</span>
               </div>
               <div className="h-2 overflow-hidden rounded-pill bg-[var(--color-surface-muted)]">
-                <div className="h-full rounded-pill bg-[var(--color-indigo-500)]" style={{ width: `${g.pct}%` }} />
+                <div className="h-full rounded-pill bg-[var(--color-indigo-500)]" style={{ width: `${g.progressPct}%` }} />
               </div>
             </div>
           ))}

@@ -4,7 +4,7 @@ type Table<Row extends Record<string, unknown>> = { Row: Row; Insert: Partial<Ro
 
 type ClientRow = { id: string; name: string; status: string; external_ref: string; primary_contact_profile_id: string | null; created_at: string; updated_at: string };
 type ProfileRow = { id: string; client_id: string; user_id: string | null; email: string; normalized_email: string; first_name: string; last_name: string; mobile: string | null; status: string; email_verified_at: string | null; created_at: string; updated_at: string };
-type BookingRow = { id: string; client_id: string; client_profile_id: string; idempotency_key: string; reference: string; service_type: string; service_id: string; service_date: string; service_time: string; location: string; payment_type: string; currency: string; subtotal_amount_php: number; total_amount_php: number; paid_amount_php: number; refunded_amount_php: number; status: string; payment_status: string; completed_at: string | null; attendance: string; kind: string; duplicate_of: string | null; loyalty_exclusion_reason: string | null; loyalty_excluded_by: string | null; loyalty_excluded_at: string | null; reward_id: string | null; paymongo_checkout_session_id: string | null; paymongo_checkout_url: string | null; paymongo_payment_intent_id: string | null; paymongo_checkout_expires_at: string | null; checkout_creation_started_at: string | null; created_at: string; updated_at: string };
+type BookingRow = { id: string; client_id: string; client_profile_id: string; idempotency_key: string; request_fingerprint: string; reference: string; service_type: string; service_id: string; service_date: string; service_time: string; location: string; payment_type: string; currency: string; subtotal_amount_php: number; total_amount_php: number; paid_amount_php: number; refunded_amount_php: number; status: string; payment_status: string; completed_at: string | null; attendance: string; kind: string; duplicate_of: string | null; loyalty_exclusion_reason: string | null; loyalty_excluded_by: string | null; loyalty_excluded_at: string | null; reward_id: string | null; paymongo_checkout_session_id: string | null; paymongo_checkout_url: string | null; paymongo_payment_intent_id: string | null; paymongo_checkout_expires_at: string | null; checkout_creation_started_at: string | null; created_at: string; updated_at: string };
 type ProjectRow = { id: string; client_id: string; booking_id: string | null; reference: string; title: string; description: string | null; status: string; starts_at: string | null; completed_at: string | null; created_at: string; updated_at: string };
 type InvoiceRow = { id: string; client_id: string; project_id: string | null; reference: string; currency: string; subtotal_amount_php: number; tax_amount_php: number; total_amount_php: number; paid_amount_php: number; status: string; issued_at: string | null; due_at: string | null; paid_at: string | null; created_at: string; updated_at: string };
 type GalleryRow = { id: string; client_id: string; project_id: string; booking_id: string | null; slug: string; title: string; description: string | null; status: string; access_rule: string; published: boolean; published_at: string | null; downloads_enabled: boolean; favorites_enabled: boolean; selections_enabled: boolean; watermark_enabled: boolean; expires_at: string | null; session_date: string | null; cover_media_asset_id: string | null; created_by: string | null; created_at: string; updated_at: string };
@@ -30,6 +30,34 @@ type LoyaltyEventRow = { id: number; booking_id: string | null; program_id: stri
 type LoyaltyOutboxRow = { id: string; reward_id: string; client_id: string; template_key: string; payload: Json; status: string; attempts: number; available_at: string; processing_at: string | null; sent_at: string | null; provider_message_id: string | null; last_error: string | null; created_at: string; updated_at: string };
 type LoyaltyTermsRow = { id: string; program_id: string; version: number; effective_at: string; body: string; published_at: string | null; created_at: string };
 type LoyaltyAuditRow = { id: number; actor_user_id: string | null; action: string; entity_type: string; entity_id: string; reason: string; previous_data: Json; new_data: Json; created_at: string };
+type ProductRow = { id: string; sku: string; name: string; category: string; price: number; stock: number; swatch: string; active: boolean; created_at: string; updated_at: string };
+type PosSaleRow = { id: string; reference: string; client_id: string | null; method: string; subtotal: number; total: number; currency: string; recorded_at: string; recorded_by: string | null };
+type PosSaleItemRow = { id: string; sale_id: string; product_id: string | null; description: string; unit_price: number; quantity: number; total_price: number };
+type PosCatalogRow = { id: string; catalog_key: string; title: string; subtitle: string | null; unit_label: string | null; active: boolean; created_at: string };
+type PosCatalogItemRow = { id: string; catalog_id: string; code: string; name: string; detail: string | null; price: number; quantity_info: string | null; sort_order: number; active: boolean };
+type EquipmentRow = { id: string; serial: string; name: string; category: string; status: string; note: string | null; location: string | null; created_at: string; updated_at: string };
+type EquipmentCheckoutRow = { id: string; equipment_id: string; checked_out_by: string | null; purpose: string; checked_out_at: string; expected_return_at: string | null; returned_at: string | null; condition_on_return: string | null };
+type MaintenanceRow = { id: string; task: string; asset_label: string; maintenance_type: string; issue: string | null; assignee: string; next_due: string | null; recurrence: string | null; estimated_cost: number | null; warranty: string | null; status: string; created_at: string; updated_at: string };
+type MarketingCampaignRow = { id: string; name: string; channel: string; spend: number; bookings_attributed: number; status: string; starts_at: string | null; ends_at: string | null; created_at: string; created_by: string | null };
+type QuotationRow = { id: string; reference: string; client_id: string | null; service_type: string; total: number; status: string; valid_until: string | null; notes: string | null; created_at: string; updated_at: string; created_by: string | null };
+type GlitchRow = { id: string; reference: string; title: string; area: string; reporter: string; severity: string; status: string; reported_at: string; resolved_at: string | null; created_by: string | null };
+type FeedbackReportRow = { id: string; iid: string; title: string; summary: string | null; app: string; kind: string; status: string; priority: string; submitted_at: string; submitted_by: string | null; checked: boolean };
+type TaskRow = { id: string; title: string; description: string | null; column_status: string; priority: string; category: string; assignee: string | null; due_date: string | null; recurrence: string | null; linked_ref: string | null; sort_order: number; created_at: string; updated_at: string; created_by: string | null };
+type ShiftRow = { id: string; day_of_week: number; initials: string; name: string; role: string; time_description: string | null; location: string; week_start: string; created_at: string; created_by: string | null };
+type ComplianceRow = { id: string; requirement: string; category: string; agency: string; reference_number: string | null; frequency: string; responsible_person: string; estimated_cost: string | null; actual_cost: string | null; status: string; expires_on: string | null; created_at: string; updated_at: string; created_by: string | null };
+type RecruitmentRoleRow = { id: string; title: string; type: string; applicant_count: number; is_open: boolean; description: string | null; created_at: string; updated_at: string };
+type RecruitmentCandidateRow = { id: string; role_id: string | null; initials: string; name: string; role_applied: string; notes: string | null; source: string | null; stage: string; created_at: string; updated_at: string };
+type RecruitmentHireRow = { id: string; initials: string; name: string; role: string; tasks_done: number; tasks_total: number; status: string; created_at: string; updated_at: string };
+type RecruitmentDepartureRow = { id: string; initials: string; name: string; role: string; tasks_done: number; tasks_total: number; status: string; created_at: string; updated_at: string };
+type PerformanceReviewRow = { id: string; staff_id: string | null; initials: string; name: string; role: string; cycle: string; rating: number | null; status: string; notes: string | null; created_at: string; updated_at: string };
+type PerformanceGoalRow = { id: string; label: string; owner: string; progress_pct: number; detail: string | null; created_at: string; updated_at: string };
+type PayrollEmployeeRow = { id: string; staff_id: string | null; initials: string; name: string; role: string; employee_ref: string; base_salary: number; sss_number: string | null; tin: string | null; philhealth_number: string | null; pagibig_number: string | null; status: string; hired_at: string | null; created_at: string; updated_at: string };
+type PayrollRunRow = { id: string; reference: string; period_label: string; period_start: string; period_end: string; payment_date: string; employee_count: number; prepared_by: string; gross_total: number; deductions_total: number; employer_share: number; net_total: number; steps_done: number; steps_total: number; status: string; created_at: string; updated_at: string; created_by: string | null };
+type PayrollPayslipRow = { id: string; run_id: string; employee_id: string; initials: string; name: string; role: string; basic_pay: number; overtime_pay: number; gross_pay: number; sss_ee: number; philhealth_ee: number; pagibig_ee: number; withholding_tax: number; other_deductions: number; net_pay: number; created_at: string };
+type PayrollAdjustmentRow = { id: string; employee_id: string; amount: number; reason: string; effective_date: string; approved_at: string | null; approved_by: string | null; status: string; created_at: string };
+type PayrollContributionRow = { id: string; employee_id: string; period_label: string; sss_amount: number; philhealth_amount: number; pagibig_amount: number; employer_sss: number; employer_philhealth: number; employer_pagibig: number; paid_at: string | null; created_at: string };
+type WebsitePortfolioRow = { id: string; slot: string; title: string; category: string; consent_reference: string | null; media_asset_id: string | null; status: string; created_at: string; updated_at: string };
+type StaffAuditLogRow = { id: number; actor_id: string | null; actor_name: string; event: string; event_type: string; entity_type: string | null; entity_id: string | null; metadata: Json | null; ip_address: string | null; created_at: string };
 
 export type Database = {
   public: {
@@ -62,6 +90,34 @@ export type Database = {
       loyalty_email_outbox: Table<LoyaltyOutboxRow>;
       loyalty_terms_versions: Table<LoyaltyTermsRow>;
       loyalty_audit_log: Table<LoyaltyAuditRow>;
+      products: Table<ProductRow>;
+      pos_sales: Table<PosSaleRow>;
+      pos_sale_items: Table<PosSaleItemRow>;
+      pos_catalogs: Table<PosCatalogRow>;
+      pos_catalog_items: Table<PosCatalogItemRow>;
+      equipment: Table<EquipmentRow>;
+      equipment_checkouts: Table<EquipmentCheckoutRow>;
+      maintenance_records: Table<MaintenanceRow>;
+      marketing_campaigns: Table<MarketingCampaignRow>;
+      quotations: Table<QuotationRow>;
+      glitches: Table<GlitchRow>;
+      feedback_reports: Table<FeedbackReportRow>;
+      tasks: Table<TaskRow>;
+      shifts: Table<ShiftRow>;
+      compliance_records: Table<ComplianceRow>;
+      recruitment_roles: Table<RecruitmentRoleRow>;
+      recruitment_candidates: Table<RecruitmentCandidateRow>;
+      recruitment_hires: Table<RecruitmentHireRow>;
+      recruitment_departures: Table<RecruitmentDepartureRow>;
+      performance_reviews: Table<PerformanceReviewRow>;
+      performance_goals: Table<PerformanceGoalRow>;
+      payroll_employees: Table<PayrollEmployeeRow>;
+      payroll_runs: Table<PayrollRunRow>;
+      payroll_payslips: Table<PayrollPayslipRow>;
+      payroll_adjustments: Table<PayrollAdjustmentRow>;
+      payroll_contributions: Table<PayrollContributionRow>;
+      website_portfolio_items: Table<WebsitePortfolioRow>;
+      staff_audit_log: Table<StaffAuditLogRow>;
     };
     Views: Record<string, never>;
     Functions: {

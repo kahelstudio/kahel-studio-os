@@ -1,16 +1,70 @@
 import { Camera, Coins, CreditCard, TrendingUp } from "lucide-react";
 import {
-  DASHBOARD_BALANCES,
-  DASHBOARD_INQUIRIES,
-  DASHBOARD_KPIS,
-  DASHBOARD_SCHEDULE,
-  REVENUE_CHART,
-} from "@/lib/sample-data";
+  getDashboardKpis,
+  getDashboardSchedule,
+  getDashboardBalances,
+  getDashboardInquiries,
+} from "@/lib/server/dashboard-data";
 
 const KPI_ICONS = [Coins, TrendingUp, Camera, CreditCard];
+
+const REVENUE_CHART = [
+  { month: "FEB", value: 238 },
+  { month: "MAR", value: 296 },
+  { month: "APR", value: 271 },
+  { month: "MAY", value: 344 },
+  { month: "JUN", value: 349 },
+  { month: "JUL", value: 412 },
+];
 const maxRevenue = Math.max(...REVENUE_CHART.map((c) => c.value));
 
-export default function DashboardPage() {
+function formatCurrency(centavos: number) {
+  return `\u20B1${(centavos / 100).toLocaleString("en-PH", { maximumFractionDigits: 0 })}`;
+}
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+}
+
+function relativeTime(dateStr: string) {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const diffHrs = Math.round(diffMs / (1000 * 60 * 60));
+  if (diffHrs < 1) return "Just now";
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  const diffDays = Math.round(diffHrs / 24);
+  return `${diffDays}d ago`;
+}
+
+function toAmPm(time: string) {
+  const [h, m] = time.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hr = h % 12 || 12;
+  return `${hr}:${String(m).padStart(2, "0")} ${ampm}`;
+}
+
+export default async function DashboardPage() {
+  const [kpis, schedule, balances, inquiries] = await Promise.all([
+    getDashboardKpis(),
+    getDashboardSchedule(),
+    getDashboardBalances(),
+    getDashboardInquiries(),
+  ]);
+
+  const kpiDisplay = [
+    { label: "Revenue MTD", value: formatCurrency(kpis.revenueMtd), delta: "MTD", positive: true },
+    { label: "Gross profit", value: formatCurrency(kpis.grossProfit), delta: "MTD", positive: true },
+    { label: "Avg booking value", value: formatCurrency(kpis.avgBookingValue), delta: "Per booking", positive: true },
+    { label: "Outstanding", value: formatCurrency(kpis.outstanding), delta: "Awaiting settlement", positive: false },
+  ];
+
+  const totalOutstanding = balances.reduce((s, b) => s + b.balance, 0);
+
   return (
     <div className="max-w-[1360px] p-12 pt-9">
       <div className="flex items-baseline justify-between">
@@ -24,7 +78,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="mt-6 grid grid-cols-4 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        {DASHBOARD_KPIS.map((k, i) => {
+        {kpiDisplay.map((k, i) => {
           const Icon = KPI_ICONS[i];
           return (
             <div
@@ -91,15 +145,22 @@ export default function DashboardPage() {
               Today&rsquo;s schedule
             </span>
             <span className="text-xs tracking-[0.04em] text-[var(--color-text-muted)]">
-              {DASHBOARD_SCHEDULE.length}
+              {schedule.length}
             </span>
           </div>
-          {DASHBOARD_SCHEDULE.map((s) => (
-            <div key={s.time} className="flex gap-4 border-b border-[var(--color-border)] px-[22px] py-3.5 last:border-b-0">
-              <div className="w-[68px] shrink-0 pt-px text-xs font-medium text-[var(--color-teal-800)]">{s.time}</div>
+          {schedule.length === 0 && (
+            <div className="px-[22px] py-6 text-center text-xs text-[var(--color-text-muted)]">
+              No bookings scheduled for today.
+            </div>
+          )}
+          {schedule.map((s) => (
+            <div key={s.ref} className="flex gap-4 border-b border-[var(--color-border)] px-[22px] py-3.5 last:border-b-0">
+              <div className="w-[68px] shrink-0 pt-px text-xs font-medium text-[var(--color-teal-800)]">
+                {s.time ? toAmPm(s.time) : "—"}
+              </div>
               <div>
-                <div className="text-sm font-semibold">{s.title}</div>
-                <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{s.sub}</div>
+                <div className="text-sm font-semibold">{s.type} — {s.client}</div>
+                <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{s.location}</div>
               </div>
             </div>
           ))}
@@ -112,13 +173,20 @@ export default function DashboardPage() {
             <span className="font-display text-[13px] font-semibold uppercase tracking-[0.16em]">
               Outstanding balances
             </span>
-            <span className="font-display text-sm font-semibold text-[#FF5300]">₱71,000</span>
+            <span className="font-display text-sm font-semibold text-[#FF5300]">
+              {formatCurrency(totalOutstanding)}
+            </span>
           </div>
-          {DASHBOARD_BALANCES.map((b) => (
+          {balances.length === 0 && (
+            <div className="px-[22px] py-6 text-center text-xs text-[var(--color-text-muted)]">
+              No outstanding balances.
+            </div>
+          )}
+          {balances.slice(0, 5).map((b) => (
             <div key={b.ref} className="flex items-center gap-3 border-b border-[var(--color-border)] px-[22px] py-3.5 text-sm last:border-b-0">
-              <span className="font-semibold">{b.name}</span>
+              <span className="font-semibold">{b.client}</span>
               <span className="text-xs text-[var(--color-text-muted)]">{b.ref}</span>
-              <span className="ml-auto font-display font-semibold">{b.amount}</span>
+              <span className="ml-auto font-display font-semibold">{formatCurrency(b.balance)}</span>
             </div>
           ))}
         </div>
@@ -128,19 +196,24 @@ export default function DashboardPage() {
               New inquiries
             </span>
             <span className="text-xs tracking-[0.04em] text-[var(--color-text-muted)]">
-              {DASHBOARD_INQUIRIES.length}
+              {inquiries.length}
             </span>
           </div>
-          {DASHBOARD_INQUIRIES.map((i) => (
-            <div key={i.name} className="flex items-center gap-3 border-b border-[var(--color-border)] px-[22px] py-3.5 text-sm last:border-b-0">
+          {inquiries.length === 0 && (
+            <div className="px-[22px] py-6 text-center text-xs text-[var(--color-text-muted)]">
+              No new inquiries.
+            </div>
+          )}
+          {inquiries.slice(0, 5).map((i) => (
+            <div key={i.id} className="flex items-center gap-3 border-b border-[var(--color-border)] px-[22px] py-3.5 text-sm last:border-b-0">
               <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-[var(--color-surface-muted)] font-display text-xs font-semibold text-[var(--color-text-secondary)]">
-                {i.ini}
+                {initials(i.client)}
               </div>
               <div>
-                <div className="font-semibold">{i.name}</div>
-                <div className="text-xs text-[var(--color-text-muted)]">{i.sub}</div>
+                <div className="font-semibold">{i.client}</div>
+                <div className="text-xs text-[var(--color-text-muted)]">{i.service_type}</div>
               </div>
-              <span className="ml-auto text-xs text-[var(--color-text-secondary)]">{i.when}</span>
+              <span className="ml-auto text-xs text-[var(--color-text-secondary)]">{relativeTime(i.created_at)}</span>
             </div>
           ))}
         </div>

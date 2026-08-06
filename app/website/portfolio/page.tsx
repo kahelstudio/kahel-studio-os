@@ -1,7 +1,14 @@
 import { Plus } from "lucide-react";
-import { WEBSITE_PORTFOLIO } from "@/lib/sample-data";
+import { getPortfolioItems } from "@/lib/server/website-data";
 
-export default function WebsitePortfolioPage() {
+const WEB_STATUS: Record<string, { bg: string; c: string; label: string }> = {
+  published: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "Published" },
+  draft: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)", label: "Draft" },
+};
+
+export default async function WebsitePortfolioPage() {
+  const portfolio = await getPortfolioItems();
+
   return (
     <div className="max-w-[1200px] p-12 pt-9">
       <div className="flex items-end justify-between">
@@ -19,29 +26,33 @@ export default function WebsitePortfolioPage() {
       </div>
 
       <div className="mt-6 grid grid-cols-3 gap-[18px]">
-        {WEBSITE_PORTFOLIO.map((p) => (
-          <div
-            key={p.slot}
-            className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-strong)]"
-          >
-            <div className="relative flex h-[150px] items-center justify-center bg-[var(--color-surface-muted)] text-xs text-[var(--color-text-muted)]">
-              Portfolio image
-              <span
-                className="absolute right-2.5 top-2.5 rounded-pill px-2.5 py-1 text-[11px] font-semibold"
-                style={{ background: p.stBg, color: p.stColor }}
-              >
-                {p.stLabel}
-              </span>
-            </div>
-            <div className="px-4 py-3.5">
-              <div className="font-display text-base font-semibold">{p.title}</div>
-              <div className="mt-1.5 flex items-center justify-between">
-                <span className="text-[13px] text-[var(--color-text-secondary)]">{p.cat}</span>
-                <span className="text-[11px] text-[var(--color-text-muted)]">{p.consentMono}</span>
+        {portfolio.map((p) => {
+          const st = WEB_STATUS[p.status] ?? WEB_STATUS.draft;
+          const consentMono = !p.consentReference ? "consent pending" : p.consentReference;
+          return (
+            <div
+              key={p.slot}
+              className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] hover:border-[var(--color-border-strong)]"
+            >
+              <div className="relative flex h-[150px] items-center justify-center bg-[var(--color-surface-muted)] text-xs text-[var(--color-text-muted)]">
+                Portfolio image
+                <span
+                  className="absolute right-2.5 top-2.5 rounded-pill px-2.5 py-1 text-[11px] font-semibold"
+                  style={{ background: st.bg, color: st.c }}
+                >
+                  {st.label}
+                </span>
+              </div>
+              <div className="px-4 py-3.5">
+                <div className="font-display text-base font-semibold">{p.title}</div>
+                <div className="mt-1.5 flex items-center justify-between">
+                  <span className="text-[13px] text-[var(--color-text-secondary)]">{p.category}</span>
+                  <span className="text-[11px] text-[var(--color-text-muted)]">{consentMono}</span>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

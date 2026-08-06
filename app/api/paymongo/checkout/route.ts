@@ -6,6 +6,18 @@ import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
 export const runtime = "nodejs";
 
 const packagePrices: Record<string, number> = { Theme: 3000, Express: 2500, Group: 2199, Duo: 1800, Solo: 1500, "Mini Session": 999, "Baby Shower": 5000, "Engagement Party": 6000, Birthday: 7000, Christening: 8000, Debut: 10000, "Anniversary Celebration": 10000 };
+
+function serviceCode(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "session";
+}
+
+async function resolveServiceId(admin: ReturnType<typeof getSupabaseAdmin>, name: string) {
+  const code = serviceCode(name);
+  const { data: existing } = await admin.from("services").select("id").eq("code", code).maybeSingle<{ id: string }>();
+  if (existing?.id) return existing.id;
+  const { data: created } = await admin.from("services").upsert({ code, name, active: true }, { onConflict: "code" }).select("id").single<{ id: string }>();
+  return created?.id ?? "00000000-0000-0000-0000-000000000000";
+}
 type CheckoutRequest = { name?: unknown; email?: unknown; mobile?: unknown; session?: unknown; date?: unknown; time?: unknown; location?: unknown; pay?: unknown };
 type BookingRow = { id: string; client_id: string; client_profile_id: string; reference: string; paymongo_checkout_url: string | null };
 const short = (value: unknown, max: number): value is string => typeof value === "string" && value.trim().length > 0 && value.length <= max;
@@ -40,16 +52,21 @@ export async function POST(request: Request) {
     const names = splitName(input.name);
     const profile = await getProfileByEmail(email) ?? await createCustomerProfile({ ...names, email, mobile: normalizeMobile(input.mobile) });
     const reference = prior.data?.reference ?? `KS-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+    const serviceId = await resolveServiceId(admin, input.session);
     const totalAmount = packagePrice * 100;
     const amountDue = Math.round(totalAmount * (input.pay === "deposit" ? 0.5 : 1));
     let booking = prior.data;
     if (!booking) {
+      const fingerprintHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(idempotencyKey));
+      const requestFingerprint = [...new Uint8Array(fingerprintHash)].map((b) => b.toString(16).padStart(2, "0")).join("");
       const inserted = await admin.from("bookings").insert({
         client_id: profile.client_id,
         client_profile_id: profile.id,
         idempotency_key: idempotencyKey,
+        request_fingerprint: requestFingerprint,
         reference,
         service_type: input.session,
+        service_id: serviceId,
         service_date: date,
         service_time: time,
         location: typeof input.location === "string" && input.location.trim() ? input.location.trim().slice(0, 500) : "Kahel Studio, Cobo, Tabaco City",

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Bell, LayoutGrid, Menu, Search } from "lucide-react";
 import { ACCENTS, type AppDef } from "@/lib/apps-config";
 import { AvatarMenu } from "@/components/shell/avatar-menu";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
+
 
 export function Topbar({
   app,
@@ -62,7 +62,7 @@ export function Topbar({
         >
           <Search className="h-5 w-5" />
         </button>
-        <ThemeToggle size={44} />
+
         <button
           className="hidden h-11 w-11 items-center justify-center rounded-control text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] min-[420px]:flex"
           aria-label="Notifications"

@@ -1,8 +1,31 @@
 import { Plus } from "lucide-react";
-import { ONBOARDING_CHECKLIST, ONBOARDING_HIRES } from "@/lib/sample-data";
+import { getHires } from "@/lib/server/recruitment-data";
+import { ONBOARDING_CHECKLIST } from "@/lib/sample-data";
 import { ProgressList } from "@/components/recruitment/progress-list";
+import type { ProgressPerson } from "@/components/recruitment/progress-list";
 
-export default function RecruitmentHiresPage() {
+function computeProgress(done: number, total: number): Pick<ProgressPerson, "pct" | "label" | "barColor" | "stBg" | "stColor" | "stLabel"> {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const complete = done >= total;
+  return {
+    pct: `${pct}%`,
+    label: `${done} / ${total}`,
+    barColor: complete ? "#00A15C" : "#4F3DD9",
+    stBg: complete ? "var(--color-success-bg)" : "var(--color-indigo-100)",
+    stColor: complete ? "var(--color-success-text)" : "var(--color-indigo-800)",
+    stLabel: complete ? "Complete" : "In progress",
+  };
+}
+
+export default async function RecruitmentHiresPage() {
+  const hires = await getHires();
+  const people: ProgressPerson[] = hires.map((h) => ({
+    ini: h.initials,
+    name: h.name,
+    role: h.role,
+    ...computeProgress(h.tasksDone, h.tasksTotal),
+  }));
+
   return (
     <div className="max-w-[1200px] p-12 pt-9">
       <div className="flex items-end justify-between">
@@ -21,7 +44,7 @@ export default function RecruitmentHiresPage() {
 
       <ProgressList
         title="Checklist"
-        people={ONBOARDING_HIRES}
+        people={people}
         checklist={ONBOARDING_CHECKLIST}
         checklistOwner="M. PADUA"
       />

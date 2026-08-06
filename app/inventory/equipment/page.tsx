@@ -1,7 +1,15 @@
 import { Plus } from "lucide-react";
-import { INVENTORY_EQUIPMENT } from "@/lib/sample-data";
+import { getEquipment } from "@/lib/server/inventory-data";
 
-export default function InventoryEquipmentPage() {
+const INV_STATUS: Record<string, { bg: string; c: string; label: string }> = {
+  available: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "Available" },
+  out: { bg: "var(--color-attention-bg)", c: "var(--color-attention-text)", label: "Checked out" },
+  maint: { bg: "var(--color-danger-bg)", c: "var(--color-danger-text)", label: "Maintenance" },
+};
+
+export default async function InventoryEquipmentPage() {
+  const equipment = await getEquipment();
+
   return (
     <div className="p-12 pt-9">
       <div className="flex items-end justify-between">
@@ -26,27 +34,32 @@ export default function InventoryEquipmentPage() {
           <div>Status</div>
           <div>Location / note</div>
         </div>
-        {INVENTORY_EQUIPMENT.map((e) => (
-          <div
-            key={e.serial}
-            className="grid h-[52px] grid-cols-[1.1fr_1.6fr_1fr_1fr_1.4fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
-          >
-            <div className="text-[13px] font-medium text-[var(--color-text-primary)]">{e.serial}</div>
-            <div className="font-semibold">{e.name}</div>
-            <div className="text-[var(--color-text-secondary)]">{e.cat}</div>
-            <div>
-              <span
-                className="rounded-pill px-2.5 py-1 text-xs font-semibold"
-                style={{ background: e.stBg, color: e.stColor }}
-              >
-                {e.stLabel}
-              </span>
+        {equipment.map((e) => {
+          const st = INV_STATUS[e.status] ?? INV_STATUS.available;
+          const note = e.note ?? e.location ?? "—";
+          const noteColor = e.status === "maint" ? "var(--color-danger-text)" : "var(--color-text-secondary)";
+          return (
+            <div
+              key={e.serial}
+              className="grid h-[52px] grid-cols-[1.1fr_1.6fr_1fr_1fr_1.4fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
+            >
+              <div className="text-[13px] font-medium text-[var(--color-text-primary)]">{e.serial}</div>
+              <div className="font-semibold">{e.name}</div>
+              <div className="text-[var(--color-text-secondary)]">{e.category}</div>
+              <div>
+                <span
+                  className="rounded-pill px-2.5 py-1 text-xs font-semibold"
+                  style={{ background: st.bg, color: st.c }}
+                >
+                  {st.label}
+                </span>
+              </div>
+              <div className="text-[13px]" style={{ color: noteColor }}>
+                {note}
+              </div>
             </div>
-            <div className="text-[13px]" style={{ color: e.noteColor }}>
-              {e.note}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -10,14 +10,14 @@ type AuthShellProps = {
   footer?: React.ReactNode;
 };
 
-function BrandLink({ mobile = false }: { mobile?: boolean }) {
+function BrandLink({ mobile = false, light = false }: { mobile?: boolean; light?: boolean }) {
   return (
     <Link
       href="/"
       className={`${styles.brandLink} ${mobile ? styles.mobileBrand : ""}`}
       aria-label="Kahel Studio home"
     >
-      <Image src="/kahelstudio-logo_b.svg" alt="Kahel Studio" width={164} height={24} priority />
+      <Image src={light ? "/kahelstudio-logo_white.svg" : "/kahelstudio-logo_b.svg"} alt="Kahel Studio" width={164} height={24} priority />
     </Link>
   );
 }
@@ -27,7 +27,7 @@ export function AuthShell({ eyebrow, title, description, children, footer }: Aut
     <main className={styles.page}>
       <section className={styles.shell} aria-labelledby="customer-auth-title">
         <aside className={styles.brandPanel} aria-label="Kahel Studio customer portal">
-          <BrandLink />
+          <BrandLink light />
           <div className={styles.brandCopy}>
             <p>Your story, kept in one place.</p>
             <p>Review sessions, follow project updates, and access your studio deliveries.</p>

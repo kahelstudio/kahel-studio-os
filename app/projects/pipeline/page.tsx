@@ -1,5 +1,3 @@
-"use client";
-
 import {
   ArrowRight,
   CalendarDays,
@@ -15,17 +13,18 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { Suspense, useState } from "react";
+import { type ReactNode, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useToast } from "@/components/toast/toast-provider";
+import { getProjectPipeline } from "@/lib/server/projects-data";
 
-type Stage = "pre" | "production" | "post";
+export type PipelineStage = "pre" | "production" | "post";
 
-type Project = {
+export interface PipelineProject {
   ref: string;
   client: string;
   service: string;
-  stage: Stage;
+  stage: PipelineStage;
   status: string;
   schedule: string;
   team?: string;
@@ -34,10 +33,10 @@ type Project = {
   due?: string;
   quick?: "overdue" | "week" | "completed" | "archived";
   history: { event: string; by: string; when: string }[];
-};
+}
 
-const stages: {
-  id: Stage;
+const PROJECT_PIPELINE_STAGES: {
+  id: PipelineStage;
   name: string;
   description: string;
   statuses: string[];
@@ -92,205 +91,6 @@ const stages: {
   },
 ];
 
-const initialProjects: Project[] = [
-  {
-    ref: "KS-2026-0142",
-    client: "Amma's Bistro",
-    service: "Food photography",
-    stage: "pre",
-    status: "Shot list",
-    schedule: "Aug 2, 2026",
-    team: "Eusebio, Luiz",
-    history: [
-      {
-        event: "Moved to shot list",
-        by: "Eusebio Barrun",
-        when: "24 Jul 2026, 09:15",
-      },
-      {
-        event: "Project created from confirmed booking",
-        by: "System",
-        when: "20 Jul 2026, 14:32",
-      },
-    ],
-  },
-  {
-    ref: "KS-2026-0145",
-    client: "Bicol Medical Center",
-    service: "Corporate interview",
-    stage: "pre",
-    status: "Awaiting client approval",
-    schedule: "Aug 5, 2026",
-    team: "Eusebio, Jose",
-    history: [
-      {
-        event: "Brief sent for approval",
-        by: "Jose Ramos",
-        when: "23 Jul 2026, 16:08",
-      },
-      {
-        event: "Project created from confirmed booking",
-        by: "System",
-        when: "22 Jul 2026, 11:20",
-      },
-    ],
-  },
-  {
-    ref: "KS-2026-0148",
-    client: "Reyes family",
-    service: "Family portrait",
-    stage: "pre",
-    status: "Equipment preparation",
-    schedule: "Aug 7, 2026",
-    team: "Joanne, Luiz",
-    history: [
-      {
-        event: "Equipment preparation assigned",
-        by: "Joanne Cruz",
-        when: "24 Jul 2026, 08:42",
-      },
-    ],
-  },
-  {
-    ref: "KS-2026-0138",
-    client: "Cafe Basilio",
-    service: "Monthly content",
-    stage: "production",
-    status: "In production",
-    schedule: "Jul 25, 9:00 AM",
-    location: "Tabaco City",
-    quick: "week",
-    history: [
-      {
-        event: "Production started",
-        by: "Eusebio Barrun",
-        when: "25 Jul 2026, 09:03",
-      },
-      {
-        event: "Schedule confirmed",
-        by: "Marisol Reyes",
-        when: "21 Jul 2026, 13:42",
-      },
-    ],
-  },
-  {
-    ref: "KS-2026-0139",
-    client: "Santos wedding",
-    service: "Wedding coverage",
-    stage: "production",
-    status: "In production",
-    schedule: "Jul 25, 1:00 PM",
-    location: "Legazpi City",
-    quick: "week",
-    history: [
-      {
-        event: "Production started",
-        by: "Eusebio Barrun",
-        when: "25 Jul 2026, 13:07",
-      },
-      {
-        event: "Team assigned",
-        by: "Marisol Reyes",
-        when: "18 Jul 2026, 10:15",
-      },
-    ],
-  },
-  {
-    ref: "KS-2026-0140",
-    client: "La Wela",
-    service: "Campaign video",
-    stage: "production",
-    status: "Ready for production",
-    schedule: "Jul 26, 10:00 AM",
-    location: "Client location",
-    quick: "week",
-    history: [
-      {
-        event: "Moved to production",
-        by: "Eusebio Barrun",
-        when: "24 Jul 2026, 17:20",
-      },
-    ],
-  },
-  {
-    ref: "KS-2026-0126",
-    client: "Sea & Smoke",
-    service: "Menu photography",
-    stage: "post",
-    status: "Photo editing",
-    schedule: "Jul 18, 2026",
-    progress: 75,
-    due: "Jul 27, 2026",
-    quick: "week",
-    history: [
-      {
-        event: "Moved to photo editing",
-        by: "Luiz Santos",
-        when: "23 Jul 2026, 15:34",
-      },
-      {
-        event: "Files backed up",
-        by: "Luiz Santos",
-        when: "19 Jul 2026, 11:24",
-      },
-    ],
-  },
-  {
-    ref: "KS-2026-0129",
-    client: "Kapihan",
-    service: "Social content",
-    stage: "post",
-    status: "Video editing",
-    schedule: "Jul 19, 2026",
-    progress: 60,
-    due: "Jul 28, 2026",
-    quick: "week",
-    history: [
-      {
-        event: "Moved to video editing",
-        by: "Eusebio Barrun",
-        when: "22 Jul 2026, 10:18",
-      },
-    ],
-  },
-  {
-    ref: "KS-2026-0132",
-    client: "Cruz family",
-    service: "Studio portrait",
-    stage: "post",
-    status: "Client review",
-    schedule: "Jul 15, 2026",
-    progress: 90,
-    due: "Jul 26, 2026",
-    quick: "week",
-    history: [
-      {
-        event: "Gallery shared for client review",
-        by: "Joanne Cruz",
-        when: "24 Jul 2026, 14:10",
-      },
-    ],
-  },
-  {
-    ref: "KS-2026-0135",
-    client: "Pacific Construction",
-    service: "Corporate interview",
-    stage: "post",
-    status: "Ready for delivery",
-    schedule: "Jul 14, 2026",
-    progress: 100,
-    due: "Jul 25, 2026",
-    quick: "overdue",
-    history: [
-      {
-        event: "Deliverables approved internally",
-        by: "Eusebio Barrun",
-        when: "24 Jul 2026, 16:31",
-      },
-    ],
-  },
-];
-
 const quickFilters = [
   ["overdue", "Overdue"],
   ["week", "Due this week"],
@@ -298,7 +98,55 @@ const quickFilters = [
   ["archived", "Archived"],
 ] as const;
 
-export default function ProjectsPipelinePage() {
+function mapPipelineToProject(p: {
+  id: string;
+  reference: string;
+  title: string;
+  client: string;
+  status: string;
+  stage: PipelineStage;
+  startsAt: string | null;
+  completedAt: string | null;
+}): PipelineProject {
+  const startDate = p.startsAt
+    ? new Date(p.startsAt).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "\u2014";
+  const isCompleted = p.status === "completed" || p.status === "delivered";
+  return {
+    ref: p.reference,
+    client: p.client,
+    service: p.title,
+    stage: p.stage,
+    status: p.status,
+    schedule: p.startsAt
+      ? new Date(p.startsAt).toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })
+      : "\u2014",
+    progress: p.stage === "post" && !isCompleted ? 0 : undefined,
+    quick: isCompleted ? "completed" : undefined,
+    history: [
+      { event: `Project created · status: ${p.status}`, by: "System", when: p.startsAt ?? startDate },
+    ],
+  };
+}
+
+export default async function ProjectsPipelinePage() {
+  const pipeline = await getProjectPipeline();
+  const allProjects: PipelineProject[] = [
+    ...pipeline.pre.map(mapPipelineToProject),
+    ...pipeline.production.map(mapPipelineToProject),
+    ...pipeline.post.map(mapPipelineToProject),
+  ];
+
   return (
     <Suspense
       fallback={
@@ -307,39 +155,43 @@ export default function ProjectsPipelinePage() {
         </div>
       }
     >
-      <ProjectsPipelineContent />
+      <ProjectsPipelineContent initialProjects={allProjects} />
     </Suspense>
   );
 }
 
-function ProjectsPipelineContent() {
+function ProjectsPipelineContent({
+  initialProjects,
+}: {
+  initialProjects: PipelineProject[];
+}) {
   const { fireToast } = useToast();
   const searchParams = useSearchParams();
-  const requestedStage = searchParams.get("stage");
+  const requestedPipelineStage = searchParams.get("stage");
   const [projects, setProjects] = useState(initialProjects);
-  const [stageFilter, setStageFilter] = useState<Stage | "all">("all");
-  const stage: Stage | "all" =
-    requestedStage === "pre" ||
-    requestedStage === "production" ||
-    requestedStage === "post"
-      ? requestedStage
+  const [stageFilter, setPipelineStageFilter] = useState<PipelineStage | "all">("all");
+  const stage: PipelineStage | "all" =
+    requestedPipelineStage === "pre" ||
+    requestedPipelineStage === "production" ||
+    requestedPipelineStage === "post"
+      ? requestedPipelineStage
       : stageFilter;
   const [status, setStatus] = useState<string | null>(null);
   const [quick, setQuick] = useState<string | null>(null);
-  const [openStages, setOpenStages] = useState<Stage[]>([
+  const [openPipelineStages, setOpenPipelineStages] = useState<PipelineStage[]>([
     "pre",
     "production",
     "post",
   ]);
   const [query, setQuery] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [selected, setSelected] = useState<Project | null>(null);
-  const [pendingMove, setPendingMove] = useState<Project | null>(null);
-  const activeStage =
-    stage === "all" ? null : stages.find((item) => item.id === stage);
+  const [selected, setSelected] = useState<PipelineProject | null>(null);
+  const [pendingMove, setPendingMove] = useState<PipelineProject | null>(null);
+  const activePipelineStage =
+    stage === "all" ? null : PROJECT_PIPELINE_STAGES.find((item) => item.id === stage);
 
   const filtered = projects.filter((project) => {
-    const matchesStage = stage === "all" || project.stage === stage;
+    const matchesPipelineStage = stage === "all" || project.stage === stage;
     const matchesStatus = !status || project.status === status;
     const matchesQuick = !quick || project.quick === quick;
     const matchesQuery =
@@ -347,31 +199,31 @@ function ProjectsPipelineContent() {
       `${project.ref} ${project.client} ${project.service}`
         .toLowerCase()
         .includes(query.toLowerCase());
-    return matchesStage && matchesStatus && matchesQuick && matchesQuery;
+    return matchesPipelineStage && matchesStatus && matchesQuick && matchesQuery;
   });
 
-  function selectStage(nextStage: Stage | "all") {
-    setStageFilter(nextStage);
+  function selectPipelineStage(nextPipelineStage: PipelineStage | "all") {
+    setPipelineStageFilter(nextPipelineStage);
     setStatus(null);
     setQuick(null);
     setFiltersOpen(false);
   }
 
-  function selectStatus(nextStage: Stage, nextStatus: string) {
-    setStageFilter(nextStage);
+  function selectStatus(nextPipelineStage: PipelineStage, nextStatus: string) {
+    setPipelineStageFilter(nextPipelineStage);
     setStatus(status === nextStatus ? null : nextStatus);
     setQuick(null);
   }
 
-  function toggleStage(stageId: Stage) {
-    setOpenStages((current) =>
+  function togglePipelineStage(stageId: PipelineStage) {
+    setOpenPipelineStages((current) =>
       current.includes(stageId)
         ? current.filter((item) => item !== stageId)
         : [...current, stageId],
     );
   }
 
-  function moveToPost(project: Project) {
+  function moveToPost(project: PipelineProject) {
     setProjects((current) =>
       current.map((item) =>
         item.ref === project.ref
@@ -414,7 +266,7 @@ function ProjectsPipelineContent() {
     fireToast(`${project.ref} moved to post-production.`, "success");
   }
 
-  function confirmCompletion(project: Project) {
+  function confirmCompletion(project: PipelineProject) {
     const history = [
       {
         event: "Project completed after delivery and payment confirmation",
@@ -439,7 +291,7 @@ function ProjectsPipelineContent() {
     fireToast(`${project.ref} marked completed.`, "success");
   }
 
-  function updateProjectStatus(project: Project, nextStatus: string) {
+  function updateProjectStatus(project: PipelineProject, nextStatus: string) {
     const history = [
       {
         event: `Status changed to ${nextStatus}`,
@@ -466,10 +318,10 @@ function ProjectsPipelineContent() {
             Project workflow
           </div>
           <h1 className="mt-2 font-display text-[36px] font-semibold tracking-[-0.025em]">
-            {activeStage?.name ?? "Projects"}
+            {activePipelineStage?.name ?? "Projects"}
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
-            {activeStage?.description ??
+            {activePipelineStage?.description ??
               "Projects are created once per confirmed booking and remain separate from staff tasks."}
           </p>
         </div>
@@ -519,7 +371,7 @@ function ProjectsPipelineContent() {
               </p>
               <button
                 onClick={() => {
-                  setStageFilter("all");
+                  setPipelineStageFilter("all");
                   setStatus(null);
                   setQuick(null);
                   setQuery("");
@@ -553,15 +405,15 @@ function ProjectsPipelineContent() {
               status={status}
               quick={quick}
               projects={projects}
-              openStages={openStages}
-              onStage={selectStage}
+              openPipelineStages={openPipelineStages}
+              onPipelineStage={selectPipelineStage}
               onStatus={selectStatus}
               onQuick={(value) => {
                 setQuick(quick === value ? null : value);
-                setStageFilter("all");
+                setPipelineStageFilter("all");
                 setStatus(null);
               }}
-              onToggle={toggleStage}
+              onToggle={togglePipelineStage}
               mobile
             />
             <button
@@ -607,28 +459,28 @@ function WorkflowSidebar({
   status,
   quick,
   projects,
-  openStages,
-  onStage,
+  openPipelineStages,
+  onPipelineStage,
   onStatus,
   onQuick,
   onToggle,
   mobile = false,
 }: {
-  stage: Stage | "all";
+  stage: PipelineStage | "all";
   status: string | null;
   quick: string | null;
-  projects: Project[];
-  openStages: Stage[];
-  onStage: (stage: Stage | "all") => void;
-  onStatus: (stage: Stage, status: string) => void;
+  projects: PipelineProject[];
+  openPipelineStages: PipelineStage[];
+  onPipelineStage: (stage: PipelineStage | "all") => void;
+  onStatus: (stage: PipelineStage, status: string) => void;
   onQuick: (filter: string) => void;
-  onToggle: (stage: Stage) => void;
+  onToggle: (stage: PipelineStage) => void;
   mobile?: boolean;
 }) {
   const contents = (
     <>
       <button
-        onClick={() => onStage("all")}
+        onClick={() => onPipelineStage("all")}
         className={`flex w-full items-center justify-between rounded-control px-3 py-2.5 text-left text-sm font-semibold ${stage === "all" && !quick ? "bg-[var(--color-kahel-500)] text-white" : "hover:bg-[var(--color-surface-muted)]"}`}
       >
         <span>All projects</span>
@@ -638,18 +490,18 @@ function WorkflowSidebar({
         <div className="px-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--color-text-muted)]">
           Workflow stages
         </div>
-        {stages.map((item) => {
+        {PROJECT_PIPELINE_STAGES.map((item) => {
           const count = projects.filter(
             (project) => project.stage === item.id,
           ).length;
-          const open = openStages.includes(item.id);
+          const open = openPipelineStages.includes(item.id);
           return (
             <div key={item.id} className="mt-1">
               <div
                 className={`flex items-center rounded-control ${stage === item.id && !status ? "bg-[var(--color-kahel-100)] text-[var(--color-kahel-700)]" : ""}`}
               >
                 <button
-                  onClick={() => onStage(item.id)}
+                  onClick={() => onPipelineStage(item.id)}
                   className="min-w-0 flex-1 px-3 py-2.5 text-left text-sm font-semibold"
                 >
                   {item.name}
@@ -737,7 +589,7 @@ function ProjectCard({
   project,
   onOpen,
 }: {
-  project: Project;
+  project: PipelineProject;
   onOpen: () => void;
 }) {
   const colors =
@@ -758,7 +610,7 @@ function ProjectCard({
         <span
           className={`rounded-pill px-2 py-1 text-[10px] font-bold uppercase tracking-[0.04em] ${colors}`}
         >
-          {stages.find((item) => item.id === project.stage)?.name}
+          {PROJECT_PIPELINE_STAGES.find((item) => item.id === project.stage)?.name}
         </span>
       </div>
       <div className="mt-3 font-display text-base font-semibold">
@@ -807,7 +659,7 @@ function ProjectDetail({
   onMove,
   onComplete,
 }: {
-  project: Project;
+  project: PipelineProject;
   onClose: () => void;
   onStatusChange: (status: string) => void;
   onMove: () => void;
@@ -815,7 +667,7 @@ function ProjectDetail({
 }) {
   const canComplete = project.status === "Delivered";
   const stageStatuses =
-    stages.find((item) => item.id === project.stage)?.statuses ?? [];
+    PROJECT_PIPELINE_STAGES.find((item) => item.id === project.stage)?.statuses ?? [];
   return (
     <div className="fixed inset-0 z-40 flex items-end bg-black/40 sm:items-stretch sm:justify-end">
       <section className="max-h-[92dvh] w-full overflow-y-auto rounded-t-modal bg-[var(--color-surface)] shadow-[var(--shadow-dialog)] sm:h-full sm:max-h-none sm:max-w-xl sm:rounded-none">
@@ -845,7 +697,7 @@ function ProjectDetail({
               Current workflow status
             </div>
             <label className="mt-3 block text-xs font-semibold text-[var(--color-text-secondary)]">
-              {stages.find((item) => item.id === project.stage)?.name}
+              {PROJECT_PIPELINE_STAGES.find((item) => item.id === project.stage)?.name}
               <select
                 value={project.status}
                 onChange={(event) => onStatusChange(event.target.value)}
@@ -932,7 +784,7 @@ function Detail({
 }: {
   label: string;
   value: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }) {
   return (
     <div className="rounded-control border border-[var(--color-border)] p-3">
@@ -950,7 +802,7 @@ function MoveDialog({
   onClose,
   onConfirm,
 }: {
-  project: Project;
+  project: PipelineProject;
   onClose: () => void;
   onConfirm: () => void;
 }) {

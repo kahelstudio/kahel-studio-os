@@ -1,8 +1,55 @@
 import { Plus } from "lucide-react";
-import { FINANCE_INVOICES, FINANCE_KPIS } from "@/lib/sample-data";
+import { getInvoices, getFinanceKpis } from "@/lib/server/finance-data";
 import { KpiStrip } from "@/components/finance/kpi-strip";
 
-export default function FinanceInvoicesPage() {
+const KIND_COLORS: Record<string, { bg: string; c: string }> = {
+  deposit: { bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
+  balance: { bg: "var(--color-attention-bg)", c: "var(--color-attention-text)" },
+  full: { bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
+  pending: { bg: "var(--color-warning-bg)", c: "var(--color-warning-text)" },
+  void: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)" },
+};
+
+function getInvoiceKindAndColors(invoice: { total: number; paid: number; status: string }) {
+  if (invoice.status === "cancelled") return { kind: "Void", bg: KIND_COLORS.void.bg, color: KIND_COLORS.void.c };
+  if (invoice.total === invoice.paid) return { kind: "Full", bg: KIND_COLORS.full.bg, color: KIND_COLORS.full.c };
+  if (invoice.paid > 0) return { kind: "Deposit", bg: KIND_COLORS.deposit.bg, color: KIND_COLORS.deposit.c };
+  if (invoice.status === "overdue") return { kind: "Balance", bg: KIND_COLORS.balance.bg, color: KIND_COLORS.balance.c };
+  return { kind: "Pending", bg: KIND_COLORS.pending.bg, color: KIND_COLORS.pending.c };
+}
+
+function formatCurrency(centavos: number) {
+  return `\u20B1${(centavos / 100).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+}
+
+function formatDate(dateStr: string | null) {
+  if (!dateStr) return "\u2014";
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+export default async function FinanceInvoicesPage() {
+  const [invoices, kpisData] = await Promise.all([getInvoices(), getFinanceKpis()]);
+
+  const kpis = [
+    { label: "Recorded MTD", value: formatCurrency(kpisData.recordedMtd).replace(/\.00$/, "") },
+    { label: "Booklet remaining", value: formatCurrency(kpisData.bookletRemaining).replace(/\.00$/, "") },
+    { label: "Unreconciled", value: formatCurrency(kpisData.unreconciled).replace(/\.00$/, "") },
+  ];
+
+  const displayRows = invoices.map((inv) => {
+    const { kind, bg, color } = getInvoiceKindAndColors(inv);
+    return {
+      serial: inv.reference,
+      ref: inv.client,
+      kindLabel: kind,
+      kindBg: bg,
+      kindColor: color,
+      amount: formatCurrency(inv.total),
+      issued: formatDate(inv.issuedAt),
+    };
+  });
+
   return (
     <div className="p-12 pt-9">
       <div className="flex items-end justify-between">
@@ -19,7 +66,7 @@ export default function FinanceInvoicesPage() {
         </button>
       </div>
 
-      <KpiStrip kpis={FINANCE_KPIS} />
+      <KpiStrip kpis={kpis} />
 
       <div className="mt-5 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="grid h-11 grid-cols-[1.2fr_1.2fr_1fr_1fr_1fr] items-center bg-[var(--color-canvas)] px-5 text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
@@ -29,7 +76,7 @@ export default function FinanceInvoicesPage() {
           <div>Issued</div>
           <div className="text-right">Amount</div>
         </div>
-        {FINANCE_INVOICES.map((r) => (
+        {displayRows.map((r) => (
           <div
             key={r.serial}
             className="grid h-[52px] grid-cols-[1.2fr_1.2fr_1fr_1fr_1fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
