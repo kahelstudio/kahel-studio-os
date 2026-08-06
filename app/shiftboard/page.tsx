@@ -2,7 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { MapPin, Plus } from "lucide-react";
-import { SHIFT_DAY_META, SHIFT_DEFAULT, type ShiftEntry } from "@/lib/sample-data";
+import { SHIFT_DEFAULT, type ShiftEntry } from "@/lib/sample-data";
+
+function getCurrentWeekMeta(): [string, string, boolean][] {
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0=Sun
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  return days.map((name, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const isToday = d.toDateString() === today.toDateString();
+    return [name, String(d.getDate()), isToday];
+  });
+}
+
+function getMondayIso(): string {
+  const today = new Date();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  return monday.toISOString().slice(0, 10);
+}
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "ks_shifts";
@@ -81,17 +102,21 @@ function mapApiShift(s: ApiShiftRow): ShiftEntry {
 
 export default function ShiftboardPage() {
   const [shifts, setShifts] = useState<ShiftEntry[]>(SHIFT_DEFAULT);
+  const [dayMeta, setDayMeta] = useState<[string, string, boolean][]>([]);
   const [dragId, setDragId] = useState<string | null>(null);
   const [view, setView] = useState<"shift" | "production">("shift");
 
   useEffect(() => {
+    setDayMeta(getCurrentWeekMeta());
+
     const local = loadLocalShifts();
     if (local) {
       queueMicrotask(() => setShifts(local));
       return;
     }
 
-    fetch("/api/shifts")
+    const weekStart = getMondayIso();
+    fetch(`/api/shifts?weekStart=${weekStart}`)
       .then((res) => res.json())
       .then((data) => {
         const rows = data as ApiShiftRow[];
@@ -144,7 +169,7 @@ export default function ShiftboardPage() {
             <div className="flex items-center px-5 py-5 text-xs font-semibold uppercase tracking-[0.13em] text-[var(--color-text-muted)]">
               Staff member
             </div>
-            {SHIFT_DAY_META.map(([day, date, isToday]) => (
+            {dayMeta.map(([day, date, isToday]) => (
               <div key={day} className="border-l border-[var(--color-border)] px-3 py-3 text-center">
                 <div
                   className="text-xs font-semibold uppercase tracking-[0.1em]"
@@ -182,7 +207,7 @@ export default function ShiftboardPage() {
                 </div>
               </div>
 
-              {SHIFT_DAY_META.map(([day], dayIndex) => {
+              {dayMeta.map(([day], dayIndex) => {
                 const entries = shifts.filter((shift) => shift.who === person.name && shift.d === dayIndex);
                 return (
                   <div

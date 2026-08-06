@@ -400,6 +400,76 @@ export async function getPayrollEmployeeById(employeeId: string): Promise<Payrol
   }
 }
 
+export type ThirteenthMonthRow = {
+  id: string;
+  name: string;
+  basis: number;
+  earned: number;
+  paid: number;
+  balance: number;
+  status: "ready" | "partial" | "paid" | "excluded";
+};
+
+export type ThirteenthMonthSummary = {
+  eligible: number;
+  earnedTotal: number;
+  paidTotal: number;
+  balanceTotal: number;
+  rows: ThirteenthMonthRow[];
+};
+
+export async function get13thMonthData(): Promise<ThirteenthMonthSummary> {
+  const empty: ThirteenthMonthSummary = { eligible: 0, earnedTotal: 0, paidTotal: 0, balanceTotal: 0, rows: [] };
+  try {
+    const admin = getSupabaseAdmin();
+    const yearStart = `${new Date().getFullYear()}-01-01`;
+    const yearEnd = `${new Date().getFullYear()}-12-31`;
+
+    const [{ data: employees, error: empErr }, { data: payslips, error: slipErr }, { data: adjustments, error: adjErr }] = await Promise.all([
+      admin.from("payroll_employees").select("id, name, status").order("name"),
+      admin.from("payroll_payslips").select("employee_id, basic_pay, created_at"),
+      admin.from("payroll_adjustments").select("employee_id, amount, reason, status").ilike("reason", "%13th%").eq("status", "approved"),
+    ]);
+
+    if (empErr || slipErr || adjErr) return empty;
+
+    const ytdByEmployee: Record<string, number> = {};
+    for (const slip of payslips ?? []) {
+      const slipDate = (slip as any).created_at?.slice(0, 10) ?? "";
+      if (slipDate >= yearStart && slipDate <= yearEnd) {
+        ytdByEmployee[(slip as any).employee_id] = (ytdByEmployee[(slip as any).employee_id] ?? 0) + ((slip as any).basic_pay ?? 0);
+      }
+    }
+
+    const paidByEmployee: Record<string, number> = {};
+    for (const adj of adjustments ?? []) {
+      paidByEmployee[(adj as any).employee_id] = (paidByEmployee[(adj as any).employee_id] ?? 0) + ((adj as any).amount ?? 0);
+    }
+
+    const rows: ThirteenthMonthRow[] = (employees ?? []).map((e: any) => {
+      if (e.status !== "active") return { id: e.id, name: e.name, basis: 0, earned: 0, paid: 0, balance: 0, status: "excluded" as const };
+      const basis = ytdByEmployee[e.id] ?? 0;
+      const earned = Math.round((basis / 12) * 100) / 100;
+      const paid = paidByEmployee[e.id] ?? 0;
+      const balance = Math.round((earned - paid) * 100) / 100;
+      const status: ThirteenthMonthRow["status"] = paid >= earned && earned > 0 ? "paid" : paid > 0 ? "partial" : "ready";
+      return { id: e.id, name: e.name, basis, earned, paid, balance, status };
+    });
+
+    const eligible = rows.filter((r) => r.status !== "excluded");
+    return {
+      eligible: eligible.length,
+      earnedTotal: eligible.reduce((s, r) => s + r.earned, 0),
+      paidTotal: eligible.reduce((s, r) => s + r.paid, 0),
+      balanceTotal: eligible.reduce((s, r) => s + r.balance, 0),
+      rows,
+    };
+  } catch (error) {
+    console.error("get13thMonthData: table not available", (error as Error).message);
+    return empty;
+  }
+}
+
 export async function getLatestPayrollRunId(): Promise<string | null> {
   try {
     const admin = getSupabaseAdmin();
