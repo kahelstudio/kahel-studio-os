@@ -27,7 +27,7 @@ export default async function AttendanceTimesheetsPage() {
   const rows = employees.map((e) => {
     const st = e.status === "active" ? "active" : e.status === "pending" ? "pending" : "inactive";
     const meta = STATUS_META[st];
-    const booking = activeBookings.find((b) => b.accountId === (e as any).clientId);
+    const booking = activeBookings.find((b) => b.accountId === (e as Record<string, unknown>).clientId);
     return {
       ini: e.initials,
       name: e.name,

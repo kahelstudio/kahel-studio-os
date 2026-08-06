@@ -87,7 +87,7 @@ export default function ShiftboardPage() {
   useEffect(() => {
     const local = loadLocalShifts();
     if (local) {
-      setShifts(local);
+      queueMicrotask(() => setShifts(local));
       return;
     }
 

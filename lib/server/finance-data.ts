@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getSupabaseAdmin } from "./supabase-admin";
 
 export type FinanceKpis = {
@@ -173,7 +174,7 @@ export async function getSales(): Promise<SaleRow[]> {
 
     const saleIds = (data ?? []).map((s: any) => s.id);
 
-    let countMap = new Map<string, number>();
+    const countMap = new Map<string, number>();
     try {
       if (saleIds.length > 0) {
         const { data: itemCounts, error: itemError } = await admin

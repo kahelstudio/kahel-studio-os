@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getSupabaseAdmin } from "./supabase-admin";
 
 export type GlitchRow = {

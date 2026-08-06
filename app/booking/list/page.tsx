@@ -9,7 +9,7 @@ import { getRealBookings } from "@/lib/server/bookings-data";
 const FILTERS = ["All", "Quoted", "Confirmed", "In progress", "This month"];
 
 export default async function BookingListPage() {
-  let bookings = await getRealBookings().catch(() => []);
+  const bookings = await getRealBookings().catch(() => []);
   const active = bookings.filter((b) => b.status !== "cancelled").length;
   const awaiting = bookings.filter((b) => b.status === "quoted" || b.status === "inquiry").length;
 
