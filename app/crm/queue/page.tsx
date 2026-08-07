@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { CheckCircle2, Clock, TriangleAlert } from "lucide-react";
 import { getCrmQueue } from "@/lib/server/crm-data";
+import { ActionButton } from "@/components/shared/action-button";
 
 function initials(name: string) {
   return name
@@ -66,9 +67,9 @@ export default async function CrmQueuePage() {
             <span className="ml-auto shrink-0 rounded-pill bg-[var(--color-danger-bg)] px-2.5 py-1 text-xs text-[var(--color-danger-text)]">
               {daysAge(r.nextActionDate)}
             </span>
-            <button className="h-[34px] shrink-0 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-[13px] font-semibold hover:border-[var(--color-kahel-700)] hover:text-[var(--color-kahel-700)]">
+            <ActionButton label="Set next action" className="h-[34px] shrink-0 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-[13px] font-semibold hover:border-[var(--color-kahel-700)] hover:text-[var(--color-kahel-700)]">
               Set next action
-            </button>
+            </ActionButton>
           </div>
         ))}
       </div>
@@ -99,9 +100,9 @@ export default async function CrmQueuePage() {
               <div className="text-[13px] text-[var(--color-text-secondary)]">{r.category} · {r.ref || "No reference"}</div>
             </div>
             <span className="ml-auto text-[13px] text-[var(--color-text-secondary)]">{r.nextActionLabel}</span>
-            <button className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-success)] hover:border-[var(--color-success)] hover:bg-[var(--color-success-bg)]">
+            <ActionButton label="Mark complete" className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-success)] hover:border-[var(--color-success)] hover:bg-[var(--color-success-bg)]">
               <CheckCircle2 className="h-4 w-4" strokeWidth={1.75} />
-            </button>
+            </ActionButton>
           </div>
         ))}
       </div>
@@ -140,9 +141,9 @@ export default async function CrmQueuePage() {
               <span className="ml-auto shrink-0 rounded-pill bg-[var(--color-danger-bg)] px-2.5 py-1 text-xs text-[var(--color-danger-text)]">
                 {daysAge(r.nextActionDate)}
               </span>
-              <button className="h-[34px] shrink-0 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-[13px] font-semibold hover:border-[var(--color-kahel-700)] hover:text-[var(--color-kahel-700)]">
+              <ActionButton label="Follow up" className="h-[34px] shrink-0 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-[13px] font-semibold hover:border-[var(--color-kahel-700)] hover:text-[var(--color-kahel-700)]">
                 Follow up
-              </button>
+              </ActionButton>
             </div>
           ))}
         </div>

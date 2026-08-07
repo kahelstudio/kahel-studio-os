@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { Download, TrendingUp, TriangleAlert, Plus } from "lucide-react";
 import { getPayrollOverview } from "@/lib/server/payroll-data";
+import { ActionButton } from "@/components/shared/action-button";
 
 function formatPHP(n: number) {
   return `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
@@ -36,15 +37,15 @@ export default async function PayrollOverviewPage() {
           </div>
         </div>
         <div className="flex shrink-0 gap-2">
-          <button className="flex h-10 items-center gap-1.5 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-sm font-semibold hover:border-[var(--color-border-strong)]">
+          <ActionButton href="/payroll/reports" className="flex h-10 items-center gap-1.5 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-sm font-semibold hover:border-[var(--color-border-strong)]">
             <TrendingUp className="h-4 w-4" /> Reports
-          </button>
-          <button className="flex h-10 items-center gap-1.5 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-sm font-semibold hover:border-[var(--color-border-strong)]">
+          </ActionButton>
+          <ActionButton label="Export payroll" className="flex h-10 items-center gap-1.5 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-sm font-semibold hover:border-[var(--color-border-strong)]">
             <Download className="h-4 w-4" /> Export
-          </button>
-          <button className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+          </ActionButton>
+          <ActionButton label="Create pay run" className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
             <Plus className="h-4 w-4" /> Create pay run
-          </button>
+          </ActionButton>
         </div>
       </div>
 
@@ -124,9 +125,9 @@ export default async function PayrollOverviewPage() {
               <div className="flex items-center gap-2 text-[13px] font-semibold text-[var(--color-warning-text)]">
                 <TriangleAlert className="h-4 w-4" /> {currentRun.status === "draft" ? "Ready for review" : "In progress"}
               </div>
-              <button className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-[18px] text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+              <ActionButton label="Review attendance" className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-[18px] text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
                 Review attendance →
-              </button>
+              </ActionButton>
             </div>
           </div>
 

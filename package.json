@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --experimental-https --experimental-https-key ./certificates/localhost-key.pem --experimental-https-cert ./certificates/localhost.pem",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -16,6 +16,7 @@
     "deploy:media:staging": "wrangler deploy --config wrangler.media.jsonc --env staging",
     "deploy:production": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --env production",
     "cf:typegen": "wrangler types --env staging --env-interface CloudflareEnv && wrangler types --config wrangler.media.jsonc --env staging --env-interface MediaProcessorEnv worker-media-configuration.d.ts",
+    "set-staff-password": "node scripts/set-staff-password.mjs",
     "cf:check": "wrangler deploy --dry-run --env staging"
   },
   "dependencies": {

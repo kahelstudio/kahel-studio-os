@@ -32,7 +32,7 @@ const previewValues: Record<string, string> = {
   decline_url: "https://portal.kahelstudio.com/decline/KS-2026-0149",
   reschedule_url: "https://portal.kahelstudio.com/reschedule/KS-2026-0149",
   confirm_url: "https://portal.kahelstudio.com/confirm/KS-2026-0149",
-  browse_url: "https://www.kahelstudio.com/book",
+  browse_url: "https://kahelstudio.com/book",
   payment_url: "https://pay.kahelstudio.com/KS-2026-0149",
   slot_expiry: "26 July 2026, 10:15 AM",
   waitlist_position: "3",

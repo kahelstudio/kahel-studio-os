@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { Plus } from "lucide-react";
 import { getInvoices, getFinanceKpis } from "@/lib/server/finance-data";
 import { KpiStrip } from "@/components/finance/kpi-strip";
+import { ActionButton } from "@/components/shared/action-button";
 
 const KIND_COLORS: Record<string, { bg: string; c: string }> = {
   deposit: { bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
@@ -63,9 +64,9 @@ export default async function FinanceInvoicesPage() {
             Recorded from printed BIR booklets — the system never generates an invoice
           </p>
         </div>
-        <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <ActionButton label="New invoice serial" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> Record serial
-        </button>
+        </ActionButton>
       </div>
 
       <KpiStrip kpis={kpis} />

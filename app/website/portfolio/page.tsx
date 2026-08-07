@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { Plus } from "lucide-react";
 import { getPortfolioItems } from "@/lib/server/website-data";
+import { ActionButton } from "@/components/shared/action-button";
 
 const WEB_STATUS: Record<string, { bg: string; c: string; label: string }> = {
   published: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "Published" },
@@ -22,9 +23,9 @@ export default async function WebsitePortfolioPage() {
             Curated by the studio — every piece needs a consent reference
           </p>
         </div>
-        <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <ActionButton label="New portfolio item" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> Add work
-        </button>
+        </ActionButton>
       </div>
 
       <div className="mt-6 grid grid-cols-3 gap-[18px]">

@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { Plus } from "lucide-react";
 import { getComplianceRegister } from "@/lib/server/compliance-data";
+import { ActionButton } from "@/components/shared/action-button";
 
 const COMP_ST: Record<string, { bg: string; c: string; l: string }> = {
   expired: { bg: "var(--color-danger-bg)", c: "var(--color-danger-text)", l: "Expired" },
@@ -27,9 +28,9 @@ export default async function ComplianceRegisterPage() {
             Sorted by urgency · government identifiers are masked
           </p>
         </div>
-        <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <ActionButton label="New compliance record" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> New record
-        </button>
+        </ActionButton>
       </div>
 
       <div className="mt-6 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">

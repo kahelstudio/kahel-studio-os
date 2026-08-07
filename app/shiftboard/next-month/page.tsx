@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ActionButton } from "@/components/shared/action-button";
 
 const WEEKS = [
   { label: "Week of 03 Aug", days: "Mon–Sat" },
@@ -35,9 +36,9 @@ export default function ShiftboardNextMonthPage() {
             Studio coverage and crew shifts looking ahead
           </p>
         </div>
-        <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <ActionButton label="New shift" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> New shift
-        </button>
+        </ActionButton>
       </div>
 
       <div className="mt-5 flex items-center gap-1.5 rounded-control bg-[var(--color-surface-muted)] p-1 w-fit">

@@ -50,6 +50,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -113,7 +114,7 @@ export default function LoginPage() {
       const response = await fetch("/api/staff/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, "cf-turnstile-response": turnstileToken }),
+        body: JSON.stringify({ email, password, rememberMe, "cf-turnstile-response": turnstileToken }),
       });
       if (!response.ok) {
         const data = await response.json() as { error?: string };
@@ -203,7 +204,15 @@ export default function LoginPage() {
                   </button>
                 </span>
               </label>
-              <div className="mt-3 text-right">
+              <div className="mt-5 flex items-center justify-between">
+                <label className="flex cursor-pointer items-center gap-2.5 text-[13px] leading-none text-[#706a65]">
+                  <span className="relative flex size-5 items-center justify-center">
+                    <input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} className="peer sr-only" />
+                    <span className="absolute inset-0 rounded-[5px] border border-[#d8d4cf] bg-white transition peer-checked:border-[var(--color-kahel-500)] peer-checked:bg-[var(--color-kahel-500)] peer-focus-visible:ring-3 peer-focus-visible:ring-[var(--color-kahel-100)]" />
+                    <svg className="relative z-10 size-3 text-white opacity-0 transition peer-checked:opacity-100" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8l3.5 3.5L13 5" /></svg>
+                  </span>
+                  Keep me signed in
+                </label>
                 <button type="button" onClick={requestPasswordReset} disabled={submitting} className="text-[13px] font-semibold text-[var(--color-kahel-600)] transition hover:text-[var(--color-kahel-700)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-kahel-100)] disabled:opacity-55">Forgot password?</button>
               </div>
 

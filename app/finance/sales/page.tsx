@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { Download } from "lucide-react";
 import { getSales } from "@/lib/server/finance-data";
 import { KpiStrip } from "@/components/finance/kpi-strip";
+import { ActionButton } from "@/components/shared/action-button";
 
 function formatPhp(amount: number) {
   return `\u20B1${Number(amount).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
@@ -46,9 +47,9 @@ export default async function FinanceSalesPage() {
             Money in — retail sales and booking payments received
           </p>
         </div>
-        <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-text-primary)]">
+        <ActionButton label="Export sales" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-text-primary)]">
           <Download className="h-4 w-4" /> Export
-        </button>
+        </ActionButton>
       </div>
 
       <KpiStrip kpis={kpis} />

@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { BOOKING_STATUS } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
 import { getRealBookings } from "@/lib/server/bookings-data";
+import { ActionButton } from "@/components/shared/action-button";
 
 const FILTERS = ["All", "Quoted", "Confirmed", "In progress", "This month"];
 
@@ -24,24 +25,25 @@ export default async function BookingListPage() {
             {active} active · {awaiting} awaiting confirmation
           </p>
         </div>
-        <button className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <ActionButton label="New booking form" className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> New booking
-        </button>
+        </ActionButton>
       </div>
 
       <div className="mb-3.5 flex gap-2">
         {FILTERS.map((f, i) => (
-          <button
+          <ActionButton
             key={f}
+            label={`Filter by ${f}`}
             className={cn(
-              "h-8 rounded-pill border px-3.5 text-[13px] font-medium",
+              "h-8 rounded-pill border px-3.5 text-[13px] font-medium cursor-pointer",
               i === 0
                 ? "border-[var(--color-kahel-500)] bg-[var(--color-kahel-50)] text-[var(--color-kahel-700)]"
                 : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]"
             )}
           >
             {f}
-          </button>
+          </ActionButton>
         ))}
       </div>
 

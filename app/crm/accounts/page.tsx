@@ -5,6 +5,7 @@ import { Plus, Search } from "lucide-react";
 import { ACCENTS } from "@/lib/apps-config";
 import { getAccounts } from "@/lib/server/crm-data";
 import { cn } from "@/lib/utils";
+import { ActionButton } from "@/components/shared/action-button";
 
 const FILTERS = ["All", "Corporate", "Consumer", "Referral source"];
 
@@ -51,9 +52,9 @@ export default async function CrmAccountsPage() {
             {accounts.length} accounts · {corporate} corporate · {consumer} consumer
           </p>
         </div>
-        <button className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <ActionButton label="New account form" className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> New account
-        </button>
+        </ActionButton>
       </div>
 
       <div className="mb-4 flex items-center gap-3 rounded-card bg-[var(--color-surface-muted)] px-4 py-3">
@@ -69,17 +70,18 @@ export default async function CrmAccountsPage() {
 
       <div className="mb-3.5 flex gap-2 overflow-x-auto pb-1">
         {FILTERS.map((f, i) => (
-          <button
+          <ActionButton
             key={f}
+            label={`Filter by ${f}`}
             className={cn(
-              "h-8 rounded-pill border px-3.5 text-[13px] font-medium",
+              "h-8 rounded-pill border px-3.5 text-[13px] font-medium cursor-pointer",
               i === 0
                 ? "border-[var(--color-ink-600)] bg-[var(--color-ink-600)] text-white"
                 : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]"
             )}
           >
             {f}
-          </button>
+          </ActionButton>
         ))}
       </div>
 

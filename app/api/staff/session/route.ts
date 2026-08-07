@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
-import { hasStaffSession, signInStaff, staffAuthConfigured, STAFF_SESSION_COOKIE } from "@/lib/server/staff-auth";
+import { hasStaffSession, signInStaff, staffAuthConfigured, STAFF_SESSION_COOKIE, STAFF_REFRESH_COOKIE, REMEMBER_ME_MAX_AGE, IS_PRODUCTION } from "@/lib/server/staff-auth";
 import { turnstileConfigured, turnstileRequired, turnstileSiteKey, verifyTurnstile } from "@/lib/server/turnstile";
 
 export const runtime = "nodejs";
-
-const IS_PRODUCTION = (process.env.APP_ENV as string) === "production" || process.env.NODE_ENV === "production";
 
 export async function GET(request: Request) {
   return NextResponse.json({
@@ -18,7 +16,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const { email, password, "cf-turnstile-response": turnstileToken } = await request.json() as { email?: unknown; password?: unknown; "cf-turnstile-response"?: unknown };
+  const { email, password, rememberMe, "cf-turnstile-response": turnstileToken } = await request.json() as { email?: unknown; password?: unknown; rememberMe?: unknown; "cf-turnstile-response"?: unknown };
   if (typeof email !== "string" || typeof password !== "string") return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
   if (!await verifyTurnstile(request, typeof turnstileToken === "string" ? turnstileToken : "")) {
     return NextResponse.json({ error: turnstileConfigured() ? "Security verification failed. Please try again." : "Security verification is not configured." }, { status: turnstileConfigured() ? 403 : 503 });
@@ -26,12 +24,18 @@ export async function POST(request: Request) {
   const session = await signInStaff(email, password);
   if (!session) return NextResponse.json({ error: staffAuthConfigured() ? "Invalid email or password." : "Staff authentication is not configured." }, { status: staffAuthConfigured() ? 401 : 503 });
   const response = NextResponse.json({ authenticated: true });
-  response.cookies.set(STAFF_SESSION_COOKIE, session.access_token, { httpOnly: true, sameSite: "lax", secure: IS_PRODUCTION, maxAge: session.expires_in, path: "/" });
+  const maxAge = rememberMe === true ? REMEMBER_ME_MAX_AGE : session.expires_in;
+  const cookieOptions = { httpOnly: true, sameSite: "lax" as const, secure: IS_PRODUCTION, maxAge, path: "/" };
+  response.cookies.set(STAFF_SESSION_COOKIE, session.access_token, cookieOptions);
+  if (rememberMe === true && session.refresh_token) {
+    response.cookies.set(STAFF_REFRESH_COOKIE, session.refresh_token, cookieOptions);
+  }
   return response;
 }
 
 export async function DELETE() {
   const response = NextResponse.json({ authenticated: false });
   response.cookies.set(STAFF_SESSION_COOKIE, "", { httpOnly: true, sameSite: "lax", secure: IS_PRODUCTION, maxAge: 0, path: "/" });
+  response.cookies.set(STAFF_REFRESH_COOKIE, "", { httpOnly: true, sameSite: "lax", secure: IS_PRODUCTION, maxAge: 0, path: "/" });
   return response;
 }

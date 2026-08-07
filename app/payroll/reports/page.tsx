@@ -1,5 +1,6 @@
 import { FileText } from "lucide-react";
 import { PAYROLL_REPORTS } from "@/lib/sample-data";
+import { ActionButton } from "@/components/shared/action-button";
 
 export default function PayrollReportsPage() {
   return (
@@ -18,13 +19,14 @@ export default function PayrollReportsPage() {
               {g.group}
             </div>
             {g.items.map((item) => (
-              <button
+              <ActionButton
                 key={item}
+                label={`Generate ${item}`}
                 className="flex w-full items-center gap-3 border-b border-[var(--color-border)] px-5 py-3 text-left text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
               >
                 <FileText className="h-4 w-4 shrink-0 text-[var(--color-text-muted)]" strokeWidth={1.75} />
                 {item}
-              </button>
+              </ActionButton>
             ))}
           </div>
         ))}

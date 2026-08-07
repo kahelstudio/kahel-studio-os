@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { TriangleAlert } from "lucide-react";
 import { getRealBookings } from "@/lib/server/bookings-data";
 import { getPayrollEmployees } from "@/lib/server/payroll-data";
+import { ActionButton } from "@/components/shared/action-button";
 
 export default async function AttendanceEngagementsPage() {
   const [bookings, employees] = await Promise.all([getRealBookings(), getPayrollEmployees()]);
@@ -61,9 +62,9 @@ export default async function AttendanceEngagementsPage() {
               {pendingEmployees[0]?.name ?? "A team member"}&rsquo;s copyright assignment is unsigned; payout is on hold
             </span>
           </div>
-          <button className="ml-auto h-[34px] shrink-0 rounded-control border border-[#FCE6D3] bg-[var(--color-surface)] px-3.5 text-[13px] font-semibold text-[var(--color-kahel-700)]">
+          <ActionButton label="Send copyright assignment for signature" className="ml-auto h-[34px] shrink-0 rounded-control border border-[#FCE6D3] bg-[var(--color-surface)] px-3.5 text-[13px] font-semibold text-[var(--color-kahel-700)]">
             Send to sign
-          </button>
+          </ActionButton>
         </div>
       )}
     </div>

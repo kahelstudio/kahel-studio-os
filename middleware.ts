@@ -1,10 +1,18 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { hasStaffSession } from "@/lib/server/staff-auth";
+import { hasStaffSession, tryRefreshStaffSession, STAFF_SESSION_COOKIE, STAFF_REFRESH_COOKIE, REMEMBER_ME_MAX_AGE, IS_PRODUCTION } from "@/lib/server/staff-auth";
 
 const PUBLIC_PATHS = ["/", "/terms", "/privacy", "/health-safety", "/login", "/reset-password", "/sign-in", "/sign-up", "/forgot-password", "/set-password", "/auth", "/portal", "/media", "/images", "/api/customer", "/api/paymongo", "/api/staff/session", "/api/staff/password-reset", "/api/staff/oauth", "/client-portal"];
 
 async function hasValidSession(request: NextRequest) {
   return hasStaffSession(request);
+}
+
+async function checkAuth(request: NextRequest) {
+  const authenticated = await hasValidSession(request);
+  if (authenticated) return { authenticated: true as const, refreshToken: null as string | null };
+  const refreshed = await tryRefreshStaffSession(request);
+  if (refreshed) return { authenticated: true as const, refreshToken: refreshed.refresh_token, accessToken: refreshed.access_token };
+  return { authenticated: false as const, refreshToken: null as string | null };
 }
 
 function isPublicPath(pathname: string) {
@@ -23,12 +31,24 @@ export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const withPathname = { request: { headers: new Headers({ ...Object.fromEntries(request.headers), "x-pathname": pathname }) } };
   if (pathname !== "/login" && isPublicPath(pathname)) return NextResponse.next(withPathname);
-  const authenticated = await hasValidSession(request);
+
+  const { authenticated, accessToken, refreshToken } = await checkAuth(request);
+
+  const cookieOptions = { httpOnly: true, sameSite: "lax" as const, secure: IS_PRODUCTION, maxAge: REMEMBER_ME_MAX_AGE, path: "/" };
 
   if (pathname === "/login") {
-    return authenticated ? NextResponse.redirect(new URL("/os", request.url)) : NextResponse.next();
+    if (!authenticated) return NextResponse.next();
+    const res = NextResponse.redirect(new URL("/os", request.url));
+    if (accessToken) res.cookies.set(STAFF_SESSION_COOKIE, accessToken, cookieOptions);
+    if (refreshToken) res.cookies.set(STAFF_REFRESH_COOKIE, refreshToken, cookieOptions);
+    return res;
   }
-  if (isPublicPath(pathname) || authenticated) return NextResponse.next(withPathname);
+  if (isPublicPath(pathname) || authenticated) {
+    const res = NextResponse.next(withPathname);
+    if (accessToken) res.cookies.set(STAFF_SESSION_COOKIE, accessToken, cookieOptions);
+    if (refreshToken) res.cookies.set(STAFF_REFRESH_COOKIE, refreshToken, cookieOptions);
+    return res;
+  }
 
   const login = new URL("/login", request.url);
   const destination = `${pathname}${search}`;

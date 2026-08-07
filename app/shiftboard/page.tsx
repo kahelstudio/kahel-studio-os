@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { MapPin, Plus } from "lucide-react";
 import { SHIFT_DEFAULT, type ShiftEntry } from "@/lib/sample-data";
+import { cn } from "@/lib/utils";
+import { ActionButton } from "@/components/shared/action-button";
 
 function getCurrentWeekMeta(): [string, string, boolean][] {
   const today = new Date();
@@ -24,8 +26,6 @@ function getMondayIso(): string {
   monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
   return monday.toISOString().slice(0, 10);
 }
-import { cn } from "@/lib/utils";
-
 const STORAGE_KEY = "ks_shifts";
 
 const STAFF = [
@@ -153,9 +153,9 @@ export default function ShiftboardPage() {
             Monitor staff schedules and production assignments.
           </p>
         </div>
-        <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <ActionButton label="New shift" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> New Shift
-        </button>
+        </ActionButton>
       </div>
 
       <div className="mt-9 flex border-b border-[var(--color-border)]">

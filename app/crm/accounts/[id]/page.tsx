@@ -7,6 +7,7 @@ import { LoyaltyAdminPanel } from "@/components/loyalty/loyalty-admin-panel";
 import { getAccountById } from "@/lib/server/crm-data";
 import { BOOKING_STATUS } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
+import { ActionButton } from "@/components/shared/action-button";
 
 function initials(name: string) {
   return name
@@ -100,12 +101,12 @@ export default async function CrmAccountDetailPage({
           </div>
         </div>
         <div className="flex gap-2 sm:ml-auto">
-          <button className="h-[38px] rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-sm font-semibold text-[var(--color-text-primary)]">
+          <ActionButton label="Edit account" className="h-[38px] rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-sm font-semibold text-[var(--color-text-primary)]">
             Edit
-          </button>
-          <button className="h-[38px] rounded-control bg-[var(--color-kahel-500)] px-3.5 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+          </ActionButton>
+          <ActionButton label="New booking" className="h-[38px] rounded-control bg-[var(--color-kahel-500)] px-3.5 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
             New booking
-          </button>
+          </ActionButton>
         </div>
       </div>
 

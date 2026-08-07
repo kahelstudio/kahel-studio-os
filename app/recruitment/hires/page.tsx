@@ -5,6 +5,7 @@ import { getHires } from "@/lib/server/recruitment-data";
 import { ONBOARDING_CHECKLIST } from "@/lib/sample-data";
 import { ProgressList } from "@/components/recruitment/progress-list";
 import type { ProgressPerson } from "@/components/recruitment/progress-list";
+import { ActionButton } from "@/components/shared/action-button";
 
 function computeProgress(done: number, total: number): Pick<ProgressPerson, "pct" | "label" | "barColor" | "stBg" | "stColor" | "stLabel"> {
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -39,9 +40,9 @@ export default async function RecruitmentHiresPage() {
             Every checklist, tracked to the last signature
           </p>
         </div>
-        <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <ActionButton label="Start onboarding" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> Start onboarding
-        </button>
+        </ActionButton>
       </div>
 
       <ProgressList

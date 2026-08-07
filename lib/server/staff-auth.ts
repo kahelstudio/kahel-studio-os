@@ -4,6 +4,11 @@ import { createClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "./supabase-admin";
 
 const COOKIE_NAME = "kahel_staff_access_token";
+const REFRESH_COOKIE_NAME = "kahel_staff_refresh_token";
+
+const REMEMBER_ME_MAX_AGE = 60 * 60 * 24 * 30;
+
+export const IS_PRODUCTION = (process.env.APP_ENV as string) === "production" || process.env.NODE_ENV === "production";
 
 type AuthConfig = {
   emails: Set<string>;
@@ -33,8 +38,18 @@ function client(settings: AuthConfig, accessToken?: string) {
   });
 }
 
+function isAllowedGmailFormat(email: string) {
+  const normalized = email.trim().toLowerCase();
+  const match = normalized.match(/^([^@]+)@gmail\.com$/);
+  if (!match) return false;
+  return match[1].includes("kahelstudio");
+}
+
 function isStaffEmail(email: string | undefined, settings: AuthConfig) {
-  return email ? settings.emails.has(email.trim().toLowerCase()) : false;
+  if (!email) return false;
+  const normalized = email.trim().toLowerCase();
+  if (settings.emails.has(normalized)) return true;
+  return isAllowedGmailFormat(normalized);
 }
 
 function accessTokenFromRequest(request: Request) {
@@ -66,9 +81,14 @@ export async function getStaffPrincipal(request: Request): Promise<StaffPrincipa
     .eq("user_id", user.id).maybeSingle<{ user_id: string; role: "super_admin" | "admin" | "staff"; active: boolean; can_manage_bookings: boolean; can_manage_loyalty: boolean; can_manage_rewards: boolean; can_manage_galleries: boolean }>();
   if (profileError) return null;
   if (!profile) {
-    const firstConfiguredEmail = [...settings.emails][0];
-    const role = user.email.trim().toLowerCase() === firstConfiguredEmail ? "super_admin" as const : "staff" as const;
-    const hasAllPermissions = role === "super_admin";
+    const configuredEmails = [...settings.emails];
+    const firstConfiguredEmail = configuredEmails[0];
+    const secondConfiguredEmail = configuredEmails[1];
+    const normalizedEmail = user.email.trim().toLowerCase();
+    const role = normalizedEmail === firstConfiguredEmail ? "super_admin" as const
+      : normalizedEmail === secondConfiguredEmail ? "admin" as const
+      : "staff" as const;
+    const hasAllPermissions = role !== "staff";
     const created = await admin.from("staff_profiles").insert({
       user_id: user.id,
       role,
@@ -84,6 +104,20 @@ export async function getStaffPrincipal(request: Request): Promise<StaffPrincipa
     profileError = created.error;
   }
   if (profileError || !profile?.active) return null;
+  const configuredEmails = [...settings.emails];
+  const normalizedEmail = user.email.trim().toLowerCase();
+  if (profile.role === "staff" && normalizedEmail === configuredEmails[1]) {
+    const { data: upgraded, error: upgradeError } = await admin.from("staff_profiles").update({
+      role: "admin",
+      can_manage_bookings: true,
+      can_manage_loyalty: true,
+      can_manage_rewards: true,
+      can_manage_galleries: true,
+    }).eq("user_id", user.id).select("user_id,role,active,can_manage_bookings,can_manage_loyalty,can_manage_rewards,can_manage_galleries").single<typeof profile>();
+    if (!upgradeError && upgraded) {
+      profile = upgraded;
+    }
+  }
   const permissions = ["loyalty.read"];
   if (profile.role !== "staff" || profile.can_manage_loyalty) permissions.push("loyalty.correct_progress", "loyalty.exclude_booking", "loyalty.restore_booking", "loyalty.resend");
   if (profile.role !== "staff" || profile.can_manage_rewards) permissions.push("loyalty.issue", "loyalty.cancel_reward", "loyalty.reinstate_reward", "loyalty.redeem_reward");
@@ -144,4 +178,20 @@ export async function hasStaffSession(request: Request) {
   return Boolean(await getStaffPrincipal(request));
 }
 
+export async function tryRefreshStaffSession(request: Request) {
+  const settings = config();
+  if (!settings) return null;
+  const refreshToken = refreshTokenFromRequest(request);
+  if (!refreshToken) return null;
+  const { data, error } = await client(settings).auth.refreshSession({ refresh_token: refreshToken });
+  if (error || !data.session || !data.user?.email || !isStaffEmail(data.user.email, settings)) return null;
+  return data.session;
+}
+
+function refreshTokenFromRequest(request: Request) {
+  return request.headers.get("cookie")?.match(new RegExp(`(?:^|; )${REFRESH_COOKIE_NAME}=([^;]+)`))?.[1];
+}
+
 export const STAFF_SESSION_COOKIE = COOKIE_NAME;
+export const STAFF_REFRESH_COOKIE = REFRESH_COOKIE_NAME;
+export { REMEMBER_ME_MAX_AGE };
