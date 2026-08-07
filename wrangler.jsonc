@@ -33,7 +33,7 @@
       "name": "kahelstudio-os-production",
       "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "kahelstudio-os-production" }],
       "send_email": [{ "name": "EMAIL" }],
-      "routes": [{ "pattern": "kahelstudio.com", "custom_domain": true }],
+      "routes": [{ "pattern": "kahelstudio.com", "custom_domain": true }, { "pattern": "www.kahelstudio.com", "custom_domain": true }],
       "vars": { "APP_ENV": "production", "MEDIA_INFRASTRUCTURE_ENABLED": "false", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "false", "AUTH_REDIRECT_URL": "https://kahelstudio.com/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "https://kahelstudio.com/auth/callback", "PUBLIC_SITE_URL": "https://kahelstudio.com", "TURNSTILE_SITE_KEY": "0x4AAAAAAEIUKZYs5BGk7pJs" }
     }
   }
