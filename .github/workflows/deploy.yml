@@ -1,0 +1,248 @@
+name: Deploy
+
+on:
+  push:
+    branches: [dev, staging, main]
+  pull_request:
+    branches: [dev, staging, main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: "npm" }
+      - run: npm ci
+      - run: npm run lint
+
+  typecheck:
+    name: Type check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: "npm" }
+      - run: npm ci
+      - run: npm run typecheck
+
+  audit:
+    name: Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: "npm" }
+      - run: npm ci
+      - run: npm audit --audit-level=high
+
+  visual_tests:
+    name: Visual tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      KAHEL_AUTH_DISABLED: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: "npm" }
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:visual
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: visual-test-results
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 3
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck, visual_tests]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: "npm" }
+      - run: npm ci
+      - run: npm run build
+      - run: npm run build:cloudflare
+      - run: npm run cf:check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: .open-next/
+          retention-days: 1
+
+  validate_migrations:
+    name: Validate Supabase migrations
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    timeout-minutes: 30
+    services:
+      docker:
+        image: docker:27.4-dind
+        options: --privileged
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: "npm" }
+      - run: npm ci
+      - run: npx supabase start --ignore-health-check
+      - run: npx supabase migration list --local
+      - run: npx supabase db lint --local --fail-on error
+
+  # ── Staging ──────────────────────────────────────────────
+
+  migrate_staging:
+    name: Migrate staging DB
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/staging'
+    needs: [build, validate_migrations]
+    environment:
+      name: staging
+      url: https://kahel.studio
+    concurrency: staging
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: "npm" }
+      - run: npm ci
+      - run: |
+          npx supabase link \
+            --project-ref "$SUPABASE_PROJECT_REF" \
+            --password "$SUPABASE_DB_PASSWORD"
+          npx supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.STAGING_SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.STAGING_SUPABASE_DB_PASSWORD }}
+
+  deploy_staging:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/staging'
+    needs: [migrate_staging]
+    environment:
+      name: staging
+      url: https://kahel.studio
+    concurrency: staging
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: "npm" }
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: .open-next/
+      - run: npm ci
+      - run: echo "$WANGLER_SECRETS" > /tmp/wrangler-secrets.json
+      - run: |
+          npx wrangler deploy --env staging --keep-vars \
+            --var "SUPABASE_URL:$SUPABASE_URL" \
+            --var "SUPABASE_PUBLISHABLE_KEY:$SUPABASE_PUBLISHABLE_KEY" \
+            --secrets-file /tmp/wrangler-secrets.json
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          WANGLER_SECRETS: ${{ secrets.STAGING_CLOUDFLARE_WORKER_SECRETS }}
+
+  verify_staging:
+    name: Verify staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/staging'
+    needs: [deploy_staging]
+    environment:
+      name: staging
+      url: https://kahel.studio
+    concurrency: staging
+    timeout-minutes: 5
+    steps:
+      - run: curl --fail --silent --show-error --max-time 20 https://kahel.studio/api/staff/session
+
+  # ── Production ───────────────────────────────────────────
+
+  migrate_production:
+    name: Migrate production DB
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: [build, validate_migrations]
+    environment:
+      name: production
+      url: https://kahelstudio.com
+    concurrency: production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: "npm" }
+      - run: npm ci
+      - run: |
+          npx supabase link \
+            --project-ref "$SUPABASE_PROJECT_REF" \
+            --password "$SUPABASE_DB_PASSWORD"
+          npx supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.PRODUCTION_SUPABASE_DB_PASSWORD }}
+
+  deploy_production:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: [migrate_production]
+    environment:
+      name: production
+      url: https://kahelstudio.com
+    concurrency: production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: "npm" }
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: .open-next/
+      - run: npm ci
+      - run: echo "$WANGLER_SECRETS" > /tmp/wrangler-secrets.json
+      - run: |
+          npx wrangler deploy --env production --keep-vars \
+            --var "SUPABASE_URL:$SUPABASE_URL" \
+            --var "SUPABASE_PUBLISHABLE_KEY:$SUPABASE_PUBLISHABLE_KEY" \
+            --secrets-file /tmp/wrangler-secrets.json
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+          WANGLER_SECRETS: ${{ secrets.PRODUCTION_CLOUDFLARE_WORKER_SECRETS }}
+
+  verify_production:
+    name: Verify production
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: [deploy_production]
+    environment:
+      name: production
+      url: https://kahelstudio.com
+    concurrency: production
+    timeout-minutes: 5
+    steps:
+      - run: curl --fail --silent --show-error --max-time 20 https://kahelstudio.com/api/staff/session
