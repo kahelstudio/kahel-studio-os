@@ -1,100 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
-import {
-  Bell,
-  Camera,
-  Coins,
-  FolderKanban,
-  ListChecks,
-  MessageSquare,
-  Plus,
-  Search,
-  TriangleAlert,
-} from "lucide-react";
+import { Bell, Plus, Search } from "lucide-react";
 import { useTheme } from "@/components/theme/theme-provider";
-
 import { AvatarMenu } from "@/components/shell/avatar-menu";
 import { QuickCreateSheet } from "@/components/shell/quick-create";
-import { cn } from "@/lib/utils";
-
-const NOTIF_ICON = {
-  booking: { bg: "#FFF4EE", c: "#B33800", Icon: Camera },
-  payment: { bg: "#E0F7EC", c: "#005430", Icon: Coins },
-  task: { bg: "#E0F7F8", c: "#00575C", Icon: ListChecks },
-  glitch: { bg: "#FDE4EA", c: "#8A0625", Icon: TriangleAlert },
-  project: { bg: "#EDEAFD", c: "#2A1F87", Icon: FolderKanban },
-  feedback: { bg: "#E3EDFF", c: "#053799", Icon: MessageSquare },
-} as const;
-
-const NOTIF_DATA = [
-  {
-    type: "booking",
-    title: "Ayala Land Premier",
-    body: "confirmed the Corporate Headshots booking.",
-    when: "12 min ago",
-    unread: true,
-  },
-  {
-    type: "payment",
-    title: "₱14,000 deposit",
-    body: "received for Bianca & Marco — Wedding.",
-    when: "40 min ago",
-    unread: true,
-  },
-  {
-    type: "glitch",
-    title: "GL-0041",
-    body: "Payslip PDF fails to generate for interns was reported.",
-    when: "1 hr ago",
-    unread: true,
-  },
-  {
-    type: "task",
-    title: "Charge batteries",
-    body: "is due today — assigned to Danilo.",
-    when: "2 hrs ago",
-    unread: false,
-  },
-  {
-    type: "project",
-    title: "PRJ-2026-0138",
-    body: "auto-created from the Ayala Land booking.",
-    when: "2 hrs ago",
-    unread: false,
-  },
-] as const;
 
 export function LauncherTopbar({ onOpenCommandPalette }: { onOpenCommandPalette: () => void }) {
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [readAll, setReadAll] = useState(false);
-  const notificationsRef = useRef<HTMLDivElement>(null);
   const { resolved } = useTheme();
 
-  const unreadCount = readAll ? 0 : NOTIF_DATA.filter((n) => n.unread).length;
   const logoSrc =
     resolved === "dark" ? "/kahelstudio-logo_w.svg" : "/kahelstudio-logo_b.svg";
-
-  useEffect(() => {
-    if (!notifOpen) return;
-
-    function closeOnOutsideClick(event: PointerEvent) {
-      if (!notificationsRef.current?.contains(event.target as Node)) setNotifOpen(false);
-    }
-
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setNotifOpen(false);
-    }
-
-    document.addEventListener("pointerdown", closeOnOutsideClick);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutsideClick);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [notifOpen]);
 
   return (
     <header className="flex h-[72px] shrink-0 items-center gap-1.5 px-4 sm:gap-3 sm:px-6 xl:gap-6 xl:px-12">
@@ -131,68 +50,25 @@ export function LauncherTopbar({ onOpenCommandPalette }: { onOpenCommandPalette:
       </button>
 
       <div className="flex items-center gap-0.5">
-
-
-        <div ref={notificationsRef} className="relative">
+        <div className="relative">
           <button
             onClick={() => setNotifOpen((v) => !v)}
             title="Notifications"
             aria-expanded={notifOpen}
-            aria-controls="notifications-menu"
             className="relative flex h-11 w-11 items-center justify-center rounded-control text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
           >
             <Bell className="h-5 w-5" strokeWidth={1.75} />
-            {unreadCount > 0 && (
-              <span className="absolute right-1.5 top-0.5 flex h-[15px] min-w-[15px] items-center justify-center rounded-full bg-[var(--color-kahel-500)] px-1 text-[9px] font-bold text-white">
-                {unreadCount}
-              </span>
-            )}
           </button>
           {notifOpen && (
-            <div id="notifications-menu" className="fixed inset-x-3 top-[68px] z-[60] max-h-[calc(100dvh-80px)] overflow-y-auto rounded-modal border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_18px_48px_-18px_rgba(20,20,20,0.28)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-[360px]">
-              <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-3.5">
+            <div className="absolute right-0 top-12 z-[60] w-[360px] overflow-hidden rounded-modal border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_18px_48px_-18px_rgba(20,20,20,0.28)]">
+              <div className="border-b border-[var(--color-border)] px-4 py-3.5">
                 <span className="font-display text-[15px] font-semibold">Notifications</span>
-                <button
-                  onClick={() => setReadAll(true)}
-                  className="text-xs font-semibold text-[var(--color-kahel-500)]"
-                >
-                  Mark all read
-                </button>
               </div>
-              <div>
-                {NOTIF_DATA.map((n, i) => {
-                  const meta = NOTIF_ICON[n.type as keyof typeof NOTIF_ICON];
-                  const unread = n.unread && !readAll;
-                  return (
-                    <div
-                      key={i}
-                      className={cn(
-                        "flex gap-3 border-b border-[var(--color-border)] px-4 py-3.5",
-                        unread ? "bg-[var(--color-kahel-50)]" : "bg-[var(--color-surface)]"
-                      )}
-                    >
-                      <span
-                        className="mt-px flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full"
-                        style={{ background: meta.bg, color: meta.c }}
-                      >
-                        <meta.Icon className="h-[15px] w-[15px]" strokeWidth={1.75} />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[13px] leading-snug text-[var(--color-text-primary)]">
-                          <span className="font-semibold">{n.title}</span> {n.body}
-                        </div>
-                        <div className="mt-0.5 text-[11px] text-[var(--color-text-muted)]">{n.when}</div>
-                      </div>
-                      {unread && (
-                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[var(--color-kahel-500)]" />
-                      )}
-                    </div>
-                  );
-                })}
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <Bell className="h-7 w-7 text-[var(--color-text-muted)]" strokeWidth={1.5} />
+                <p className="mt-3 text-sm font-semibold text-[var(--color-text-primary)]">No notifications</p>
+                <p className="mt-1 text-[13px] text-[var(--color-text-muted)]">You're all caught up.</p>
               </div>
-              <button className="w-full border-t border-[var(--color-border)] bg-[var(--color-canvas)] py-3 text-[13px] font-semibold text-[var(--color-text-primary)]">
-                View all activity
-              </button>
             </div>
           )}
         </div>
