@@ -3,6 +3,7 @@ import { Archivo, Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { ThemeScript } from "@/components/theme/theme-script";
 import { ToastProvider } from "@/components/toast/toast-provider";
+import JsonLd from "@/components/seo/json-ld";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -40,6 +41,7 @@ export default function RootLayout({
     >
       <head>
         <ThemeScript />
+        <JsonLd />
       </head>
       <body className="min-h-full font-sans">
         <ThemeProvider>

@@ -16,26 +16,20 @@ import { useToast } from "@/components/toast/toast-provider";
 import { REPORTING_PERIOD } from "@/lib/reporting-sample-data";
 
 const metrics = [
-  { label: "Revenue growth", value: "+18%", change: "3.2% vs last month", color: "#00A15C", points: "0,31 12,35 23,24 35,29 48,16 62,21 76,3 88,11 100,7" },
-  { label: "Export activity", value: "24", change: "12% more this month", color: "#FF5300", points: "0,29 13,14 26,25 39,18 51,37 64,22 77,32 89,26 100,30" },
-  { label: "On-time delivery", value: "91%", change: "7.5% vs last month", color: "#E89A00", points: "0,34 13,37 26,19 39,43 52,27 65,31 78,6 90,16 100,9" },
-  { label: "Report usage", value: "68%", change: "6% vs last month", color: "#00A15C", points: "0,35 13,39 26,25 39,33 52,20 65,25 78,5 90,12 100,10" },
+  { label: "Revenue growth", value: "—", change: "No data yet", color: "#CECBC5", points: "0,40 25,40 50,40 75,40 100,40" },
+  { label: "Export activity", value: "—", change: "No data yet", color: "#CECBC5", points: "0,40 25,40 50,40 75,40 100,40" },
+  { label: "On-time delivery", value: "—", change: "No data yet", color: "#CECBC5", points: "0,40 25,40 50,40 75,40 100,40" },
+  { label: "Report usage", value: "—", change: "No data yet", color: "#CECBC5", points: "0,40 25,40 50,40 75,40 100,40" },
 ];
 
 const categories = [
-  ["Financial reports", "Revenue, expenses and receivables", "12", "#E0F7F8", "#00575C"],
-  ["Booking reports", "Sessions, demand and conversion", "8", "#E3EDFF", "#053799"],
-  ["Project delivery", "Production progress and due dates", "15", "#EDEAFD", "#2A1F87"],
-  ["Annual reports", "Yearly business performance", "5", "#FFF1CC", "#8A6D00"],
+  ["Financial reports", "Revenue, expenses and receivables", "0", "#E0F7F8", "#00575C"],
+  ["Booking reports", "Sessions, demand and conversion", "0", "#E3EDFF", "#053799"],
+  ["Project delivery", "Production progress and due dates", "0", "#EDEAFD", "#2A1F87"],
+  ["Annual reports", "Yearly business performance", "0", "#FFF1CC", "#8A6D00"],
 ] as const;
 
-const reports = [
-  { name: "Monthly operating report", meta: "31 Jul 2026 · Operations · 2.4 MB" },
-  { name: "Sales and collections summary", meta: "28 Jul 2026 · Financial · 1.8 MB" },
-  { name: "Project delivery health", meta: "25 Jul 2026 · Projects · 3.1 MB" },
-  { name: "Booking conversion report", meta: "22 Jul 2026 · Bookings · 1.6 MB" },
-  { name: "Annual business review", meta: "31 Dec 2025 · Annual · 5.6 MB" },
-];
+const reports: { name: string; meta: string }[] = [];
 
 export function ReportsClient() {
   const { fireToast } = useToast();
@@ -80,7 +74,7 @@ export function ReportsClient() {
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-control bg-[var(--color-kahel-50)] text-[var(--color-kahel-700)]"><FileText className="h-5 w-5" /></span>
               <div className="min-w-0 flex-1"><div className="truncate text-sm font-semibold">{report.name}</div><div className="mt-1 truncate text-xs text-[var(--color-text-secondary)]">{report.meta}</div></div>
               <button onClick={() => exportReport(report.name)} className="grid h-10 w-10 shrink-0 place-items-center rounded-control text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-kahel-700)]" aria-label={`Download ${report.name}`}><Download className="h-4 w-4" /></button>
-            </div>) : <div className="px-5 py-12 text-center text-sm text-[var(--color-text-secondary)]">No reports match your search.</div>}
+            </div>) : <div className="px-5 py-12 text-center text-sm text-[var(--color-text-muted)]">No reports generated yet.</div>}
             <button onClick={() => fireToast("All available reports loaded.", "info")} className="flex w-full items-center justify-center gap-2 px-5 py-4 text-sm font-semibold text-[var(--color-kahel-700)] hover:bg-[var(--color-kahel-50)]">View all reports <ChevronRight className="h-4 w-4" /></button>
           </section>
 
@@ -98,7 +92,7 @@ export function ReportsClient() {
             <div className="mt-4 space-y-3">{categories.map(([name, description, count, bg, color]) => <button key={name} onClick={() => setType(name.split(" ")[0])} className="flex w-full items-center gap-3 rounded-control border border-[var(--color-border)] p-3 text-left hover:border-[var(--color-border-strong)] hover:bg-[var(--color-surface-muted)]"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-control" style={{ background: bg, color }}><LineChart className="h-5 w-5" /></span><span className="min-w-0 flex-1"><span className="block text-sm font-semibold">{name}</span><span className="mt-0.5 block text-xs text-[var(--color-text-secondary)]">{count} reports · {description}</span></span><ChevronRight className="h-4 w-4 text-[var(--color-text-muted)]" /></button>)}</div>
           </section>
           <section className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-5"><h2 className="font-display text-lg font-semibold">Quick actions</h2><div className="mt-4 space-y-2"><QuickAction label="Request a statement" onClick={() => fireToast("Statement request created.", "success")} /><QuickAction label="Download tax forms" onClick={() => fireToast("Tax forms are being prepared.", "success")} /><QuickAction label="Schedule report" onClick={() => fireToast("Report scheduler opened.", "info")} /></div></section>
-          <section className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-5"><h2 className="font-display text-lg font-semibold">Recent activity</h2><div className="mt-4 space-y-4"><Activity label="Sales summary downloaded" when="2 hours ago" color="#00A15C" /><Activity label="Monthly report generated" when="5 hours ago" color="#00A5AD" /><Activity label="Project delivery report viewed" when="Yesterday" color="#FF5300" /></div></section>
+          <section className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-5"><h2 className="font-display text-lg font-semibold">Recent activity</h2><p className="mt-3 text-sm text-[var(--color-text-muted)]">No activity yet.</p></section>
         </aside>
       </div>
     </div>

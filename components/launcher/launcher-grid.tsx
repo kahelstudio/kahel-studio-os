@@ -133,9 +133,9 @@ export function LauncherGrid() {
           Good morning, Eusebio
         </div>
         <div className="mt-2 text-base leading-6 text-[var(--color-text-secondary)]">
-          <span className="font-light">2 events and 3 studio sessions today</span>{" "}
+          <span className="font-light">0 events and 0 studio sessions today</span>{" "}
           <span aria-hidden>|</span>{" "}
-          <span className="font-medium text-[#FF5300]">₱71,000</span>{" "}
+          <span className="font-medium text-[#FF5300]">₱0</span>{" "}
           <span className="font-light">sales this month</span>
         </div>
       </div>

@@ -485,38 +485,26 @@ export const POS_CATALOGS: Record<string, { title: string; sub: string; unit: st
 
 // ── Dashboard KPIs (July 2026) ───────────────────────────────────────
 export const DASHBOARD_KPIS = [
-  { label: "Revenue MTD", value: "₱412,500", delta: "▲ 18% vs Jun", positive: true },
-  { label: "Gross profit", value: "₱268,100", delta: "65% margin", positive: true },
-  { label: "Avg booking value", value: "₱34,375", delta: "▲ ₱2,100 vs Jun", positive: true },
-  { label: "Outstanding", value: "₱71,000", delta: "3 balances due", positive: false },
+  { label: "Revenue MTD", value: "₱0", delta: "— vs Jun", positive: true },
+  { label: "Gross profit", value: "₱0", delta: "—", positive: true },
+  { label: "Avg booking value", value: "₱0", delta: "— vs Jun", positive: true },
+  { label: "Outstanding", value: "₱0", delta: "0 balances due", positive: false },
 ];
 
 export const REVENUE_CHART = [
-  { month: "FEB", value: 238 },
-  { month: "MAR", value: 296 },
-  { month: "APR", value: 271 },
-  { month: "MAY", value: 344 },
-  { month: "JUN", value: 349 },
-  { month: "JUL", value: 412 },
+  { month: "FEB", value: 0 },
+  { month: "MAR", value: 0 },
+  { month: "APR", value: 0 },
+  { month: "MAY", value: 0 },
+  { month: "JUN", value: 0 },
+  { month: "JUL", value: 0 },
 ];
 
-export const DASHBOARD_SCHEDULE = [
-  { time: "10:00 AM", title: "Corporate Headshots — Ayala Land", sub: "Studio B · 24 subjects" },
-  { time: "2:00 PM", title: "Client call — Reyes Family", sub: "Confirm birthday details" },
-  { time: "4:30 PM", title: "Album review — Bianca & Marco", sub: "Final proof approval" },
-];
+export const DASHBOARD_SCHEDULE = [];
 
-export const DASHBOARD_BALANCES = [
-  { name: "Bianca & Marco", ref: "KS-2026-0142", amount: "₱92,500" },
-  { name: "Aria & Josh Lim", ref: "KS-2026-0149", amount: "₱21,000" },
-  { name: "Reyes Family", ref: "KS-2026-0151", amount: "₱14,000" },
-];
+export const DASHBOARD_BALANCES = [];
 
-export const DASHBOARD_INQUIRIES = [
-  { ini: "GL", name: "Globe Telecom", sub: "Product shoot · 30 Jul", when: "3d ago" },
-  { ini: "CT", name: "Carla Tan", sub: "Prenup enquiry", when: "2d ago" },
-  { ini: "MP", name: "Maria Pascual", sub: "Graduation portraits", when: "5h ago" },
-];
+export const DASHBOARD_INQUIRIES = [];
 
 // ── Finance ──────────────────────────────────────────────────────────
 const FIN_KINDS: Record<string, { bg: string; c: string }> = {
@@ -527,44 +515,27 @@ const FIN_KINDS: Record<string, { bg: string; c: string }> = {
 };
 
 export const FINANCE_KPIS = [
-  { label: "Recorded MTD", value: "₱412,500" },
-  { label: "Booklet remaining", value: "54 serials" },
-  { label: "Unreconciled", value: "2 items" },
+  { label: "Recorded MTD", value: "₱0" },
+  { label: "Booklet remaining", value: "0 serials" },
+  { label: "Unreconciled", value: "0 items" },
 ];
 
-export const FINANCE_INVOICES = [
-  { serial: "KS-000-1042", ref: "KS-2026-0142", kind: "deposit", amount: "₱92,500.00", issued: "20 Jun 2026" },
-  { serial: "KS-000-1043", ref: "KS-2026-0149", kind: "deposit", amount: "₱21,000.00", issued: "28 Jun 2026" },
-  { serial: "KS-000-1044", ref: "ORD-2026-0771", kind: "retail", amount: "₱3,350.00", issued: "12 Jul 2026" },
-  { serial: "KS-000-1045", ref: "KS-2025-0088", kind: "full", amount: "₱29,000.00", issued: "01 Mar 2026" },
-  { serial: "KS-000-1046", ref: "KS-2026-0138", kind: "balance", amount: "₱48,000.00", issued: "18 Jul 2026" },
-].map((r) => ({
-  ...r,
-  kindLabel: r.kind.charAt(0).toUpperCase() + r.kind.slice(1),
-  kindBg: FIN_KINDS[r.kind].bg,
-  kindColor: FIN_KINDS[r.kind].c,
-}));
+export const FINANCE_INVOICES = [];
 
 export const FINANCE_SALES_KPIS = [
-  { label: "Sales this month", value: "₱125,750" },
-  { label: "Transactions", value: "27" },
-  { label: "Average sale", value: "₱4,657" },
-  { label: "vs. last month", value: "▲ 8%" },
+  { label: "Sales this month", value: "₱0" },
+  { label: "Transactions", value: "0" },
+  { label: "Average sale", value: "₱0" },
+  { label: "vs. last month", value: "—" },
 ];
 
-export const FINANCE_SALES = [
-  { ref: "POS-2026-0712", desc: "Prints & frames — walk-in", method: "Cash", date: "21 Jul 2026", amt: "₱3,450.00" },
-  { ref: "POS-2026-0711", desc: "Package add-on — Reyes", method: "GCash", date: "20 Jul 2026", amt: "₱6,000.00" },
-  { ref: "KS-2026-0149", desc: "Wedding deposit — Deveza", method: "Bank transfer", date: "28 Jun 2026", amt: "₱21,000.00" },
-  { ref: "KS-2026-0142", desc: "Corporate deposit — Globe", method: "Bank transfer", date: "20 Jun 2026", amt: "₱92,500.00" },
-  { ref: "POS-2026-0708", desc: "Album reprint — Santos", method: "Maya", date: "18 Jul 2026", amt: "₱2,800.00" },
-];
+export const FINANCE_SALES = [];
 
 export const FINANCE_EXPENSE_KPIS = [
-  { label: "Expenses this month", value: "₱101,830" },
-  { label: "Largest category", value: "Payroll" },
-  { label: "Entries", value: "18" },
-  { label: "vs. last month", value: "▲ 6%" },
+  { label: "Expenses this month", value: "₱0" },
+  { label: "Largest category", value: "—" },
+  { label: "Entries", value: "0" },
+  { label: "vs. last month", value: "—" },
 ];
 
 const EXP_TONE: Record<string, { bg: string; c: string }> = {
@@ -575,37 +546,16 @@ const EXP_TONE: Record<string, { bg: string; c: string }> = {
   grey: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)" },
 };
 
-export const FINANCE_EXPENSES = [
-  { ref: "EXP-2026-0221", cat: "Equipment", tone: "blue", desc: "Lens rental — 70-200mm", date: "19 Jul 2026", amt: "₱4,500.00" },
-  { ref: "EXP-2026-0220", cat: "Studio", tone: "indigo", desc: "Studio rent — July", date: "01 Jul 2026", amt: "₱35,000.00" },
-  { ref: "EXP-2026-0219", cat: "Payroll", tone: "orange", desc: "Semi-monthly payroll — Jul A", date: "15 Jul 2026", amt: "₱47,190.00" },
-  { ref: "EXP-2026-0218", cat: "Supplies", tone: "teal", desc: "Prints & framing stock", date: "12 Jul 2026", amt: "₱6,240.00" },
-  { ref: "EXP-2026-0217", cat: "Utilities", tone: "grey", desc: "Electricity & internet", date: "08 Jul 2026", amt: "₱8,900.00" },
-].map((r) => ({ ...r, catBg: EXP_TONE[r.tone].bg, catColor: EXP_TONE[r.tone].c }));
+export const FINANCE_EXPENSES = [];
 
 export const FINANCE_PAYMENT_KPIS = [
-  { label: "Money in", value: "₱119,500" },
-  { label: "Money out", value: "₱82,190" },
-  { label: "Net movement", value: "₱37,310" },
-  { label: "Pending", value: "1" },
+  { label: "Money in", value: "₱0" },
+  { label: "Money out", value: "₱0" },
+  { label: "Net movement", value: "₱0" },
+  { label: "Pending", value: "0" },
 ];
 
-export const FINANCE_PAYMENTS = [
-  { ref: "PAY-IN-0342", party: "Reyes Family", dir: "in", method: "GCash ••7712", date: "20 Jul 2026", amt: "₱6,000.00", st: "cleared" },
-  { ref: "PAY-OUT-0119", party: "Payroll — Jul A · 5 staff", dir: "out", method: "Bank transfer", date: "15 Jul 2026", amt: "₱47,190.00", st: "cleared" },
-  { ref: "PAY-IN-0341", party: "Globe Telecom", dir: "in", method: "Bank transfer", date: "20 Jun 2026", amt: "₱92,500.00", st: "cleared" },
-  { ref: "PAY-OUT-0118", party: "Studio rent — July", dir: "out", method: "Bank transfer", date: "01 Jul 2026", amt: "₱35,000.00", st: "cleared" },
-  { ref: "PAY-IN-0343", party: "Deveza — balance", dir: "in", method: "Bank transfer", date: "Awaiting", amt: "₱21,000.00", st: "pending" },
-].map((r) => ({
-  ...r,
-  dirColor: r.dir === "in" ? "var(--color-success-text)" : "var(--color-danger-text)",
-  dirSign: r.dir === "in" ? "+" : "−",
-  dirBg: r.dir === "in" ? "var(--color-success-bg)" : "var(--color-danger-bg)",
-  dirLabel: r.dir === "in" ? "In" : "Out",
-  stBg: r.st === "cleared" ? "var(--color-success-bg)" : "var(--color-warning-bg)",
-  stColor: r.st === "cleared" ? "var(--color-success-text)" : "var(--color-warning-text)",
-  stLabel: r.st === "cleared" ? "Cleared" : "Pending",
-}));
+export const FINANCE_PAYMENTS = [];
 
 // ── Quotation ────────────────────────────────────────────────────────
 const QUOTE_ST: Record<string, { bg: string; c: string; l: string }> = {
