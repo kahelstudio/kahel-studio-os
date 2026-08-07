@@ -67,7 +67,7 @@ export function LauncherTopbar({ onOpenCommandPalette }: { onOpenCommandPalette:
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Bell className="h-7 w-7 text-[var(--color-text-muted)]" strokeWidth={1.5} />
                 <p className="mt-3 text-sm font-semibold text-[var(--color-text-primary)]">No notifications</p>
-                <p className="mt-1 text-[13px] text-[var(--color-text-muted)]">You're all caught up.</p>
+                <p className="mt-1 text-[13px] text-[var(--color-text-muted)]">You&apos;re all caught up.</p>
               </div>
             </div>
           )}

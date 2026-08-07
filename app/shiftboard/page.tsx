@@ -102,13 +102,11 @@ function mapApiShift(s: ApiShiftRow): ShiftEntry {
 
 export default function ShiftboardPage() {
   const [shifts, setShifts] = useState<ShiftEntry[]>([]);
-  const [dayMeta, setDayMeta] = useState<[string, string, boolean][]>([]);
+  const [dayMeta] = useState<[string, string, boolean][]>(() => getCurrentWeekMeta());
   const [dragId, setDragId] = useState<string | null>(null);
   const [view, setView] = useState<"shift" | "production">("shift");
 
   useEffect(() => {
-    setDayMeta(getCurrentWeekMeta());
-
     const local = loadLocalShifts();
     if (local) {
       queueMicrotask(() => setShifts(local));

@@ -163,6 +163,7 @@ export default function LoginPage() {
   }
 
   function continueWithGoogle() {
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = "/api/staff/oauth/google";
   }
 
