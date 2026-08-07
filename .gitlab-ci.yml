@@ -35,13 +35,11 @@ default:
 
 .staging_rules: &staging_rules
   rules:
-    - if: '$CI_COMMIT_BRANCH == "dev"'
+    - if: '$CI_COMMIT_BRANCH == "staging"'
 
 .production_rules: &production_rules
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-      when: manual
-    - when: never
 
 install_dependencies:
   stage: install
@@ -229,5 +227,4 @@ verify_production:
   interruptible: false
   script:
     - curl --fail --silent --show-error --max-time 20 https://kahelstudio.com/api/staff/session > /dev/null
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+  <<: *production_rules
