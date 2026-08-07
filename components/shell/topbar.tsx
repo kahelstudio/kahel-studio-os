@@ -37,7 +37,7 @@ export function Topbar({
       >
         <span
           className="flex h-[30px] w-[30px] items-center justify-center rounded-control"
-          style={{ background: accent.tint, color: accent.text }}
+          style={{ color: accent.base }}
         >
           <Icon className="h-4 w-4" strokeWidth={1.75} />
         </span>

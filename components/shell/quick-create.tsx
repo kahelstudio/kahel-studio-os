@@ -82,7 +82,7 @@ export function QuickCreateSheet({ open, onClose }: { open: boolean; onClose: ()
             >
               <span
                 className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control"
-                style={{ background: item.accent.tint, color: item.accent.text }}
+                style={{ color: item.accent.base }}
               >
                 <item.icon className="h-[22px] w-[22px]" strokeWidth={1.75} />
               </span>
