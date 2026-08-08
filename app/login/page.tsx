@@ -103,7 +103,11 @@ export default function LoginPage() {
 
   async function signIn(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (config?.turnstileRequired && !turnstileToken) {
+    if (!config) {
+      setError("Authentication is still loading. Please try again.");
+      return;
+    }
+    if (config.turnstileRequired && !turnstileToken) {
       setError("Complete the security verification to continue.");
       return;
     }
@@ -222,7 +226,7 @@ export default function LoginPage() {
               {error && <p className="mt-4 text-sm font-medium text-[var(--color-danger-text)]" role="alert">{error}</p>}
               {notice && <p className="mt-4 text-sm font-medium text-[var(--color-success-text)]" role="status">{notice}</p>}
 
-              <button disabled={submitting || !config || (config.turnstileRequired && !config.turnstileConfigured)} className="mt-6 h-13 w-full rounded-[10px] bg-[var(--color-kahel-500)] font-display text-sm font-semibold text-white transition hover:bg-[var(--color-kahel-600)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-kahel-200)] disabled:cursor-not-allowed disabled:opacity-55">{submitting ? "Signing in..." : "Sign in"}</button>
+              <button disabled={submitting || Boolean(config?.turnstileRequired && !config.turnstileConfigured)} className="mt-6 h-13 w-full rounded-[10px] bg-[var(--color-kahel-500)] font-display text-sm font-semibold text-white transition hover:bg-[var(--color-kahel-600)] focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[var(--color-kahel-200)] disabled:cursor-not-allowed disabled:opacity-55">{submitting ? "Signing in..." : "Sign in"}</button>
             </form>
 
             {config?.googleConfigured && (
