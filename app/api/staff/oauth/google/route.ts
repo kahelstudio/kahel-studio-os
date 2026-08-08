@@ -47,7 +47,7 @@ export async function GET() {
   }
 
   const response = NextResponse.redirect(data.url);
-  response.cookies.set(STAFF_OAUTH_VERIFIER_COOKIE, encodeURIComponent(verifier), {
+  response.cookies.set(STAFF_OAUTH_VERIFIER_COOKIE, verifier, {
     httpOnly: true,
     sameSite: "lax",
     secure: IS_PRODUCTION,
