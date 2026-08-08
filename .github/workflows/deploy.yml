@@ -270,7 +270,10 @@ jobs:
       - run: |
           for attempt in {1..12}; do
             response="$(curl --fail --silent --show-error --max-time 20 "https://kahelstudio.com/api/staff/session?deployment_check=$attempt")"
-            if jq -e '.configured == true' <<< "$response" > /dev/null; then
+            if jq -e '
+              .configured == true and
+              (.configurationChecks | all(. == true))
+            ' <<< "$response" > /dev/null; then
               exit 0
             fi
             sleep 5

@@ -12,6 +12,12 @@ export async function GET(request: Request) {
     turnstileConfigured: turnstileConfigured(),
     turnstileSiteKey: turnstileSiteKey(),
     googleConfigured: process.env.GOOGLE_AUTH_ENABLED === "true",
+    configurationChecks: {
+      staffEmails: Boolean(process.env.KAHEL_STAFF_EMAILS || process.env.KAHEL_STAFF_EMAIL),
+      supabaseUrl: Boolean(process.env.SUPABASE_URL),
+      supabasePublishableKey: Boolean(process.env.SUPABASE_PUBLISHABLE_KEY),
+      authRedirectUrl: Boolean(process.env.AUTH_REDIRECT_URL),
+    },
   });
 }
 
