@@ -38,8 +38,9 @@ function client(settings: AuthConfig, accessToken?: string) {
   });
 }
 
-function isAllowedGmailFormat(email: string) {
+function isAllowedStaffEmail(email: string) {
   const normalized = email.trim().toLowerCase();
+  if (normalized.endsWith("@kahelstudio.com")) return true;
   const match = normalized.match(/^([^@]+)@gmail\.com$/);
   if (!match) return false;
   return match[1].includes("kahelstudio");
@@ -49,7 +50,7 @@ function isStaffEmail(email: string | undefined, settings: AuthConfig) {
   if (!email) return false;
   const normalized = email.trim().toLowerCase();
   if (settings.emails.has(normalized)) return true;
-  return isAllowedGmailFormat(normalized);
+  return isAllowedStaffEmail(normalized);
 }
 
 export function staffEmailAuthorized(email: string | undefined) {
