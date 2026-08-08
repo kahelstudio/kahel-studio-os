@@ -85,6 +85,7 @@ jobs:
           name: build-output
           path: .open-next/
           retention-days: 1
+          include-hidden-files: true
 
   validate_migrations:
     name: Validate Supabase migrations
