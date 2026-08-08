@@ -253,14 +253,20 @@ function DatePicker({ value, onChange }: { value: string; onChange: (value: stri
   return <div ref={pickerRef} className={styles.picker}><button type="button" className={styles.pickerTrigger} aria-expanded={open} onClick={() => setOpen((current) => !current)}><span>{label}</span><CalendarDays size={16} /></button>{open && <div className={styles.calendar}><div className={styles.calendarHead}><strong>{first.toLocaleDateString("en-PH", { month: "long", year: "numeric" })}</strong><span><button type="button" onClick={() => step(-1)} aria-label="Previous month"><ChevronLeft /></button><button type="button" onClick={() => step(1)} aria-label="Next month"><ChevronRight /></button></span></div><div className={styles.weekdays}>{["M", "T", "W", "T", "F", "S", "S"].map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}</div><div className={styles.days}>{cells.map((date) => { const iso = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`; return <button type="button" key={iso} data-outside={date.getMonth() !== month.month} data-today={iso === todayIso()} aria-pressed={iso === value} onClick={() => { onChange(iso); setOpen(false); }}>{date.getDate()}</button>; })}</div><div className={styles.calendarFoot}><button type="button" onClick={() => { onChange(""); setOpen(false); }}>Clear</button><button type="button" onClick={() => { onChange(todayIso()); setOpen(false); }}>Today</button></div></div>}</div>;
 }
 
+const bookingTimeSlots = Array.from({ length: 17 }, (_, index) => {
+  const totalMinutes = 8 * 60 + index * 30;
+  return `${pad(Math.floor(totalMinutes / 60))}:${pad(totalMinutes % 60)}`;
+});
+
+function formatBookingTime(value: string) {
+  const [hour, minute] = value.split(":").map(Number);
+  return `${pad(hour % 12 || 12)}:${pad(minute)} ${hour >= 12 ? "PM" : "AM"}`;
+}
+
 function TimePicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   const [open, setOpen] = useState(false);
   const pickerRef = usePopupDismissal(open, setOpen);
-  const [hour, minute] = value ? value.split(":").map(Number) : [9, 0];
-  const period = hour >= 12 ? "PM" : "AM";
-  const hour12 = hour % 12 || 12;
-  const setPart = (nextHour = hour12, nextMinute = minute, nextPeriod = period) => onChange(`${pad((nextHour % 12) + (nextPeriod === "PM" ? 12 : 0))}:${pad(nextMinute)}`);
-  return <div ref={pickerRef} className={styles.picker}><button type="button" className={styles.pickerTrigger} aria-expanded={open} onClick={() => setOpen((current) => !current)}><span>{value ? `${pad(hour12)}:${pad(minute)} ${period}` : "Select time"}</span><Clock3 size={16} /></button>{open && <div className={styles.timePicker}><div>{Array.from({ length: 12 }, (_, index) => index + 1).map((item) => <button type="button" aria-pressed={hour12 === item} key={item} onClick={() => setPart(item)}>{pad(item)}</button>)}</div><div><button type="button" aria-pressed={minute === 0} onClick={() => setPart(hour12, 0)}>00</button></div><div>{["AM", "PM"].map((item) => <button type="button" aria-pressed={period === item} key={item} onClick={() => { setPart(hour12, minute, item); setOpen(false); }}>{item}</button>)}</div></div>}</div>;
+  return <div ref={pickerRef} className={styles.picker}><button type="button" className={styles.pickerTrigger} aria-expanded={open} onClick={() => setOpen((current) => !current)}><span>{value ? formatBookingTime(value) : "Select time"}</span><Clock3 size={16} /></button>{open && <div className={styles.timePicker}><div className={styles.timePickerHead}><strong>Choose a start time</strong><span>Open 8:00 AM–5:00 PM</span></div><div className={styles.timeSlots} role="listbox" aria-label="Available start times">{bookingTimeSlots.map((time) => <button type="button" role="option" aria-selected={value === time} key={time} onClick={() => { onChange(time); setOpen(false); }}>{formatBookingTime(time)}</button>)}</div><small>30-minute intervals · Sessions last 30 or 60 minutes</small></div>}</div>;
 }
 
 function Booking({ goHome }: { goHome: () => void }) {
@@ -272,7 +278,7 @@ function Booking({ goHome }: { goHome: () => void }) {
   const selected = allPackages.find((item) => item.name === form.session);
   const studioSelected = studioPackages.some((item) => item.name === form.session);
   const due = selected ? selected.price * (form.pay === "deposit" ? .5 : 1) : 0;
-  const valid = Boolean(form.name && form.email && /^9\d{9}$/.test(form.mobile) && form.session && form.date);
+  const valid = Boolean(form.name && form.email && /^9\d{9}$/.test(form.mobile) && form.session && form.date && form.time);
   const update = <Key extends keyof BookingForm>(key: Key, value: BookingForm[Key]) => setForm((current) => ({ ...current, [key]: key === "mobile" ? String(value).replace(/\D/g, "").slice(0, 10) : value }));
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();

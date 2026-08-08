@@ -36,8 +36,8 @@ export async function POST(request: Request) {
   const email = typeof input.email === "string" ? normalizeEmail(input.email) : "";
   const mobile = typeof input.mobile === "string" ? normalizeMobile(input.mobile) : "";
   const date = typeof input.date === "string" ? input.date : "";
-  const time = typeof input.time === "string" && /^\d{2}:\d{2}$/.test(input.time) ? input.time : "09:00";
-  if (!short(input.name, 120) || !isValidEmail(email) || !/^\+639\d{9}$/.test(mobile) || !short(input.session, 80) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || (input.pay !== "deposit" && input.pay !== "full")) return NextResponse.json({ error: "Complete the required booking details before checkout." }, { status: 400 });
+  const time = typeof input.time === "string" ? input.time : "";
+  if (!short(input.name, 120) || !isValidEmail(email) || !/^\+639\d{9}$/.test(mobile) || !short(input.session, 80) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(0[89]|1[0-6]):(00|30)$/.test(time) || (input.pay !== "deposit" && input.pay !== "full")) return NextResponse.json({ error: "Complete the required booking details before checkout." }, { status: 400 });
   const packagePrice = packagePrices[input.session];
   if (!packagePrice) return NextResponse.json({ error: "Selected package is unavailable." }, { status: 400 });
   const idempotencyKey = request.headers.get("Idempotency-Key")?.trim();

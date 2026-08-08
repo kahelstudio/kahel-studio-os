@@ -51,7 +51,7 @@ describe("customer authentication boundaries", () => {
 
   it("rejects a booking without a stable idempotency key before persistence", async () => {
     process.env.PAYMONGO_SECRET_KEY = "sk_test_example";
-    const response = await checkout(jsonRequest("/api/paymongo/checkout", { name: "Ana Cruz", email: "ana@example.com", mobile: "09171234567", session: "Solo", date: "2026-12-01", pay: "deposit" }));
+    const response = await checkout(jsonRequest("/api/paymongo/checkout", { name: "Ana Cruz", email: "ana@example.com", mobile: "09171234567", session: "Solo", date: "2026-12-01", time: "09:00", pay: "deposit" }));
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: "Refresh the page and submit the booking again." });
   });
