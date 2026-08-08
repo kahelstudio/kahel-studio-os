@@ -40,6 +40,7 @@ export async function POST(request: Request) {
   if (!short(input.name, 120) || !isValidEmail(email) || !/^\+639\d{9}$/.test(mobile) || !short(input.session, 80) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(0[89]|1[0-6]):(00|30)$/.test(time) || (input.pay !== "deposit" && input.pay !== "full")) return NextResponse.json({ error: "Complete the required booking details before checkout." }, { status: 400 });
   const packagePrice = packagePrices[input.session];
   if (!packagePrice) return NextResponse.json({ error: "Selected package is unavailable." }, { status: 400 });
+  if (time === "16:30" && input.session !== "Mini Session") return NextResponse.json({ error: "Select a time that finishes by 5:00 PM." }, { status: 400 });
   const idempotencyKey = request.headers.get("Idempotency-Key")?.trim();
   if (!idempotencyKey || idempotencyKey.length < 8 || idempotencyKey.length > 200) return NextResponse.json({ error: "Refresh the page and submit the booking again." }, { status: 400 });
 
