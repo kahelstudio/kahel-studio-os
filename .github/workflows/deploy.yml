@@ -232,21 +232,20 @@ jobs:
           path: .open-next/
       - run: npm ci
       - run: |
-          while IFS= read -r line || [[ -n "$line" ]]; do
-            case "$line" in
-              SUPABASE_URL=*|SUPABASE_PUBLISHABLE_KEY=*|SUPABASE_SECRET_KEY=*|KAHEL_STAFF_EMAILS=*) continue ;;
-              *) printf '%s\n' "$line" ;;
-            esac
-          done <<< "$WANGLER_SECRETS" > /tmp/wrangler-secrets.env
-          printf 'SUPABASE_URL=%s\nSUPABASE_PUBLISHABLE_KEY=%s\nSUPABASE_SECRET_KEY=%s\nKAHEL_STAFF_EMAILS=%s\n' \
-            "$SUPABASE_URL" \
-            "$SUPABASE_PUBLISHABLE_KEY" \
-            "$SUPABASE_SECRET_KEY" \
-            "$KAHEL_STAFF_EMAILS" \
-            >> /tmp/wrangler-secrets.env
+          jq -n \
+            --arg supabase_url "$SUPABASE_URL" \
+            --arg supabase_publishable_key "$SUPABASE_PUBLISHABLE_KEY" \
+            --arg supabase_secret_key "$SUPABASE_SECRET_KEY" \
+            --arg staff_emails "$KAHEL_STAFF_EMAILS" \
+            '{
+              SUPABASE_URL: $supabase_url,
+              SUPABASE_PUBLISHABLE_KEY: $supabase_publishable_key,
+              SUPABASE_SECRET_KEY: $supabase_secret_key,
+              KAHEL_STAFF_EMAILS: $staff_emails
+            }' > /tmp/supabase-secrets.json
       - run: |
           npx wrangler deploy --env production --keep-vars
-          npx wrangler secret bulk /tmp/wrangler-secrets.env --env production
+          npx wrangler secret bulk /tmp/supabase-secrets.json --env production
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -254,7 +253,6 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
           KAHEL_STAFF_EMAILS: ${{ secrets.PRODUCTION_KAHEL_STAFF_EMAILS }}
-          WANGLER_SECRETS: ${{ secrets.PRODUCTION_CLOUDFLARE_WORKER_SECRETS }}
 
   verify_production:
     name: Verify production
