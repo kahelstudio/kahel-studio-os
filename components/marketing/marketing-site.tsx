@@ -10,7 +10,6 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  Clock3,
   Menu,
   X,
 } from "lucide-react";
@@ -265,16 +264,36 @@ function addMinutes(value: string, minutesToAdd: number) {
 }
 
 function TimePicker({ value, durationMinutes, onChange }: { value: string; durationMinutes: number; onChange: (value: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const pickerRef = usePopupDismissal(open, setOpen);
-  const bookingTimeSlots = Array.from({ length: durationMinutes === 30 ? 18 : 17 }, (_, index) => {
-    const totalMinutes = 8 * 60 + index * 30;
+  const wheelRef = useRef<HTMLDivElement>(null);
+  const scrollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const studioSession = durationMinutes > 0;
+  const disabled = durationMinutes < 0;
+  const bookingTimeSlots = Array.from({ length: studioSession ? (durationMinutes === 30 ? 18 : 17) : 48 }, (_, index) => {
+    const totalMinutes = (studioSession ? 8 * 60 : 0) + index * 30;
     return `${pad(Math.floor(totalMinutes / 60))}:${pad(totalMinutes % 60)}`;
   });
   useEffect(() => {
-    if (value && !bookingTimeSlots.includes(value)) onChange("");
-  }, [bookingTimeSlots, onChange, value]);
-  return <div ref={pickerRef} className={styles.picker}><button type="button" className={styles.pickerTrigger} aria-expanded={open} onClick={() => setOpen((current) => !current)}>{value ? <span className={styles.selectedTimeRange}><strong>{formatBookingTime(value)}</strong><ArrowRight size={15} /><strong>{formatBookingTime(addMinutes(value, durationMinutes))}</strong></span> : <span>Select time</span>}<Clock3 size={16} /></button>{open && <div className={styles.timePicker}><div className={styles.timePickerHead}><strong>Choose a start time</strong><span>Open 8:00 AM–5:00 PM</span></div>{value && <div className={styles.timeRangePreview}><strong>{formatBookingTime(value)}</strong><ArrowRight size={16} /><strong>{formatBookingTime(addMinutes(value, durationMinutes))}</strong></div>}<div className={styles.timeSlots} role="listbox" aria-label="Available start times">{bookingTimeSlots.map((time) => <button type="button" role="option" aria-selected={value === time} key={time} onClick={() => { onChange(time); setOpen(false); }}>{formatBookingTime(time)}</button>)}</div><small>30-minute intervals · {durationMinutes}-minute session</small></div>}</div>;
+    wheelRef.current?.scrollTo({ top: 0 });
+    return () => { if (scrollTimer.current) clearTimeout(scrollTimer.current); };
+  }, [durationMinutes]);
+  const selectCenteredTime = () => {
+    if (!wheelRef.current) return;
+    const wheelBounds = wheelRef.current.getBoundingClientRect();
+    const center = wheelBounds.top + wheelBounds.height / 2;
+    const options = [...wheelRef.current.querySelectorAll<HTMLButtonElement>("[data-time]")];
+    const closest = options.reduce((best, option) => Math.abs(option.getBoundingClientRect().top + option.offsetHeight / 2 - center) < Math.abs(best.getBoundingClientRect().top + best.offsetHeight / 2 - center) ? option : best);
+    if (closest.dataset.time && closest.dataset.time !== value) onChange(closest.dataset.time);
+  };
+  const handleScroll = () => {
+    if (scrollTimer.current) clearTimeout(scrollTimer.current);
+    scrollTimer.current = setTimeout(selectCenteredTime, 100);
+  };
+  const chooseTime = (time: string, target: HTMLButtonElement) => {
+    onChange(time);
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+  if (disabled) return <div className={styles.timeWheelDisabled}>Select a session first</div>;
+  return <div className={styles.timePickerInline}><div className={styles.timePickerHead}><strong>{studioSession ? "Choose a studio time" : "Choose an event start time"}</strong><span>{studioSession ? `8:00 AM–5:00 PM · ${durationMinutes}-minute session` : "Events can start at any time"}</span></div><div className={styles.timeWheelFrame}><div className={styles.timeWheelSelection} aria-hidden="true" /><div ref={wheelRef} className={styles.timeWheel} role="listbox" aria-label="Available start times" tabIndex={0} onScroll={handleScroll}>{bookingTimeSlots.map((time) => <button type="button" role="option" aria-selected={value === time} data-time={time} key={time} onClick={(event) => chooseTime(time, event.currentTarget)}>{studioSession ? <><span>{formatBookingTime(time)}</span><ArrowRight size={15} /><span>{formatBookingTime(addMinutes(time, durationMinutes))}</span></> : <span>{formatBookingTime(time)}</span>}</button>)}</div></div><small>Scroll to select · 30-minute intervals</small></div>;
 }
 
 function Booking({ goHome }: { goHome: () => void }) {
@@ -285,10 +304,10 @@ function Booking({ goHome }: { goHome: () => void }) {
   const allPackages = [...studioPackages, ...eventPackages];
   const selected = allPackages.find((item) => item.name === form.session);
   const studioSelected = studioPackages.some((item) => item.name === form.session);
-  const sessionDuration = selected?.per === "30 minutes" ? 30 : 60;
+  const sessionDuration = !selected ? -1 : studioSelected ? (selected.per === "30 minutes" ? 30 : 60) : 0;
   const due = selected ? selected.price * (form.pay === "deposit" ? .5 : 1) : 0;
   const valid = Boolean(form.name && form.email && /^9\d{9}$/.test(form.mobile) && form.session && form.date && form.time);
-  const update = <Key extends keyof BookingForm>(key: Key, value: BookingForm[Key]) => setForm((current) => ({ ...current, [key]: key === "mobile" ? String(value).replace(/\D/g, "").slice(0, 10) : value }));
+  const update = <Key extends keyof BookingForm>(key: Key, value: BookingForm[Key]) => setForm((current) => ({ ...current, [key]: key === "mobile" ? String(value).replace(/\D/g, "").slice(0, 10) : value, ...(key === "session" ? { time: "" } : {}) }));
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!valid || !selected) return;

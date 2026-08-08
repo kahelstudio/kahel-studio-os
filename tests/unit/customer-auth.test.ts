@@ -55,4 +55,25 @@ describe("customer authentication boundaries", () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: "Refresh the page and submit the booking again." });
   });
+
+  it("keeps studio sessions within opening hours based on their duration", async () => {
+    process.env.PAYMONGO_SECRET_KEY = "sk_test_example";
+    const response = await checkout(jsonRequest("/api/paymongo/checkout", { name: "Ana Cruz", email: "ana@example.com", mobile: "09171234567", session: "Solo", date: "2026-12-01", time: "16:30", pay: "deposit" }));
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Select a studio time between 8:00 AM and 5:00 PM." });
+  });
+
+  it("allows a mini session to end at closing time", async () => {
+    process.env.PAYMONGO_SECRET_KEY = "sk_test_example";
+    const response = await checkout(jsonRequest("/api/paymongo/checkout", { name: "Ana Cruz", email: "ana@example.com", mobile: "09171234567", session: "Mini Session", date: "2026-12-01", time: "16:30", pay: "deposit" }));
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Refresh the page and submit the booking again." });
+  });
+
+  it("allows event start times outside studio hours", async () => {
+    process.env.PAYMONGO_SECRET_KEY = "sk_test_example";
+    const response = await checkout(jsonRequest("/api/paymongo/checkout", { name: "Ana Cruz", email: "ana@example.com", mobile: "09171234567", session: "Birthday", date: "2026-12-01", time: "23:00", pay: "deposit" }));
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Refresh the page and submit the booking again." });
+  });
 });
