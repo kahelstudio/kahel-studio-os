@@ -23,7 +23,7 @@ npm run build
 
 ## Deployment Architecture
 
-- **GitLab CI** validates pull requests and deploys configured branches.
+- **Github CI** validates pull requests and deploys configured branches.
 - **Cloudflare Workers** runs the Next.js application through OpenNext.
 - **Supabase** provides Postgres persistence for client portal settings, activity, and expiring link tokens.
 
