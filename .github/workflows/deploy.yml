@@ -163,8 +163,8 @@ jobs:
             "$SUPABASE_PUBLISHABLE_KEY" \
             >> /tmp/wrangler-secrets.env
       - run: |
-          npx wrangler deploy --env staging --keep-vars \
-            --secrets-file /tmp/wrangler-secrets.env
+          npx wrangler deploy --env staging --keep-vars
+          npx wrangler secret bulk /tmp/wrangler-secrets.env --env staging
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -245,8 +245,8 @@ jobs:
             "$KAHEL_STAFF_EMAILS" \
             >> /tmp/wrangler-secrets.env
       - run: |
-          npx wrangler deploy --env production --keep-vars \
-            --secrets-file /tmp/wrangler-secrets.env
+          npx wrangler deploy --env production --keep-vars
+          npx wrangler secret bulk /tmp/wrangler-secrets.env --env production
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
