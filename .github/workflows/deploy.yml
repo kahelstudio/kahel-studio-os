@@ -152,11 +152,16 @@ jobs:
           path: .open-next/
       - run: npm ci
       - run: |
-          printf '%s\nSUPABASE_URL=%s\nSUPABASE_PUBLISHABLE_KEY=%s\n' \
-            "$WANGLER_SECRETS" \
+          while IFS= read -r line || [[ -n "$line" ]]; do
+            case "$line" in
+              SUPABASE_URL=*|SUPABASE_PUBLISHABLE_KEY=*) continue ;;
+              *) printf '%s\n' "$line" ;;
+            esac
+          done <<< "$WANGLER_SECRETS" > /tmp/wrangler-secrets.env
+          printf 'SUPABASE_URL=%s\nSUPABASE_PUBLISHABLE_KEY=%s\n' \
             "$SUPABASE_URL" \
             "$SUPABASE_PUBLISHABLE_KEY" \
-            > /tmp/wrangler-secrets.env
+            >> /tmp/wrangler-secrets.env
       - run: |
           npx wrangler deploy --env staging --keep-vars \
             --secrets-file /tmp/wrangler-secrets.env
@@ -227,13 +232,18 @@ jobs:
           path: .open-next/
       - run: npm ci
       - run: |
-          printf '%s\nSUPABASE_URL=%s\nSUPABASE_PUBLISHABLE_KEY=%s\nSUPABASE_SECRET_KEY=%s\nKAHEL_STAFF_EMAILS=%s\n' \
-            "$WANGLER_SECRETS" \
+          while IFS= read -r line || [[ -n "$line" ]]; do
+            case "$line" in
+              SUPABASE_URL=*|SUPABASE_PUBLISHABLE_KEY=*|SUPABASE_SECRET_KEY=*|KAHEL_STAFF_EMAILS=*) continue ;;
+              *) printf '%s\n' "$line" ;;
+            esac
+          done <<< "$WANGLER_SECRETS" > /tmp/wrangler-secrets.env
+          printf 'SUPABASE_URL=%s\nSUPABASE_PUBLISHABLE_KEY=%s\nSUPABASE_SECRET_KEY=%s\nKAHEL_STAFF_EMAILS=%s\n' \
             "$SUPABASE_URL" \
             "$SUPABASE_PUBLISHABLE_KEY" \
             "$SUPABASE_SECRET_KEY" \
             "$KAHEL_STAFF_EMAILS" \
-            > /tmp/wrangler-secrets.env
+            >> /tmp/wrangler-secrets.env
       - run: |
           npx wrangler deploy --env production --keep-vars \
             --secrets-file /tmp/wrangler-secrets.env
@@ -258,5 +268,11 @@ jobs:
     timeout-minutes: 5
     steps:
       - run: |
-          response="$(curl --fail --silent --show-error --max-time 20 https://kahelstudio.com/api/staff/session)"
-          jq -e '.configured == true' <<< "$response"
+          for attempt in {1..12}; do
+            response="$(curl --fail --silent --show-error --max-time 20 "https://kahelstudio.com/api/staff/session?deployment_check=$attempt")"
+            if jq -e '.configured == true' <<< "$response" > /dev/null; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
