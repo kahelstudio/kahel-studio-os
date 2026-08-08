@@ -227,10 +227,12 @@ jobs:
           path: .open-next/
       - run: npm ci
       - run: |
-          printf '%s\nSUPABASE_URL=%s\nSUPABASE_PUBLISHABLE_KEY=%s\n' \
+          printf '%s\nSUPABASE_URL=%s\nSUPABASE_PUBLISHABLE_KEY=%s\nSUPABASE_SECRET_KEY=%s\nKAHEL_STAFF_EMAILS=%s\n' \
             "$WANGLER_SECRETS" \
             "$SUPABASE_URL" \
             "$SUPABASE_PUBLISHABLE_KEY" \
+            "$SUPABASE_SECRET_KEY" \
+            "$KAHEL_STAFF_EMAILS" \
             > /tmp/wrangler-secrets.env
       - run: |
           npx wrangler deploy --env production --keep-vars \
@@ -240,6 +242,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
+          KAHEL_STAFF_EMAILS: ${{ secrets.PRODUCTION_KAHEL_STAFF_EMAILS }}
           WANGLER_SECRETS: ${{ secrets.PRODUCTION_CLOUDFLARE_WORKER_SECRETS }}
 
   verify_production:
@@ -253,4 +257,6 @@ jobs:
     concurrency: production
     timeout-minutes: 5
     steps:
-      - run: curl --fail --silent --show-error --max-time 20 https://kahelstudio.com/api/staff/session
+      - run: |
+          response="$(curl --fail --silent --show-error --max-time 20 https://kahelstudio.com/api/staff/session)"
+          jq -e '.configured == true' <<< "$response"
