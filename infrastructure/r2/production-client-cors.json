@@ -1,0 +1,13 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": ["https://kahelstudio.com", "https://www.kahelstudio.com"],
+        "methods": ["PUT", "HEAD"],
+        "headers": ["Content-Type", "x-amz-checksum-sha256"]
+      },
+      "expose_headers": ["ETag", "x-amz-checksum-sha256"],
+      "max_age_seconds": 3600
+    }
+  ]
+}
