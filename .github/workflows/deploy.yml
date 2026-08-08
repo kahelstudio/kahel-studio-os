@@ -231,28 +231,10 @@ jobs:
           name: build-output
           path: .open-next/
       - run: npm ci
-      - run: |
-          jq -n \
-            --arg supabase_url "$SUPABASE_URL" \
-            --arg supabase_publishable_key "$SUPABASE_PUBLISHABLE_KEY" \
-            --arg supabase_secret_key "$SUPABASE_SECRET_KEY" \
-            --arg staff_emails "$KAHEL_STAFF_EMAILS" \
-            '{
-              SUPABASE_URL: $supabase_url,
-              SUPABASE_PUBLISHABLE_KEY: $supabase_publishable_key,
-              SUPABASE_SECRET_KEY: $supabase_secret_key,
-              KAHEL_STAFF_EMAILS: $staff_emails
-            }' > /tmp/supabase-secrets.json
-      - run: |
-          npx wrangler deploy --env production --keep-vars
-          npx wrangler secret bulk /tmp/supabase-secrets.json --env production
+      - run: npx wrangler deploy --env production --keep-vars
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-          SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
-          KAHEL_STAFF_EMAILS: ${{ secrets.PRODUCTION_KAHEL_STAFF_EMAILS }}
 
   verify_production:
     name: Verify production
