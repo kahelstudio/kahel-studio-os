@@ -151,11 +151,17 @@ jobs:
           name: build-output
           path: .open-next/
       - run: npm ci
-      - run: echo "$WANGLER_SECRETS" > /tmp/wrangler-secrets.json
+      - run: |
+          jq -n \
+            --argjson configured "$WANGLER_SECRETS" \
+            --arg supabase_url "$SUPABASE_URL" \
+            --arg supabase_publishable_key "$SUPABASE_PUBLISHABLE_KEY" \
+            '$configured + {
+              SUPABASE_URL: $supabase_url,
+              SUPABASE_PUBLISHABLE_KEY: $supabase_publishable_key
+            }' > /tmp/wrangler-secrets.json
       - run: |
           npx wrangler deploy --env staging --keep-vars \
-            --var "SUPABASE_URL:$SUPABASE_URL" \
-            --var "SUPABASE_PUBLISHABLE_KEY:$SUPABASE_PUBLISHABLE_KEY" \
             --secrets-file /tmp/wrangler-secrets.json
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -223,11 +229,17 @@ jobs:
           name: build-output
           path: .open-next/
       - run: npm ci
-      - run: echo "$WANGLER_SECRETS" > /tmp/wrangler-secrets.json
+      - run: |
+          jq -n \
+            --argjson configured "$WANGLER_SECRETS" \
+            --arg supabase_url "$SUPABASE_URL" \
+            --arg supabase_publishable_key "$SUPABASE_PUBLISHABLE_KEY" \
+            '$configured + {
+              SUPABASE_URL: $supabase_url,
+              SUPABASE_PUBLISHABLE_KEY: $supabase_publishable_key
+            }' > /tmp/wrangler-secrets.json
       - run: |
           npx wrangler deploy --env production --keep-vars \
-            --var "SUPABASE_URL:$SUPABASE_URL" \
-            --var "SUPABASE_PUBLISHABLE_KEY:$SUPABASE_PUBLISHABLE_KEY" \
             --secrets-file /tmp/wrangler-secrets.json
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
