@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const reports = await getFeedbackReports();
     return NextResponse.json(reports);
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to fetch feedback reports" }, { status: 500 });
   }
 }

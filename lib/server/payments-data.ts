@@ -90,9 +90,9 @@ export async function getPayments(): Promise<{ rows: PaymentRow[]; kpis: Payment
 
 export async function getPaymentCounts(): Promise<{ paid: number; pending: number; total: number }> {
   const admin = getSupabaseAdmin();
-  const { count: paid, error: paidError } = await admin.from("bookings").select("*", { count: "exact", head: true }).eq("payment_status", "paid");
-  const { count: pending, error: pendingError } = await admin.from("bookings").select("*", { count: "exact", head: true }).eq("payment_status", "pending");
-  const { count: total, error: totalError } = await admin.from("bookings").select("*", { count: "exact", head: true });
+  const { count: paid } = await admin.from("bookings").select("*", { count: "exact", head: true }).eq("payment_status", "paid");
+  const { count: pending } = await admin.from("bookings").select("*", { count: "exact", head: true }).eq("payment_status", "pending");
+  const { count: total } = await admin.from("bookings").select("*", { count: "exact", head: true });
   return {
     paid: paid ?? 0,
     pending: pending ?? 0,

@@ -38,3 +38,7 @@
 .homeHeader .headerSignIn{border-color:rgba(255,255,255,.35);color:#fff}
 @media(max-width:1080px){.headerBook,.headerSignIn,.accountMenu{display:none}.menuBook{display:inline-flex}.menuBookNow{display:flex;align-items:center;justify-content:center}}
 @media(max-width:640px){.logo{height:28px}.menuBook{font-size:18px}.mobileMenuFoot{padding-bottom:calc(32px + env(safe-area-inset-bottom));font-size:16px}.footerBottom>span:last-child{display:none}}
+.finalCtaActions{display:flex;flex:none;gap:14px}.finalCta .outlineButton{border-color:#FF5300;background:#FF5300;color:#fff}.finalCta .outlineButton:hover{border-color:var(--primary-h);background:var(--primary-h)}
+@media(max-width:640px){.finalCtaActions{flex-direction:column}.finalCtaActions>*{width:100%}}
+.hero .outlineButton{border-color:#FF5300;background:#FF5300}.hero .outlineButton:hover{border-color:var(--primary-h);background:var(--primary-h)}
+.fields>label:nth-child(3){position:relative}.fields>label:nth-child(3)::before{position:absolute;top:42px;left:15px;z-index:1;color:var(--text);font-size:16px;font-weight:400;letter-spacing:0;content:"+63"}.fields>label:nth-child(3) input{padding-left:53px}.fields>label:nth-child(3) input::placeholder{color:transparent}.fields>label:nth-child(3):has(input:placeholder-shown)::after{position:absolute;top:42px;left:53px;color:var(--text3);font-size:16px;font-weight:400;letter-spacing:0;content:"917 000 0000";pointer-events:none;text-transform:none}

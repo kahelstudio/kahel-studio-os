@@ -34,9 +34,10 @@ export async function POST(request: Request) {
   let input: CheckoutRequest;
   try { input = await request.json() as CheckoutRequest; } catch { return NextResponse.json({ error: "Invalid checkout request." }, { status: 400 }); }
   const email = typeof input.email === "string" ? normalizeEmail(input.email) : "";
+  const mobile = typeof input.mobile === "string" ? normalizeMobile(input.mobile) : "";
   const date = typeof input.date === "string" ? input.date : "";
   const time = typeof input.time === "string" && /^\d{2}:\d{2}$/.test(input.time) ? input.time : "09:00";
-  if (!short(input.name, 120) || !isValidEmail(email) || !short(input.mobile, 32) || !short(input.session, 80) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || (input.pay !== "deposit" && input.pay !== "full")) return NextResponse.json({ error: "Complete the required booking details before checkout." }, { status: 400 });
+  if (!short(input.name, 120) || !isValidEmail(email) || !/^\+639\d{9}$/.test(mobile) || !short(input.session, 80) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || (input.pay !== "deposit" && input.pay !== "full")) return NextResponse.json({ error: "Complete the required booking details before checkout." }, { status: 400 });
   const packagePrice = packagePrices[input.session];
   if (!packagePrice) return NextResponse.json({ error: "Selected package is unavailable." }, { status: 400 });
   const idempotencyKey = request.headers.get("Idempotency-Key")?.trim();
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
     if (prior.data?.paymongo_checkout_url) return NextResponse.json({ checkoutUrl: prior.data.paymongo_checkout_url, reference: prior.data.reference, reused: true });
 
     const names = splitName(input.name);
-    const profile = await getProfileByEmail(email) ?? await createCustomerProfile({ ...names, email, mobile: normalizeMobile(input.mobile) });
+    const profile = await getProfileByEmail(email) ?? await createCustomerProfile({ ...names, email, mobile });
     const reference = prior.data?.reference ?? `KS-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
     const serviceId = await resolveServiceId(admin, input.session);
     const totalAmount = packagePrice * 100;
@@ -105,7 +106,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: { Authorization: `Basic ${Buffer.from(`${secretKey}:`).toString("base64")}`, "Content-Type": "application/json" },
       body: JSON.stringify({ data: { attributes: {
-        billing: { name: input.name.trim(), email, phone: normalizeMobile(input.mobile) },
+        billing: { name: input.name.trim(), email, phone: mobile },
         cancel_url: `${origin}/?checkout=cancelled`, description: `${input.session} photography booking`,
         line_items: [{ amount: amountDue, currency: "PHP", name: `${input.session} ${input.pay === "deposit" ? "50% deposit" : "full payment"}`, quantity: 1 }],
         metadata: { booking_id: booking.id, booking_date: date, booking_time: time, payment_type: input.pay },

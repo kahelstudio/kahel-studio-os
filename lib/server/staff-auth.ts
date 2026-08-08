@@ -52,6 +52,11 @@ function isStaffEmail(email: string | undefined, settings: AuthConfig) {
   return isAllowedGmailFormat(normalized);
 }
 
+export function staffEmailAuthorized(email: string | undefined) {
+  const settings = config();
+  return Boolean(settings && isStaffEmail(email, settings));
+}
+
 function accessTokenFromRequest(request: Request) {
   return request.headers.get("cookie")?.match(new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]+)`))?.[1];
 }
@@ -153,25 +158,6 @@ export async function updateStaffPassword(accessToken: string, password: string)
   const admin = getSupabaseAdmin();
   const { error: updateError } = await admin.auth.admin.updateUserById(data.user.id, { password });
   return !updateError;
-}
-
-export async function signInStaffWithVerifiedEmail(email: string) {
-  const settings = config();
-  if (!settings || !isStaffEmail(email, settings)) return null;
-  const admin = getSupabaseAdmin();
-  const normalized = email.trim().toLowerCase();
-  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-    type: "magiclink",
-    email: normalized,
-  });
-  if (linkError || !linkData?.properties?.hashed_token) return null;
-  const { data: sessionData, error: sessionError } = await client(settings).auth.verifyOtp({
-    token_hash: linkData.properties.hashed_token,
-    type: "magiclink",
-  });
-  if (sessionError || !sessionData.session) return null;
-  if (!isStaffEmail(sessionData.session.user?.email, settings)) return null;
-  return sessionData.session;
 }
 
 export async function hasStaffSession(request: Request) {

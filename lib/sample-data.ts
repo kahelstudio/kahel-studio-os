@@ -507,13 +507,6 @@ export const DASHBOARD_BALANCES = [];
 export const DASHBOARD_INQUIRIES = [];
 
 // ── Finance ──────────────────────────────────────────────────────────
-const FIN_KINDS: Record<string, { bg: string; c: string }> = {
-  deposit: { bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
-  balance: { bg: "var(--color-attention-bg)", c: "var(--color-attention-text)" },
-  full: { bg: "var(--color-success-bg)", c: "var(--color-success-text)" },
-  retail: { bg: "var(--color-teal-100)", c: "var(--color-teal-800)" },
-};
-
 export const FINANCE_KPIS = [
   { label: "Recorded MTD", value: "₱0" },
   { label: "Booklet remaining", value: "0 serials" },
@@ -537,14 +530,6 @@ export const FINANCE_EXPENSE_KPIS = [
   { label: "Entries", value: "0" },
   { label: "vs. last month", value: "—" },
 ];
-
-const EXP_TONE: Record<string, { bg: string; c: string }> = {
-  blue: { bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
-  indigo: { bg: "var(--color-indigo-100)", c: "var(--color-indigo-800)" },
-  orange: { bg: "#FFF4EE", c: "var(--color-attention-text)" },
-  teal: { bg: "var(--color-teal-100)", c: "var(--color-teal-800)" },
-  grey: { bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)" },
-};
 
 export const FINANCE_EXPENSES = [];
 

@@ -44,14 +44,13 @@ export async function getDashboardKpis(): Promise<DashboardKpis> {
 
     const { data: bookings, error: bookingError } = await admin
       .from("bookings")
-      .select("total_amount_php, paid_amount_php, status")
+      .select("total_amount_php")
       .gte("service_date", mtdStart)
       .not("status", "in", '("cancelled")');
 
     if (bookingError) throw bookingError;
 
     const revenueMtd = (bookings ?? []).reduce((s: number, b: any) => s + (b.total_amount_php ?? 0), 0);
-    const paidMtd = (bookings ?? []).reduce((s: number, b: any) => s + (b.paid_amount_php ?? 0), 0);
     const count = (bookings ?? []).length;
     const avgBookingValue = count > 0 ? Math.round(revenueMtd / count) : 0;
 

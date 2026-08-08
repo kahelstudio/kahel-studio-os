@@ -16,7 +16,9 @@ export async function GET(request: Request) {
       staffEmails: Boolean(process.env.KAHEL_STAFF_EMAILS || process.env.KAHEL_STAFF_EMAIL),
       supabaseUrl: Boolean(process.env.SUPABASE_URL),
       supabasePublishableKey: Boolean(process.env.SUPABASE_PUBLISHABLE_KEY),
+      supabaseSecretKey: Boolean(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY),
       authRedirectUrl: Boolean(process.env.AUTH_REDIRECT_URL),
+      turnstileSecret: Boolean(process.env.TURNSTILE_SECRET),
     },
   });
 }

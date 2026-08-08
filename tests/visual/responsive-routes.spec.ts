@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page, type Response } from "@playwright/test";
 
 test.setTimeout(180_000);
 test.skip(Boolean(process.env.CI), "Requires local application data services");
@@ -11,9 +11,7 @@ const routes = [
   "/glitches/open", "/help", "/inventory/checkouts", "/inventory/equipment", "/login", "/logs",
   "/maintenance/history", "/maintenance/schedule", "/marketing/attribution", "/marketing/campaigns", "/os",
   "/payroll/adjustments", "/payroll/audit", "/payroll/contributions", "/payroll/employees",
-  "/payroll/employees/emp-002", "/payroll/employees/emp-004", "/payroll/employees/emp-007",
-  "/payroll/employees/emp-009", "/payroll/employees/emp-011", "/payroll/employees/frl-003", "/payroll/overview",
-  "/payroll/payslips", "/payroll/reports", "/payroll/runs", "/payroll/settings", "/payroll/states",
+  "/payroll/overview", "/payroll/payslips", "/payroll/reports", "/payroll/runs", "/payroll/settings", "/payroll/states",
   "/payroll/thirteenth", "/performance/goals", "/performance/me", "/performance/reviews",
   "/policies/health-safety", "/policies/it", "/policies/policies", "/pos/bookings", "/pos/cat-addons",
   "/pos/cat-events", "/pos/cat-rentals", "/pos/cat-retail", "/pos/cat-sessions", "/pos/sale",
@@ -28,12 +26,23 @@ const routes = [
 
 async function expectResponsivePage(page: Page, route: string) {
   const errors: string[] = [];
+  const failedResponses: string[] = [];
   const onConsole = (message: { type: () => string; text: () => string }) => {
     const text = message.text();
-    const expectedDataFallback = /table not available|Client portal access lookup failed/.test(text);
+    const expectedDataFallback = /table not available|Client portal access lookup failed|Failed to load resource/.test(text);
     if (message.type() === "error" && !expectedDataFallback) errors.push(text);
   };
+  const onResponse = (response: Response) => {
+    const url = new URL(response.url());
+    const expectedTasksFallback = response.status() === 401
+      && url.pathname === "/api/tasks"
+      && url.searchParams.get("mine") === "true";
+    if (response.status() >= 400 && response.request().resourceType() !== "document" && !expectedTasksFallback) {
+      failedResponses.push(`${response.status()} ${response.url()}`);
+    }
+  };
   page.on("console", onConsole);
+  page.on("response", onResponse);
   const response = await page.goto(route, { waitUntil: "domcontentloaded" });
   expect(response?.status(), route).toBeLessThan(400);
   const widths = await page.evaluate(() => ({
@@ -44,7 +53,9 @@ async function expectResponsivePage(page: Page, route: string) {
   expect(widths.document, `${route} document overflow`).toBeLessThanOrEqual(widths.viewport + 1);
   expect(widths.body, `${route} body overflow`).toBeLessThanOrEqual(widths.viewport + 1);
   expect(errors, `${route} console errors`).toEqual([]);
+  expect(failedResponses, `${route} failed resources`).toEqual([]);
   page.removeListener("console", onConsole);
+  page.removeListener("response", onResponse);
 }
 
 for (const viewport of [

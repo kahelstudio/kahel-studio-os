@@ -4,7 +4,7 @@ test("desktop header shows sign in for unauthenticated users", async ({ page }) 
   await page.route("**/api/customer/session", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ authenticated: false }) }));
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("banner").getByRole("link", { name: "Sign in" })).toBeVisible();
 });
 
 test("authenticated desktop header exposes only customer account links", async ({ page }) => {
@@ -24,8 +24,9 @@ for (const viewport of [{ name: "iPad", width: 820, height: 1180 }, { name: "mob
     await page.setViewportSize(viewport);
     await page.goto("/");
     await page.getByRole("button", { name: "Open menu" }).click();
-    await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
-    await expect(page.getByRole("dialog", { name: "Menu" }).getByRole("button", { name: "Book now" })).toBeVisible();
+    const menu = page.getByRole("dialog", { name: "Menu" });
+    await expect(menu.getByRole("link", { name: "Sign in" })).toBeVisible();
+    await expect(menu.getByRole("button", { name: "Book now" })).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByRole("button", { name: "Open menu" })).toBeFocused();
   });

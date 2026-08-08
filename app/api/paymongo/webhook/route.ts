@@ -89,7 +89,6 @@ export async function POST(request: Request) {
   if (!update) return NextResponse.json({ received: true });
 
   const bookingId = event.data?.attributes?.data?.attributes?.metadata?.booking_id as string | undefined;
-  const reference = event.data?.attributes?.data?.attributes?.reference_number;
 
   if (!bookingId || typeof bookingId !== "string") {
     return NextResponse.json({ error: "Missing booking reference in metadata." }, { status: 400 });

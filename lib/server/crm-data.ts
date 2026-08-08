@@ -66,76 +66,66 @@ export async function getCrmQueue(): Promise<{ noNextAction: CrmQueueItem[]; due
       .limit(50);
 
     if (noError) {
-      const { data: existingClients, error: clientErr } = await admin
+      const { data: dueToday, error: dueError } = await admin
         .from("bookings")
-        .select("client_id")
+        .select(`
+          reference,
+          service_date,
+          status,
+          client_id,
+          clients:client_id ( id, name, status )
+        `)
+        .eq("service_date", today)
         .not("status", "in", '("cancelled","completed")')
-        .limit(2000);
+        .order("created_at", { ascending: false });
 
-      if (!clientErr) {
-        const activeClientIds = new Set((existingClients ?? []).map((b: any) => b.client_id));
+      if (dueError) throw dueError;
 
-        const { data: dueToday, error: dueError } = await admin
-          .from("bookings")
-          .select(`
-            reference,
-            service_date,
-            status,
-            client_id,
-            clients:client_id ( id, name, status )
-          `)
-          .eq("service_date", today)
-          .not("status", "in", '("cancelled","completed")')
-          .order("created_at", { ascending: false });
+      const { data: overdue, error: overError } = await admin
+        .from("bookings")
+        .select(`
+          reference,
+          service_date,
+          status,
+          client_id,
+          clients:client_id ( id, name, status )
+        `)
+        .lt("service_date", today)
+        .not("status", "in", '("cancelled","completed","inquiry")')
+        .order("service_date", { ascending: true })
+        .limit(50);
 
-        if (dueError) throw dueError;
+      if (overError) throw overError;
 
-        const { data: overdue, error: overError } = await admin
-          .from("bookings")
-          .select(`
-            reference,
-            service_date,
-            status,
-            client_id,
-            clients:client_id ( id, name, status )
-          `)
-          .lt("service_date", today)
-          .not("status", "in", '("cancelled","completed","inquiry")')
-          .order("service_date", { ascending: true })
-          .limit(50);
-
-        if (overError) throw overError;
-
-        return {
-          noNextAction: (noAction ?? []).map((c: any) => ({
-            id: c.id,
-            name: c.name,
-            status: c.status,
-            category: "No contact profile",
-            ref: "",
-            nextActionDate: null,
-            nextActionLabel: "Add primary contact",
-          })),
-          dueToday: (dueToday ?? []).map((b: any) => ({
-            id: b.clients?.id ?? "",
-            name: b.clients?.name ?? "Unknown",
-            status: b.clients?.status ?? "",
-            category: b.status,
-            ref: b.reference,
-            nextActionDate: b.service_date,
-            nextActionLabel: "Follow up",
-          })),
-          overdue: (overdue ?? []).map((b: any) => ({
-            id: b.clients?.id ?? "",
-            name: b.clients?.name ?? "Unknown",
-            status: b.clients?.status ?? "",
-            category: b.status,
-            ref: b.reference,
-            nextActionDate: b.service_date,
-            nextActionLabel: "Overdue follow-up",
-          })),
-        };
-      }
+      return {
+        noNextAction: (noAction ?? []).map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          status: c.status,
+          category: "No contact profile",
+          ref: "",
+          nextActionDate: null,
+          nextActionLabel: "Add primary contact",
+        })),
+        dueToday: (dueToday ?? []).map((b: any) => ({
+          id: b.clients?.id ?? "",
+          name: b.clients?.name ?? "Unknown",
+          status: b.clients?.status ?? "",
+          category: b.status,
+          ref: b.reference,
+          nextActionDate: b.service_date,
+          nextActionLabel: "Follow up",
+        })),
+        overdue: (overdue ?? []).map((b: any) => ({
+          id: b.clients?.id ?? "",
+          name: b.clients?.name ?? "Unknown",
+          status: b.clients?.status ?? "",
+          category: b.status,
+          ref: b.reference,
+          nextActionDate: b.service_date,
+          nextActionLabel: "Overdue follow-up",
+        })),
+      };
     }
 
     return { noNextAction: [], dueToday: [], overdue: [] };

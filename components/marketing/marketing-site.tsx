@@ -156,7 +156,7 @@ function MobileMenu({ page, customer, close, go, signOut }: { page: Page; custom
 function Home({ go }: { go: (page: Page, category?: ServiceCategory) => void }) {
   const [filter, setFilter] = useState("All");
   return <>
-    <section className={styles.hero}><Photo alt="Portrait photographed by Kahel Studio" position="50% 18%" preload sizes="(min-width: 1081px) 72vw, 100vw" /><div className={styles.heroScrim} /><div className={`${styles.container} ${styles.heroContent}`}><div className={styles.heroCopy}><h1>Creating timeless photographs.</h1><p>From portraits and celebrations to commercial work, every project is thoughtfully captured and delivered in a private gallery you keep.</p><div className={styles.heroActions}><ArrowButton primary onClick={() => go("book")}>Book a session</ArrowButton></div><div className={styles.heroStats}>{[["300+", "sessions"], ["2022", "behind the lens"], ["72h", "delivery"], ["5.0★", "rating"]].map(([number, label]) => <div key={label}><strong>{number}</strong><span>{label}</span></div>)}</div></div></div></section>
+    <section className={styles.hero}><Photo alt="Portrait photographed by Kahel Studio" position="50% 18%" preload sizes="(min-width: 1081px) 72vw, 100vw" /><div className={styles.heroScrim} /><div className={`${styles.container} ${styles.heroContent}`}><div className={styles.heroCopy}><h1>Creating timeless photographs.</h1><p>From portraits and celebrations to commercial work, every project is thoughtfully captured and delivered in a private gallery you keep.</p><div className={styles.heroActions}><ArrowButton onClick={() => go("book")}>Book your session</ArrowButton></div><div className={styles.heroStats}>{[["300+", "sessions"], ["2022", "behind the lens"], ["72h", "delivery"], ["5.0★", "rating"]].map(([number, label]) => <div key={label}><strong>{number}</strong><span>{label}</span></div>)}</div></div></div></section>
     <section className={`${styles.section} ${styles.container}`}><div className={styles.sectionHead}><div><Eyebrow>Selected work</Eyebrow><h2>The contact sheet.</h2><p>A rolling selection from recent shoots, filter by the kind of story you&apos;re planning.</p></div><ArrowButton onClick={() => go("portfolio")}>Full portfolio</ArrowButton></div><FilterChips active={filter} setActive={setFilter} /><Gallery filter={filter} home /></section>
     <section className={`${styles.section} ${styles.softSection}`}><div className={styles.container}><div className={styles.centerHead}><Eyebrow>What we shoot</Eyebrow><h2>Two ways to work with us.</h2></div><div className={styles.serviceTiles}>{[{ title: "In the studio", kicker: "Studio sessions", description: "Portraits, branding, group and mini shoots.", src: "/Mini Session_Gerladine Ceneta Pongan_15.jpg", position: "30% 48%", category: "sessions" as const }, { title: "On your day", kicker: "Events", description: "Debut, christening, birthdays and celebrations.", src: "/Event_Debut_Keely Bueno_15.jpg", position: "72% 43%", category: "events" as const }].map((item) => <button type="button" key={item.title} onClick={() => go("services", item.category)}><Photo alt={item.title} src={item.src} position={item.position} /><span className={styles.tileScrim} /><span className={styles.tileCopy}><Eyebrow warm>{item.kicker}</Eyebrow><strong>{item.title}</strong><small>{item.description}</small><b>View rates <ArrowRight size={15} /></b></span></button>)}</div></div></section>
     <section className={`${styles.section} ${styles.container}`}><div className={styles.editorialSplit}><div><Eyebrow>Why Kahel Studio</Eyebrow><h2>We chase the last warm light.</h2><p>Kahel is Filipino for the colour orange, the hour just before the day lets go. Since 2022 we&apos;ve built every shoot around that light, working small and close so the day stays yours.</p><ArrowButton onClick={() => go("about")}>More about the studio</ArrowButton></div><Values /></div></section>
@@ -260,7 +260,7 @@ function TimePicker({ value, onChange }: { value: string; onChange: (value: stri
   const period = hour >= 12 ? "PM" : "AM";
   const hour12 = hour % 12 || 12;
   const setPart = (nextHour = hour12, nextMinute = minute, nextPeriod = period) => onChange(`${pad((nextHour % 12) + (nextPeriod === "PM" ? 12 : 0))}:${pad(nextMinute)}`);
-  return <div ref={pickerRef} className={styles.picker}><button type="button" className={styles.pickerTrigger} aria-expanded={open} onClick={() => setOpen((current) => !current)}><span>{value ? `${pad(hour12)}:${pad(minute)} ${period}` : "Select time"}</span><Clock3 size={16} /></button>{open && <div className={styles.timePicker}><div>{Array.from({ length: 12 }, (_, index) => index + 1).map((item) => <button type="button" aria-pressed={hour12 === item} key={item} onClick={() => setPart(item)}>{pad(item)}</button>)}</div><div>{[0, 15, 30, 45].map((item) => <button type="button" aria-pressed={minute === item} key={item} onClick={() => setPart(hour12, item)}>{pad(item)}</button>)}</div><div>{["AM", "PM"].map((item) => <button type="button" aria-pressed={period === item} key={item} onClick={() => { setPart(hour12, minute, item); setOpen(false); }}>{item}</button>)}</div></div>}</div>;
+  return <div ref={pickerRef} className={styles.picker}><button type="button" className={styles.pickerTrigger} aria-expanded={open} onClick={() => setOpen((current) => !current)}><span>{value ? `${pad(hour12)}:${pad(minute)} ${period}` : "Select time"}</span><Clock3 size={16} /></button>{open && <div className={styles.timePicker}><div>{Array.from({ length: 12 }, (_, index) => index + 1).map((item) => <button type="button" aria-pressed={hour12 === item} key={item} onClick={() => setPart(item)}>{pad(item)}</button>)}</div><div><button type="button" aria-pressed={minute === 0} onClick={() => setPart(hour12, 0)}>00</button></div><div>{["AM", "PM"].map((item) => <button type="button" aria-pressed={period === item} key={item} onClick={() => { setPart(hour12, minute, item); setOpen(false); }}>{item}</button>)}</div></div>}</div>;
 }
 
 function Booking({ goHome }: { goHome: () => void }) {
@@ -272,8 +272,8 @@ function Booking({ goHome }: { goHome: () => void }) {
   const selected = allPackages.find((item) => item.name === form.session);
   const studioSelected = studioPackages.some((item) => item.name === form.session);
   const due = selected ? selected.price * (form.pay === "deposit" ? .5 : 1) : 0;
-  const valid = Boolean(form.name && form.email && form.mobile && form.session && form.date);
-  const update = <Key extends keyof BookingForm>(key: Key, value: BookingForm[Key]) => setForm((current) => ({ ...current, [key]: value }));
+  const valid = Boolean(form.name && form.email && /^9\d{9}$/.test(form.mobile) && form.session && form.date);
+  const update = <Key extends keyof BookingForm>(key: Key, value: BookingForm[Key]) => setForm((current) => ({ ...current, [key]: key === "mobile" ? String(value).replace(/\D/g, "").slice(0, 10) : value }));
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!valid || !selected) return;
@@ -282,7 +282,7 @@ function Booking({ goHome }: { goHome: () => void }) {
       const response = await fetch("/api/paymongo/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Idempotency-Key": bookingRequestId.current ??= crypto.randomUUID() },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, mobile: `+63${form.mobile}` }),
       });
       const result = await response.json() as { checkoutUrl?: string; error?: string };
       if (!response.ok || !result.checkoutUrl) throw new Error(result.error || "Unable to open checkout.");
@@ -298,7 +298,7 @@ function Booking({ goHome }: { goHome: () => void }) {
 }
 
 function FinalCta({ goBook }: { goBook: () => void }) {
-  return <section className={styles.finalCta}><div className={styles.container}><div><h2>Let&apos;s keep your last warm light.</h2><p>Tell us the date. We&apos;ll hold it, plan the shoot around your people, and hand back a gallery you keep.</p></div><ArrowButton primary onClick={goBook}>Book a session</ArrowButton></div></section>;
+  return <section className={styles.finalCta}><div className={styles.container}><div><h2>Let&apos;s keep your last warm light.</h2><p>Tell us the date. We&apos;ll hold it, plan the shoot around your people, and hand back a gallery you keep.</p></div><div className={styles.finalCtaActions}><ArrowButton onClick={goBook}>Book your session</ArrowButton></div></div></section>;
 }
 
 function SocialIcon({ type }: { type: "Facebook" | "Instagram" | "TikTok" | "YouTube" }) {
@@ -334,7 +334,6 @@ export function MarketingSite({ initialPage = "home" }: { initialPage?: Page }) 
   useEffect(() => {
     fetch("/api/customer/session", { cache: "no-store" }).then((response) => response.ok ? response.json() as Promise<CustomerHeaderState> : null).then((state) => { if (state) setCustomer(state); }).catch(() => {});
   }, []);
-  const setTheme = (next: Theme) => { setThemeState(next); try { localStorage.setItem("ks-theme", next); } catch {} };
   const go = (next: Page, category?: ServiceCategory) => { if (category) setServiceCategory(category); setPage(next); setMenuOpen(false); document.body.style.overflow = ""; window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); };
   const closeMenu = () => { setMenuOpen(false); requestAnimationFrame(() => menuTrigger.current?.focus()); };
   const signOut = () => { void fetch("/api/customer/session", { method: "DELETE" }).finally(() => { setCustomer({ authenticated: false }); setMenuOpen(false); }); };

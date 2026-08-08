@@ -163,15 +163,16 @@ jobs:
             "$SUPABASE_URL" \
             "$SUPABASE_PUBLISHABLE_KEY" \
             >> /tmp/wrangler-secrets.env
+        env:
+          SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+          WANGLER_SECRETS: ${{ secrets.STAGING_CLOUDFLARE_WORKER_SECRETS }}
       - run: |
           npx wrangler deploy --env staging --keep-vars
           npx wrangler secret bulk /tmp/wrangler-secrets.env --env staging
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}
-          WANGLER_SECRETS: ${{ secrets.STAGING_CLOUDFLARE_WORKER_SECRETS }}
 
   verify_staging:
     name: Verify staging
@@ -184,7 +185,18 @@ jobs:
     concurrency: staging
     timeout-minutes: 5
     steps:
-      - run: curl --fail --silent --show-error --max-time 20 https://kahel.studio/api/staff/session
+      - run: |
+          for attempt in {1..12}; do
+            response="$(curl --fail --silent --show-error --max-time 20 "https://kahel.studio/api/staff/session?deployment_check=$attempt")"
+            if jq -e '
+              .configured == true and
+              (.configurationChecks | all(. == true))
+            ' <<< "$response" > /dev/null; then
+              exit 0
+            fi
+            sleep 5
+          done
+          exit 1
 
   # ── Production ───────────────────────────────────────────
 

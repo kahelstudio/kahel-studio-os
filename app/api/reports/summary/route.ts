@@ -36,7 +36,7 @@ export async function GET() {
       signedStaff,
       bookingConversion: bookingCount > 0 ? Math.round((confirmedCount / bookingCount) * 100) : 0,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to fetch report summary" }, { status: 500 });
   }
 }
