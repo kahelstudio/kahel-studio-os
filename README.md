@@ -29,4 +29,4 @@ npm run build
 
 The Worker deployment configuration is in `wrangler.jsonc`. Staging is `kahel.studio` from `dev`; production is `kahelstudio.com` from `main` through protected manual jobs.
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the complete GitLab variable checklist, Supabase and Cloudflare setup, branch and environment protections, rollout procedure, and rollback guidance. It intentionally contains no project references, credentials, or secret values.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the complete Github variable checklist, Supabase and Cloudflare setup, branch and environment protections, rollout procedure, and rollback guidance. It intentionally contains no project references, credentials, or secret values.
