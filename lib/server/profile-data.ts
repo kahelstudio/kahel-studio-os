@@ -3,12 +3,14 @@ import "server-only";
 import { cookies } from "next/headers";
 import { getSupabaseAdmin, getSupabaseAuthClient } from "./supabase-admin";
 import { authenticationDisabled } from "./staff-auth";
+import { resolvedStaffName } from "@/lib/staff-name";
 
 export type MyProfile = {
   userId: string;
   email: string;
   displayName: string;
   initials: string;
+  avatarUrl: string | null;
   jobTitle: string;
   adminRole: "super_admin" | "admin" | "staff";
   employeeRef: string | null;
@@ -34,17 +36,23 @@ function formatHiredAt(date: string | null): string {
   return new Date(date).toLocaleDateString("en-PH", { month: "long", year: "numeric" });
 }
 
+function initialsFromName(name: string) {
+  return name.split(/\s+/).map((word) => word[0]).join("").slice(0, 2).toUpperCase();
+}
+
 export async function getMyProfile(): Promise<MyProfile | null> {
   const admin = getSupabaseAdmin();
 
   if (authenticationDisabled()) {
     const { data: sp } = await admin.from("staff_profiles").select("user_id,role,display_name").limit(1).single();
     const { data: pe } = await admin.from("payroll_employees").select("initials,name,role,employee_ref,sss_number,tin,philhealth_number,pagibig_number,hired_at").limit(1).maybeSingle();
+    const displayName = resolvedStaffName(sp?.display_name, "development@kahel.local", pe?.name);
     return {
       userId: sp?.user_id ?? "dev",
       email: "development@kahel.local",
-      displayName: pe?.name ?? sp?.display_name ?? "Developer",
-      initials: pe?.initials ?? "DV",
+      displayName,
+      initials: initialsFromName(displayName),
+      avatarUrl: null,
       jobTitle: pe?.role ?? "Developer",
       adminRole: (sp?.role as MyProfile["adminRole"]) ?? "super_admin",
       employeeRef: pe?.employee_ref ?? null,
@@ -71,11 +79,13 @@ export async function getMyProfile(): Promise<MyProfile | null> {
     admin.from("payroll_employees").select("initials,name,role,employee_ref,sss_number,tin,philhealth_number,pagibig_number,hired_at").eq("staff_id", user.id).maybeSingle(),
   ]);
 
+  const displayName = resolvedStaffName(sp?.display_name, user.email ?? "", pe?.name);
   return {
     userId: user.id,
     email: user.email ?? "",
-    displayName: pe?.name ?? sp?.display_name ?? user.email ?? "",
-    initials: pe?.initials ?? (sp?.display_name ?? "??").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(),
+    displayName,
+    initials: initialsFromName(displayName),
+    avatarUrl: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null,
     jobTitle: pe?.role ?? sp?.role ?? "Staff",
     adminRole: (sp?.role as MyProfile["adminRole"]) ?? "staff",
     employeeRef: pe?.employee_ref ?? null,

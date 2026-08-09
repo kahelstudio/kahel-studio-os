@@ -2,6 +2,8 @@ import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "./supabase-admin";
+import { nameFromEmail } from "@/lib/staff-name";
+import { sendRecoveryPasswordLink } from "./security-email";
 
 const COOKIE_NAME = "kahel_staff_access_token";
 const REFRESH_COOKIE_NAME = "kahel_staff_refresh_token";
@@ -80,6 +82,8 @@ export async function getStaffPrincipal(request: Request): Promise<StaffPrincipa
   const { data, error } = await client(settings).auth.getUser(accessToken);
   const user = data.user;
   if (error || !user?.email || !isStaffEmail(user.email, settings)) return null;
+  const assurance = await client(settings, accessToken).auth.mfa.getAuthenticatorAssuranceLevel();
+  if (!assurance.error && assurance.data.nextLevel === "aal2" && assurance.data.currentLevel !== "aal2") return null;
 
   const admin = getSupabaseAdmin();
   let { data: profile, error: profileError } = await admin.from("staff_profiles")
@@ -98,7 +102,7 @@ export async function getStaffPrincipal(request: Request): Promise<StaffPrincipa
     const created = await admin.from("staff_profiles").insert({
       user_id: user.id,
       role,
-      display_name: user.user_metadata?.full_name || user.email,
+      display_name: user.user_metadata?.full_name || nameFromEmail(user.email),
       active: true,
       can_manage_bookings: hasAllPermissions,
       can_manage_loyalty: hasAllPermissions,
@@ -145,9 +149,24 @@ export async function signInStaff(email: string, password: string) {
 
 export async function requestPasswordReset(email: string) {
   const settings = config();
-  if (!settings || !isStaffEmail(email, settings)) return false;
-  const { error } = await client(settings).auth.resetPasswordForEmail(email.trim().toLowerCase(), { redirectTo: settings.redirectUrl });
-  return !error;
+  if (!settings) return false;
+  const normalized = email.trim().toLowerCase();
+  const admin = getSupabaseAdmin();
+  const users = await admin.auth.admin.listUsers({ perPage: 1000 });
+  if (users.error) return false;
+  const primaryUser = users.data.users.find((item) => item.email?.toLowerCase() === normalized && isStaffEmail(item.email, settings));
+  if (primaryUser) {
+    const { error } = await client(settings).auth.resetPasswordForEmail(normalized, { redirectTo: settings.redirectUrl });
+    return !error;
+  }
+  const user = users.data.users.find((item) => item.user_metadata?.recovery_email?.toLowerCase() === normalized && isStaffEmail(item.email, settings));
+  if (!user?.email) return false;
+  const link = await admin.auth.admin.generateLink({ type: "recovery", email: user.email, options: { redirectTo: settings.redirectUrl } });
+  if (link.error) return false;
+  const resetUrl = new URL(settings.redirectUrl);
+  resetUrl.searchParams.set("token_hash", link.data.properties.hashed_token);
+  resetUrl.searchParams.set("type", "recovery");
+  return sendRecoveryPasswordLink(normalized, resetUrl.toString());
 }
 
 export async function updateStaffPassword(accessToken: string, password: string) {
@@ -159,6 +178,15 @@ export async function updateStaffPassword(accessToken: string, password: string)
   const admin = getSupabaseAdmin();
   const { error: updateError } = await admin.auth.admin.updateUserById(data.user.id, { password });
   return !updateError;
+}
+
+export async function updateStaffPasswordWithRecoveryToken(tokenHash: string, password: string) {
+  const settings = config();
+  if (!settings) return false;
+  const supabase = client(settings);
+  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
+  if (error || !data.session || !isStaffEmail(data.user?.email, settings)) return false;
+  return updateStaffPassword(data.session.access_token, password);
 }
 
 export async function hasStaffSession(request: Request) {

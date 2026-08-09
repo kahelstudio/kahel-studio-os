@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Script from "next/script";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck, X } from "lucide-react";
 
 type TurnstileApi = {
   render: (container: HTMLElement, options: Record<string, unknown>) => string;
@@ -57,12 +57,16 @@ export default function LoginPage() {
   const [scriptReady, setScriptReady] = useState(false);
   const [config, setConfig] = useState<LoginConfig | null>(null);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaCode, setMfaCode] = useState("");
   const turnstileContainer = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | null>(null);
 
   useEffect(() => {
-    const urlError = new URLSearchParams(window.location.search).get("error");
+    const search = new URLSearchParams(window.location.search);
+    const urlError = search.get("error");
     if (urlError) queueMicrotask(() => setError(decodeURIComponent(urlError).replace(/_/g, " ")));
+    if (search.get("mfa") === "required") queueMicrotask(() => setMfaRequired(true));
   }, []);
 
   useEffect(() => {
@@ -120,11 +124,17 @@ export default function LoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, rememberMe, "cf-turnstile-response": turnstileToken }),
       });
+      const data = await response.json() as { error?: string; mfaRequired?: boolean };
       if (!response.ok) {
-        const data = await response.json() as { error?: string };
         setError(data.error ?? "Unable to sign in.");
         setSubmitting(false);
         resetTurnstile();
+        return;
+      }
+      if (data.mfaRequired) {
+        setMfaCode("");
+        setMfaRequired(true);
+        setSubmitting(false);
         return;
       }
       const raw = new URLSearchParams(window.location.search).get("next");
@@ -135,6 +145,28 @@ export default function LoginPage() {
       setSubmitting(false);
       resetTurnstile();
     }
+  }
+
+  async function verifyMfa(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+    try {
+      const response = await fetch("/api/staff/security/mfa", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: mfaCode }) });
+      const result = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(result.error ?? "Unable to verify the authentication code.");
+      window.location.href = safeStaffRedirect(new URLSearchParams(window.location.search).get("next"));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Unable to verify the authentication code.");
+      setSubmitting(false);
+    }
+  }
+
+  async function cancelMfa() {
+    await fetch("/api/staff/session", { method: "DELETE" });
+    setMfaRequired(false);
+    setMfaCode("");
+    setError("");
   }
 
   async function requestPasswordReset() {
@@ -239,6 +271,7 @@ export default function LoginPage() {
           </div>
         </div>
       </section>
+      {mfaRequired && <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="mfa-login-title"><form onSubmit={verifyMfa} className="w-full rounded-t-[20px] border border-black/8 bg-white shadow-[0_24px_80px_rgba(27,22,18,0.2)] sm:max-w-md sm:rounded-[20px]"><div className="flex items-start gap-4 border-b border-[#e5e1dd] p-5"><div className="grid size-11 shrink-0 place-items-center rounded-full bg-[var(--color-kahel-100)] text-[var(--color-kahel-700)]"><ShieldCheck className="size-5" /></div><div><h2 id="mfa-login-title" className="font-display text-xl font-semibold">Authentication code</h2><p className="mt-1 text-sm text-[#706a65]">Enter the 6-digit code from your authenticator app.</p></div><button type="button" onClick={cancelMfa} disabled={submitting} className="ml-auto grid min-h-11 min-w-11 place-items-center rounded-[10px] text-[#706a65] hover:bg-[#f5f3ef]" aria-label="Cancel sign in"><X className="size-4" /></button></div><div className="p-5"><label className="block text-sm font-semibold">6-digit code<input autoFocus required inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} value={mfaCode} onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))} className="mt-2 h-13 w-full rounded-[10px] border border-[#d8d4cf] px-4 text-center font-mono text-2xl tracking-[0.3em] outline-none focus:border-[var(--color-kahel-500)]" /></label>{error && <p className="mt-4 text-sm font-medium text-[var(--color-danger-text)]" role="alert">{error}</p>}<button disabled={submitting || mfaCode.length !== 6} className="mt-5 h-12 w-full rounded-[10px] bg-[var(--color-kahel-500)] text-sm font-semibold text-white disabled:opacity-55">{submitting ? "Verifying..." : "Verify and sign in"}</button></div></form></div>}
     </main>
   );
 }

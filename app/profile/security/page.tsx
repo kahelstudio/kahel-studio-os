@@ -1,16 +1,11 @@
 export const dynamic = "force-dynamic";
 
 import { getMyProfile } from "@/lib/server/profile-data";
+import { SecurityActions } from "./security-actions";
 
 export default async function ProfileSecurityPage() {
   const profile = await getMyProfile();
   const email = profile?.email ?? "—";
-
-  const securityItems = [
-    { label: "Password", sub: "Manage your account password", action: "Change" },
-    { label: "Two-factor authentication", sub: "Add an extra layer of security", action: "Manage" },
-    { label: "Recovery email", sub: email, action: "Edit" },
-  ];
 
   const sessions = [
     { device: "Current session", meta: "Your active sign-in", current: true },
@@ -25,19 +20,7 @@ export default async function ProfileSecurityPage() {
         Sign-in, verification, and active sessions
       </p>
 
-      <div className="mt-6 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        {securityItems.map((s) => (
-          <div key={s.label} className="flex items-center gap-4 border-b border-[var(--color-border)] px-5 py-4 last:border-b-0">
-            <div>
-              <div className="text-sm font-semibold">{s.label}</div>
-              <div className="mt-0.5 text-[13px] text-[var(--color-text-secondary)]">{s.sub}</div>
-            </div>
-            <button className="ml-auto h-[34px] shrink-0 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-[13px] font-semibold hover:border-[var(--color-border-strong)]">
-              {s.action}
-            </button>
-          </div>
-        ))}
-      </div>
+      <SecurityActions email={email} />
 
       <div className="mb-4 mt-9 border-b border-[var(--color-border)] pb-3 font-display text-[13px] font-semibold uppercase tracking-[0.16em] text-[var(--color-text-primary)]">
         Active sessions

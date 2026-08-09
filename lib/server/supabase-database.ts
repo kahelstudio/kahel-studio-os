@@ -2,7 +2,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 
 type Table<Row extends Record<string, unknown>> = { Row: Row; Insert: Partial<Row>; Update: Partial<Row>; Relationships: [] };
 
-type ClientRow = { id: string; name: string; status: string; external_ref: string; primary_contact_profile_id: string | null; created_at: string; updated_at: string };
+type ClientRow = { id: string; name: string; status: string; account_type: string; external_ref: string; primary_contact_profile_id: string | null; created_at: string; updated_at: string };
 type ProfileRow = { id: string; client_id: string; user_id: string | null; email: string; normalized_email: string; first_name: string; last_name: string; mobile: string | null; status: string; email_verified_at: string | null; created_at: string; updated_at: string };
 type BookingRow = { id: string; client_id: string; client_profile_id: string; idempotency_key: string; request_fingerprint: string; reference: string; service_type: string; service_id: string; service_date: string; service_time: string; location: string; payment_type: string; currency: string; subtotal_amount_php: number; total_amount_php: number; paid_amount_php: number; refunded_amount_php: number; status: string; payment_status: string; completed_at: string | null; attendance: string; kind: string; duplicate_of: string | null; loyalty_exclusion_reason: string | null; loyalty_excluded_by: string | null; loyalty_excluded_at: string | null; reward_id: string | null; paymongo_checkout_session_id: string | null; paymongo_checkout_url: string | null; paymongo_payment_intent_id: string | null; paymongo_checkout_expires_at: string | null; checkout_creation_started_at: string | null; created_at: string; updated_at: string };
 type ProjectRow = { id: string; client_id: string; booking_id: string | null; reference: string; title: string; description: string | null; status: string; starts_at: string | null; completed_at: string | null; created_at: string; updated_at: string };
@@ -22,6 +22,7 @@ type AuditRow = { id: string; client_id: string | null; client_profile_id: strin
 type ResolutionRow = { id: string; auth_user_id: string | null; normalized_email: string; candidate_profile_ids: string[]; reason: string; status: string; resolution: Json | null; resolved_by: string | null; resolved_at: string | null; created_at: string; updated_at: string };
 type RateLimitRow = { scope: string; key_hash: string; window_started_at: string; attempts: number; expires_at: string; updated_at: string };
 type StaffProfileRow = { user_id: string; role: string; display_name: string; active: boolean; can_manage_bookings: boolean; can_manage_loyalty: boolean; can_manage_rewards: boolean; can_manage_galleries: boolean; created_at: string; updated_at: string };
+type StaffEmergencyContactRow = { id: string; staff_id: string; name: string; relationship: string; phone: string; email: string | null; created_at: string };
 type ServiceRow = { id: string; code: string; name: string; active: boolean; created_at: string; updated_at: string };
 type LoyaltyProgramRow = { id: string; code: string; name: string; launch_date: string; active: boolean; threshold: number; reward_service_id: string; expires_after: string | null; retroactive: boolean; created_at: string; updated_at: string };
 type LoyaltyRewardRow = { id: string; client_id: string; program_id: string; sequence: number; threshold: number; service_id: string; status: string; issued_at: string; reserved_at: string | null; redeemed_at: string | null; voided_at: string | null; expires_at: string | null; review_required: boolean; review_reason: string | null; updated_at: string };
@@ -82,6 +83,7 @@ export type Database = {
       customer_identity_resolution_cases: Table<ResolutionRow>;
       customer_auth_rate_limits: Table<RateLimitRow>;
       staff_profiles: Table<StaffProfileRow>;
+      staff_emergency_contacts: Table<StaffEmergencyContactRow>;
       services: Table<ServiceRow>;
       loyalty_programs: Table<LoyaltyProgramRow>;
       loyalty_rewards: Table<LoyaltyRewardRow>;

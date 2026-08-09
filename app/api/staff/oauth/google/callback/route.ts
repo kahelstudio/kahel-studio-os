@@ -41,7 +41,8 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent("This Google account is not authorized for staff access.")}`, siteOrigin));
   }
 
-  const response = NextResponse.redirect(new URL("/os", siteOrigin));
+  const mfaRequired = data.user.factors?.some((factor) => factor.factor_type === "totp" && factor.status === "verified") ?? false;
+  const response = NextResponse.redirect(new URL(mfaRequired ? "/login?mfa=required" : "/os", siteOrigin));
   const cookieOptions = { httpOnly: true, sameSite: "lax" as const, secure: IS_PRODUCTION, maxAge: REMEMBER_ME_MAX_AGE, path: "/" };
   response.cookies.set(STAFF_SESSION_COOKIE, data.session.access_token, cookieOptions);
   response.cookies.set(STAFF_REFRESH_COOKIE, data.session.refresh_token, cookieOptions);

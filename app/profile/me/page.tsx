@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { Lock } from "lucide-react";
 import { getMyProfile } from "@/lib/server/profile-data";
+import { ProfileEditor } from "./profile-editor";
 
 function SectionLabel({
   children,
@@ -67,8 +68,8 @@ export default async function ProfileMePage() {
   return (
     <div className="max-w-[900px] p-12 pt-9">
       <div className="flex items-center gap-5">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[16px] bg-[var(--color-indigo-100)] font-display text-3xl font-semibold text-[var(--color-indigo-800)]">
-          {profile.initials}
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[16px] bg-cover bg-center bg-[var(--color-indigo-100)] font-display text-3xl font-semibold text-[var(--color-indigo-800)]" style={profile.avatarUrl ? { backgroundImage: `url(${profile.avatarUrl})` } : undefined}>
+          {!profile.avatarUrl && profile.initials}
         </div>
         <div className="min-w-0">
           <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
@@ -78,9 +79,7 @@ export default async function ProfileMePage() {
             {profile.jobTitle} · {adminRoleLabel}
           </p>
         </div>
-        <button className="ml-auto flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
-          Edit profile
-        </button>
+        <ProfileEditor displayName={profile.displayName} email={profile.email} initials={profile.initials} avatarUrl={profile.avatarUrl} />
       </div>
 
       <SectionLabel>Contact</SectionLabel>

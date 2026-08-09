@@ -31,11 +31,12 @@ export async function POST(request: Request) {
   }
   const session = await signInStaff(email, password);
   if (!session) return NextResponse.json({ error: staffAuthConfigured() ? "Invalid email or password." : "Staff authentication is not configured." }, { status: staffAuthConfigured() ? 401 : 503 });
-  const response = NextResponse.json({ authenticated: true });
+  const mfaRequired = session.user.factors?.some((factor) => factor.factor_type === "totp" && factor.status === "verified") ?? false;
+  const response = NextResponse.json({ authenticated: !mfaRequired, mfaRequired });
   const maxAge = rememberMe === true ? REMEMBER_ME_MAX_AGE : session.expires_in;
   const cookieOptions = { httpOnly: true, sameSite: "lax" as const, secure: IS_PRODUCTION, maxAge, path: "/" };
   response.cookies.set(STAFF_SESSION_COOKIE, session.access_token, cookieOptions);
-  if (rememberMe === true && session.refresh_token) {
+  if ((rememberMe === true || mfaRequired) && session.refresh_token) {
     response.cookies.set(STAFF_REFRESH_COOKIE, session.refresh_token, cookieOptions);
   }
   return response;

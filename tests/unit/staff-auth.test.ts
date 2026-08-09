@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { staffEmailAuthorized } from "@/lib/server/staff-auth";
+import { POST as changePassword } from "@/app/api/staff/password-reset/route";
 
 describe("staff email authorization", () => {
   beforeEach(() => {
@@ -7,6 +8,7 @@ describe("staff email authorization", () => {
     process.env.SUPABASE_URL = "https://example.supabase.co";
     process.env.SUPABASE_PUBLISHABLE_KEY = "publishable-key";
     process.env.AUTH_REDIRECT_URL = "https://kahelstudio.com/reset-password";
+    process.env.KAHEL_AUTH_DISABLED = "false";
   });
 
   it("authorizes the Kahel Studio work domain", () => {
@@ -19,5 +21,18 @@ describe("staff email authorization", () => {
 
   it("rejects unrelated domains", () => {
     expect(staffEmailAuthorized("person@example.com")).toBe(false);
+  });
+
+  it("requires an authenticated session to change a password", async () => {
+    const request = new Request("https://kahelstudio.com/api/staff/password-reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: "ValidPassword1!" }),
+    });
+
+    const response = await changePassword(request);
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ error: "Sign in again before changing your password." });
   });
 });
