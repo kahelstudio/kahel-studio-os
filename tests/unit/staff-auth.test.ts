@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { authenticationDisabled, staffEmailAuthorized } from "@/lib/server/staff-auth";
 import { POST as changePassword } from "@/app/api/staff/password-reset/route";
 
@@ -30,7 +30,12 @@ describe("staff email authorization", () => {
     expect(authenticationDisabled()).toBe(false);
   });
 
+  afterEach(() => vi.unstubAllGlobals());
+
   it("requires an authenticated session to change a password", async () => {
+    // The password below clears the composition rules, so the route reaches the
+    // breach lookup. Stubbed so the unit suite never depends on the network.
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: true, text: async () => "" }) as unknown as Response));
     const request = new Request("https://kahelstudio.com/api/staff/password-reset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

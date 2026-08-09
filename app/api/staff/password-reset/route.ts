@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStaffPrincipal, requestPasswordReset, updateStaffPassword, updateStaffPasswordWithRecoveryToken } from "@/lib/server/staff-auth";
+import { validatePassword } from "@/lib/server/password-policy";
 import { turnstileConfigured, turnstileRequired, verifyTurnstile } from "@/lib/server/turnstile";
 
 export const runtime = "nodejs";
@@ -8,15 +9,15 @@ export async function POST(request: Request) {
   let body: { email?: unknown; accessToken?: unknown; tokenHash?: unknown; password?: unknown; "cf-turnstile-response"?: unknown };
   try { body = await request.json() as typeof body; } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   if (typeof body.accessToken === "string" || typeof body.tokenHash === "string" || typeof body.password === "string") {
-    if (typeof body.password !== "string" || body.password.length < 12 || body.password.length > 128 || !/[A-Z]/.test(body.password) || !/[a-z]/.test(body.password) || !/[0-9]/.test(body.password) || !/[^A-Za-z0-9]/.test(body.password)) {
-      return NextResponse.json({ error: "Password must be 12–128 characters with an uppercase letter, a lowercase letter, a digit, and a symbol." }, { status: 400 });
-    }
+    const password = typeof body.password === "string" ? body.password : "";
+    const passwordError = await validatePassword(password);
+    if (passwordError) return NextResponse.json({ error: passwordError }, { status: 400 });
     const principal = typeof body.accessToken === "string" || typeof body.tokenHash === "string" ? null : await getStaffPrincipal(request);
     const accessToken = typeof body.accessToken === "string" ? body.accessToken : principal?.accessToken;
     if (typeof body.tokenHash !== "string" && !accessToken) return NextResponse.json({ error: "Sign in again before changing your password." }, { status: 401 });
     const updated = typeof body.tokenHash === "string"
-      ? await updateStaffPasswordWithRecoveryToken(body.tokenHash, body.password)
-      : await updateStaffPassword(accessToken!, body.password);
+      ? await updateStaffPasswordWithRecoveryToken(body.tokenHash, password)
+      : await updateStaffPassword(accessToken!, password);
     return updated
       ? NextResponse.json({ updated: true })
       : NextResponse.json({ error: "This password reset link is invalid or has expired." }, { status: 400 });
