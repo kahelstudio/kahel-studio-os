@@ -27,6 +27,6 @@ npm run build
 - **Cloudflare Workers** runs the Next.js application through OpenNext.
 - **Supabase** provides Postgres persistence for client portal settings, activity, and expiring link tokens.
 
-The Worker deployment configuration is in `wrangler.jsonc`. Staging is `kahel.studio` from `dev`; production is `kahelstudio.com` from `main` through protected manual jobs.
+The Worker deployment configuration is in `wrangler.jsonc`. Staging is `kahel.studio` from `staging`; production is `kahelstudio.com` from `main` through protected manual jobs. Pushes to `dev` run the validation jobs only and deploy nothing.
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the complete Github variable checklist, Supabase and Cloudflare setup, branch and environment protections, rollout procedure, and rollback guidance. It intentionally contains no project references, credentials, or secret values.
