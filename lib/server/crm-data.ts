@@ -15,7 +15,9 @@ export type AccountRow = {
   id: string;
   name: string;
   status: string;
+  accountType: "consumer" | "corporate";
   externalRef: string;
+  mobile: string | null;
   totalBookings: number;
   totalSpent: number;
   lastBooking: string | null;
@@ -26,6 +28,7 @@ export type AccountDetail = {
   id: string;
   name: string;
   status: string;
+  accountType: "consumer" | "corporate";
   externalRef: string;
   createdAt: string;
   bookings: Array<{
@@ -141,13 +144,21 @@ export async function getAccounts(): Promise<AccountRow[]> {
 
     const { data: clients, error } = await admin
       .from("clients")
-      .select("id, name, status, external_ref, created_at")
+      .select("id, name, status, account_type, external_ref, created_at, primary_contact_profile_id")
       .order("created_at", { ascending: false })
       .limit(200);
 
     if (error) throw error;
 
     const clientIds = (clients ?? []).map((c: any) => c.id);
+
+    const { data: profiles, error: pError } = await admin
+      .from("client_profiles")
+      .select("id,client_id,mobile")
+      .in("client_id", clientIds);
+
+    if (pError) throw pError;
+    const profileMap = new Map((profiles ?? []).map((profile: any) => [profile.id, profile]));
 
     const { data: bookings, error: bError } = await admin
       .from("bookings")
@@ -175,7 +186,9 @@ export async function getAccounts(): Promise<AccountRow[]> {
         id: c.id,
         name: c.name,
         status: c.status,
+        accountType: c.account_type === "corporate" ? "corporate" : "consumer",
         externalRef: c.external_ref,
+        mobile: profileMap.get(c.primary_contact_profile_id)?.mobile ?? null,
         totalBookings: bm?.count ?? 0,
         totalSpent: bm?.total ?? 0,
         lastBooking: bm?.lastDate ?? null,
@@ -194,7 +207,7 @@ export async function getAccountById(id: string): Promise<AccountDetail | null> 
 
     const { data: client, error } = await admin
       .from("clients")
-      .select("id, name, status, external_ref, created_at")
+      .select("id, name, status, account_type, external_ref, created_at")
       .eq("id", id)
       .maybeSingle();
 
@@ -229,6 +242,7 @@ export async function getAccountById(id: string): Promise<AccountDetail | null> 
       id: (client as any).id,
       name: (client as any).name,
       status: (client as any).status,
+      accountType: (client as any).account_type === "corporate" ? "corporate" : "consumer",
       externalRef: (client as any).external_ref,
       createdAt: (client as any).created_at,
       bookings: (bookings ?? []).map((b: any) => ({

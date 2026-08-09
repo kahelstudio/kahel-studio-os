@@ -1,11 +1,11 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { Plus, Search } from "lucide-react";
 import { ACCENTS } from "@/lib/apps-config";
 import { getAccounts } from "@/lib/server/crm-data";
 import { cn } from "@/lib/utils";
 import { ActionButton } from "@/components/shared/action-button";
+import { NewAccountButton } from "./new-account-button";
 
 const FILTERS = ["All", "Corporate", "Consumer", "Referral source"];
 
@@ -28,44 +28,21 @@ export default async function CrmAccountsPage() {
     id: r.id,
     name: r.name,
     ini: initials(r.name),
-    type: r.status === "corporate" ? "Corporate" as const : "Consumer" as const,
+    type: r.accountType === "corporate" ? "Corporate" as const : "Consumer" as const,
     accent: "indigo" as const,
     source: r.externalRef ?? "",
     last: r.lastBooking
       ? new Date(r.lastBooking).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
       : "—",
     ltv: formatPHP(r.totalSpent),
-    phone: r.externalRef ?? "",
+    phone: r.mobile ?? "—",
   }));
-
-  const corporate = accounts.filter((a) => a.type === "Corporate").length;
-  const consumer = accounts.filter((a) => a.type === "Consumer").length;
 
   return (
     <div className="p-4 pt-6 sm:p-10 sm:pt-8">
       <div className="mb-5 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
-            Accounts
-          </h1>
-          <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
-            {accounts.length} accounts · {corporate} corporate · {consumer} consumer
-          </p>
-        </div>
-        <ActionButton label="New account form" className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
-          <Plus className="h-4 w-4" /> New account
-        </ActionButton>
-      </div>
-
-      <div className="mb-4 flex items-center gap-3 rounded-card bg-[var(--color-surface-muted)] px-4 py-3">
-        <Search className="h-4 w-4 shrink-0 text-[var(--color-text-secondary)]" />
-        <input
-          placeholder="Look up a client by mobile number — e.g. 0917 555 0142 or +63 917 555 0142"
-          className="flex-1 bg-transparent text-sm text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-muted)]"
-        />
-        <span className="hidden shrink-0 text-xs text-[var(--color-text-muted)] lg:block">
-          &ldquo;May I have the mobile number used for your booking?&rdquo;
-        </span>
+        <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">Accounts</h1>
+        <NewAccountButton />
       </div>
 
       <div className="mb-3.5 flex gap-2 overflow-x-auto pb-1">

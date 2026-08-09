@@ -35,7 +35,7 @@ export default async function CrmAccountDetailPage({
     id: detail.id,
     name: detail.name,
     ini: initials(detail.name),
-    type: detail.status === "corporate" ? "Corporate" as const : "Consumer" as const,
+    type: detail.accountType === "corporate" ? "Corporate" as const : "Consumer" as const,
     accent: "indigo" as const,
     source: detail.externalRef ?? "",
     last: "",
