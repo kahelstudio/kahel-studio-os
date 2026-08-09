@@ -24,6 +24,8 @@ import {
   SlidersHorizontal,
   FileClock,
   Gauge,
+  ReceiptText,
+  BadgeCheck,
   type LucideIcon,
 } from "lucide-react";
 
@@ -144,10 +146,19 @@ export const APPS: AppDef[] = [
     nav: [
       { id: "invoices", label: "Invoice records", href: "/finance/invoices" },
       { id: "sales", label: "Sales", href: "/finance/sales" },
-      { id: "expenses", label: "Expenses", href: "/finance/expenses" },
       { id: "payments", label: "Payments", href: "/finance/payments" },
       { id: "reconciliation", label: "Reconciliation", href: "/finance/reconciliation" },
     ],
+  },
+  {
+    id: "expenses",
+    name: "Expenses",
+    description: "Studio costs, categories, and money out",
+    accent: "orange",
+    icon: ReceiptText,
+    href: "/finance/expenses",
+    launcherGroup: "live",
+    nav: [{ id: "expenses", label: "Expenses", href: "/finance/expenses" }],
   },
   {
     id: "quotation",
@@ -177,6 +188,16 @@ export const APPS: AppDef[] = [
       { id: "post-production", label: "Post-production", href: "/projects/pipeline?stage=post" },
       { id: "deliveries", label: "Galleries", href: "/projects/deliveries" },
     ],
+  },
+  {
+    id: "approvals",
+    name: "Approvals",
+    description: "Review project media before client delivery",
+    accent: "indigo",
+    icon: BadgeCheck,
+    href: "/approvals",
+    launcherGroup: "live",
+    nav: [{ id: "queue", label: "Pending approvals", href: "/approvals" }],
   },
   {
     id: "glitches",

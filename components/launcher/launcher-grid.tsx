@@ -43,7 +43,13 @@ function loadOrder(key: string, fallback: string[]): string[] {
     const known = new Set(fallback);
     const kept = stored.filter((id) => known.has(id));
     const missing = fallback.filter((id) => !kept.includes(id));
-    return [...kept, ...missing];
+    for (const id of missing) {
+      const defaultIndex = fallback.indexOf(id);
+      const predecessor = fallback.slice(0, defaultIndex).reverse().find((candidate) => kept.includes(candidate));
+      const insertAt = predecessor ? kept.indexOf(predecessor) + 1 : 0;
+      kept.splice(insertAt, 0, id);
+    }
+    return kept;
   } catch {
     return fallback;
   }

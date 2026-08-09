@@ -1,112 +1,96 @@
 export const dynamic = "force-dynamic";
 
-import { getCalendarEvents, type CalendarEvent } from "@/lib/server/bookings-data";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { getCalendarEvents, getCalendarEventsByDate, type CalendarEvent } from "@/lib/server/bookings-data";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 const EVENT_TINT: Record<CalendarEvent["accent"], { bg: string; c: string }> = {
   ink: { bg: "var(--color-surface-muted)", c: "var(--color-text-primary)" },
   orange: { bg: "var(--color-kahel-50)", c: "var(--color-kahel-700)" },
   indigo: { bg: "var(--color-indigo-100)", c: "var(--color-indigo-800)" },
   teal: { bg: "var(--color-teal-100)", c: "var(--color-teal-800)" },
 };
+type CalendarView = "month" | "week";
+type CalendarCell = { key: string; day: number | null; today: boolean; inMonth: boolean; events: CalendarEvent[] };
 
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+export default async function BookingCalendarPage({ searchParams }: { searchParams: Promise<{ date?: string | string[]; view?: string | string[] }> }) {
+  const query = await searchParams;
+  const todayIso = manilaToday();
+  const selectedIso = typeof query.date === "string" && validDate(query.date) ? query.date : todayIso;
+  const view: CalendarView = query.view === "week" ? "week" : "month";
+  const selected = fromIso(selectedIso);
+  const period = view === "month" ? await monthPeriod(selected, todayIso) : await weekPeriod(selected, todayIso);
+  const previous = addPeriod(selected, view === "month" ? -1 : -7, view);
+  const next = addPeriod(selected, view === "month" ? 1 : 7, view);
 
-export default async function BookingCalendarPage() {
-  const now = new Date();
-  const month = now.getMonth() + 1;
-  const year = now.getFullYear();
-  const today = now.getDate();
-
-  const events = await getCalendarEvents(month, year);
-  const firstDay = new Date(year, month - 1, 1).getDay();
-  const daysInMonth = new Date(year, month, 0).getDate();
-
-  const days = Array.from({ length: 35 }, (_, i) => {
-    const day = i - firstDay + 1;
-    const inMonth = day >= 1 && day <= daysInMonth;
-    return {
-      day: inMonth ? day : null,
-      today: inMonth && day === today,
-      inMonth,
-      events: inMonth ? (events[day] ?? []) : [],
-    };
-  });
-
-  return (
-    <div className="p-10 pt-8">
-      <div className="mb-5 flex items-center gap-4">
-        <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
-          {MONTHS[month - 1]} {year}
-        </h1>
-        <div className="flex gap-1">
-          <button className="flex h-[34px] w-[34px] items-center justify-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]">
-            ‹
-          </button>
-          <button className="flex h-[34px] w-[34px] items-center justify-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]">
-            ›
-          </button>
-        </div>
-        <div className="ml-auto flex gap-0.5 rounded-control bg-[var(--color-surface-muted)] p-[3px]">
-          <button className="h-[30px] rounded-[6px] bg-[var(--color-surface)] px-3.5 text-[13px] font-semibold shadow-sm">
-            Month
-          </button>
-          <button className="h-[30px] rounded-[6px] px-3.5 text-[13px] font-medium text-[var(--color-text-secondary)]">
-            Week
-          </button>
-        </div>
+  return <div className="p-5 pt-6 sm:p-10 sm:pt-8">
+    <div className="mb-5 flex flex-wrap items-center gap-3 sm:gap-4">
+      <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)] sm:text-[32px]">{period.label}</h1>
+      <div className="flex gap-1">
+        <Link href={calendarHref(previous, view)} aria-label={`Previous ${view}`} className="flex h-[34px] w-[34px] items-center justify-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"><ChevronLeft className="h-4 w-4" /></Link>
+        <Link href={calendarHref(next, view)} aria-label={`Next ${view}`} className="flex h-[34px] w-[34px] items-center justify-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"><ChevronRight className="h-4 w-4" /></Link>
       </div>
-
-      <div className="overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="grid grid-cols-7 border-b border-[var(--color-border)] bg-[var(--color-canvas)]">
-          {WEEKDAYS.map((d) => (
-            <div key={d} className="px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
-              {d}
-            </div>
-          ))}
-        </div>
-        <div className="grid grid-cols-7 auto-rows-[112px]">
-          {days.map((c, i) => (
-            <div
-              key={i}
-              className="overflow-hidden border-b border-r border-[var(--color-border)] p-2"
-              style={{ background: c.today ? "var(--color-kahel-50)" : "var(--color-surface)" }}
-            >
-              <div
-                className="flex items-center gap-1.5 text-[13px]"
-                style={{
-                  fontWeight: c.today ? 700 : 500,
-                  color: !c.inMonth ? "var(--color-text-muted)" : c.today ? "var(--color-kahel-700)" : "var(--color-text-secondary)",
-                }}
-              >
-                {c.day ?? ""}
-                {c.today && (
-                  <span className="rounded-pill bg-[var(--color-kahel-100)] px-1.5 py-px text-[10px] font-semibold text-[var(--color-kahel-700)]">
-                    Today
-                  </span>
-                )}
-              </div>
-              {c.events.slice(0, 3).map((ev, j) => {
-                const tint = EVENT_TINT[ev.accent];
-                return (
-                  <div
-                    key={j}
-                    className="mb-0.5 truncate rounded-[4px] px-1.5 py-px text-[11px] font-medium"
-                    style={{ background: tint.bg, color: tint.c }}
-                    title={`${ev.title} at ${ev.time}`}
-                  >
-                    {ev.time} {ev.title.length > 24 ? `${ev.title.slice(0, 24)}\u2026` : ev.title}
-                  </div>
-                );
-              })}
-              {(c.events.length > 3) && (
-                <div className="text-[11px] font-medium text-[var(--color-text-muted)]">+{c.events.length - 3} more</div>
-              )}
-            </div>
-          ))}
+      <div className="ml-auto flex gap-0.5 rounded-control bg-[var(--color-surface-muted)] p-[3px]">
+        <Link href={calendarHref(toIso(selected), "month")} aria-current={view === "month" ? "page" : undefined} className={`flex h-[30px] items-center rounded-[6px] px-3.5 text-[13px] ${view === "month" ? "bg-[var(--color-surface)] font-semibold shadow-sm" : "font-medium text-[var(--color-text-secondary)]"}`}>Month</Link>
+        <Link href={calendarHref(toIso(selected), "week")} aria-current={view === "week" ? "page" : undefined} className={`flex h-[30px] items-center rounded-[6px] px-3.5 text-[13px] ${view === "week" ? "bg-[var(--color-surface)] font-semibold shadow-sm" : "font-medium text-[var(--color-text-secondary)]"}`}>Week</Link>
+      </div>
+    </div>
+    <div className="overflow-x-auto rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <div className="min-w-[760px]">
+        <div className="grid grid-cols-7 border-b border-[var(--color-border)] bg-[var(--color-canvas)]">{WEEKDAYS.map((day) => <div key={day} className="px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">{day}</div>)}</div>
+        <div className={`grid grid-cols-7 ${view === "week" ? "auto-rows-[minmax(360px,calc(100dvh-245px))]" : "auto-rows-[112px]"}`}>
+          {period.cells.map((cell) => <CalendarDay key={cell.key} cell={cell} expanded={view === "week"} />)}
         </div>
       </div>
     </div>
-  );
+  </div>;
 }
+
+function CalendarDay({ cell, expanded }: { cell: CalendarCell; expanded: boolean }) {
+  const visible = expanded ? cell.events : cell.events.slice(0, 3);
+  return <div className="overflow-hidden border-b border-r border-[var(--color-border)] p-2" style={{ background: cell.today ? "var(--color-kahel-50)" : "var(--color-surface)" }}>
+    <div className="flex items-center gap-1.5 text-[13px]" style={{ fontWeight: cell.today ? 700 : 500, color: !cell.inMonth ? "var(--color-text-muted)" : cell.today ? "var(--color-kahel-700)" : "var(--color-text-secondary)" }}>{cell.day ?? ""}{cell.today && <span className="rounded-pill bg-[var(--color-kahel-100)] px-1.5 py-px text-[10px] font-semibold text-[var(--color-kahel-700)]">Today</span>}</div>
+    <div className={expanded ? "mt-2 space-y-1" : ""}>{visible.map((event, index) => { const tint = EVENT_TINT[event.accent]; return <div key={`${event.time}-${event.title}-${index}`} className={`rounded-[4px] px-1.5 text-[11px] font-medium ${expanded ? "py-1.5 whitespace-normal" : "mb-0.5 truncate py-px"}`} style={{ background: tint.bg, color: tint.c }} title={`${event.title} at ${event.time}`}>{event.time} {event.title}</div>; })}</div>
+    {!expanded && cell.events.length > 3 && <div className="text-[11px] font-medium text-[var(--color-text-muted)]">+{cell.events.length - 3} more</div>}
+  </div>;
+}
+
+async function monthPeriod(selected: Date, todayIso: string) {
+  const year = selected.getUTCFullYear();
+  const monthIndex = selected.getUTCMonth();
+  const month = monthIndex + 1;
+  const firstDay = new Date(Date.UTC(year, monthIndex, 1)).getUTCDay();
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const events = await getCalendarEvents(month, year);
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  return {
+    label: new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" }).format(selected),
+    cells: Array.from({ length: totalCells }, (_, index): CalendarCell => {
+      const day = index - firstDay + 1;
+      const inMonth = day >= 1 && day <= daysInMonth;
+      const key = inMonth ? `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` : `blank-${index}`;
+      return { key, day: inMonth ? day : null, today: key === todayIso, inMonth, events: inMonth ? events[day] ?? [] : [] };
+    }),
+  };
+}
+
+async function weekPeriod(selected: Date, todayIso: string) {
+  const start = new Date(selected);
+  start.setUTCDate(start.getUTCDate() - start.getUTCDay());
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 6);
+  const events = await getCalendarEventsByDate(toIso(start), toIso(end));
+  const sameMonth = start.getUTCMonth() === end.getUTCMonth();
+  const label = sameMonth
+    ? `${new Intl.DateTimeFormat("en-US", { month: "long", timeZone: "UTC" }).format(start)} ${start.getUTCDate()}–${end.getUTCDate()}, ${end.getUTCFullYear()}`
+    : `${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(start)} – ${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(end)}`;
+  return { label, cells: Array.from({ length: 7 }, (_, index): CalendarCell => { const date = new Date(start); date.setUTCDate(start.getUTCDate() + index); const key = toIso(date); return { key, day: date.getUTCDate(), today: key === todayIso, inMonth: date.getUTCMonth() === selected.getUTCMonth(), events: events[key] ?? [] }; }) };
+}
+
+function calendarHref(date: string, view: CalendarView) { return `/booking/calendar?date=${date}&view=${view}`; }
+function addPeriod(date: Date, amount: number, view: CalendarView) { const next = new Date(date); if (view === "month") next.setUTCMonth(next.getUTCMonth() + amount, 1); else next.setUTCDate(next.getUTCDate() + amount); return toIso(next); }
+function validDate(value: string) { if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false; const parsed = fromIso(value); return !Number.isNaN(parsed.getTime()) && toIso(parsed) === value; }
+function fromIso(value: string) { return new Date(`${value}T12:00:00Z`); }
+function toIso(value: Date) { return value.toISOString().slice(0, 10); }
+function manilaToday() { const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).map((part) => [part.type, part.value])); return `${parts.year}-${parts.month}-${parts.day}`; }

@@ -7,6 +7,7 @@ export type RealBookingRow = {
   account: string;
   type: string;
   date: string;
+  serviceDate: string;
   status: BookingStatusId;
   total: string;
   payment_status: string;
@@ -67,6 +68,7 @@ function mapBookingRow(row: BookingRow): RealBookingRow {
     account: row.clients?.name || "Unknown",
     type: row.service_type,
     date: formatDate(row.service_date, row.service_time),
+    serviceDate: row.service_date,
     status,
     total: formatCurrency(row.subtotal_amount_php),
     payment_status: row.payment_status,
@@ -161,11 +163,9 @@ export async function getRealBookingByRef(ref: string): Promise<RealBookingRow |
 
 export type CalendarEvent = { title: string; time: string; accent: "ink" | "orange" | "indigo" | "teal" };
 
-export async function getCalendarEvents(month: number, year: number): Promise<Record<number, CalendarEvent[]>> {
+export async function getCalendarEventsByDate(startDate: string, endDate: string): Promise<Record<string, CalendarEvent[]>> {
   try {
     const admin = getSupabaseAdmin();
-    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
-    const endDate = `${year}-${String(month).padStart(2, "0")}-31`;
     const { data, error } = await admin.from("bookings").select(`
       reference,
       service_type,
@@ -173,33 +173,40 @@ export async function getCalendarEvents(month: number, year: number): Promise<Re
       service_time,
       status,
       clients:client_id ( name )
-    `).gte("service_date", startDate).lte("service_date", endDate).order("service_date", { ascending: true });
+    `).gte("service_date", startDate).lte("service_date", endDate).order("service_date", { ascending: true }).order("service_time", { ascending: true });
 
     if (error) throw error;
     const bookings = data as unknown as Array<{
       reference: string; service_type: string; service_date: string; service_time: string;
       status: string; clients: { name: string } | null;
     }>;
-
     const accentByStatus: Record<string, CalendarEvent["accent"]> = {
       confirmed: "orange", inquiry: "ink", quoted: "indigo", progress: "teal",
       completed: "teal", cancelled: "ink",
     };
-
-    const grouped: Record<number, CalendarEvent[]> = {};
-    for (const b of bookings) {
-      const day = parseInt(b.service_date.split("-")[2] ?? "0", 10);
-      if (!day) continue;
-      if (!grouped[day]) grouped[day] = [];
-      grouped[day].push({
-        title: `${b.clients?.name ?? b.reference}: ${b.service_type}`,
-        time: b.service_time.slice(0, 5),
-        accent: accentByStatus[b.status] ?? "ink",
+    const grouped: Record<string, CalendarEvent[]> = {};
+    for (const booking of bookings) {
+      grouped[booking.service_date] ??= [];
+      grouped[booking.service_date].push({
+        title: `${booking.clients?.name ?? booking.reference}: ${booking.service_type}`,
+        time: booking.service_time.slice(0, 5),
+        accent: accentByStatus[booking.status] ?? "ink",
       });
     }
     return grouped;
   } catch (error) {
-    console.error("getCalendarEvents: table not available", (error as Error).message);
+    console.error("getCalendarEventsByDate: data unavailable", (error as Error).message);
     return {};
   }
+}
+
+export async function getCalendarEvents(month: number, year: number): Promise<Record<number, CalendarEvent[]>> {
+  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+  const endDate = `${year}-${String(month).padStart(2, "0")}-${new Date(Date.UTC(year, month, 0)).getUTCDate()}`;
+  const dated = await getCalendarEventsByDate(startDate, endDate);
+  const grouped: Record<number, CalendarEvent[]> = {};
+  for (const [date, events] of Object.entries(dated)) {
+    grouped[Number(date.slice(-2))] = events;
+  }
+  return grouped;
 }

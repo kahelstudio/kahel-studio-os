@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import styles from "./customer-auth.module.css";
 
 type CustomerSignOutButtonProps = {
@@ -8,6 +9,7 @@ type CustomerSignOutButtonProps = {
 };
 
 export function CustomerSignOutButton({ className = "" }: CustomerSignOutButtonProps) {
+  const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -20,7 +22,7 @@ export function CustomerSignOutButton({ className = "" }: CustomerSignOutButtonP
         setError("Unable to sign out right now. Please try again.");
         return;
       }
-      window.location.assign("/sign-in");
+      router.replace("/sign-in");
     } catch {
       setError("Unable to sign out right now. Please try again.");
     } finally {

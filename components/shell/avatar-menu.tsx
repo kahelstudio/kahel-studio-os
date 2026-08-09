@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Building2, Gauge, LogOut, Settings, User } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,7 @@ const MENU_ITEMS = [
 ] as const;
 
 export function AvatarMenu({ size = 38 }: { size?: number }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<StaffProfileSummary>({ displayName: "Account", initials: "KS", avatarUrl: null, role: "staff" });
   const ref = useRef<HTMLDivElement>(null);
@@ -44,7 +46,7 @@ export function AvatarMenu({ size = 38 }: { size?: number }) {
 
   async function signOut() {
     await fetch("/api/staff/session", { method: "DELETE" });
-    window.location.href = "/login";
+    router.replace("/login");
   }
 
   return (

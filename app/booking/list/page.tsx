@@ -5,15 +5,30 @@ import { Plus } from "lucide-react";
 import { BOOKING_STATUS } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
 import { getRealBookings } from "@/lib/server/bookings-data";
-import { ActionButton } from "@/components/shared/action-button";
 import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
-const FILTERS = ["All", "Quoted", "Confirmed", "In progress", "This month"];
+const FILTERS = [
+  { id: "all", label: "All" },
+  { id: "quoted", label: "Quoted" },
+  { id: "confirmed", label: "Confirmed" },
+  { id: "progress", label: "In progress" },
+  { id: "month", label: "This month" },
+] as const;
+type FilterId = (typeof FILTERS)[number]["id"];
 
-export default async function BookingListPage() {
-  const bookings = await getRealBookings().catch(() => []);
-  const active = bookings.filter((b) => b.status !== "cancelled").length;
-  const awaiting = bookings.filter((b) => b.status === "quoted" || b.status === "inquiry").length;
+export default async function BookingListPage({ searchParams }: { searchParams: Promise<{ filter?: string | string[] }> }) {
+  const allBookings = await getRealBookings().catch(() => []);
+  const requestedFilter = (await searchParams).filter;
+  const filter = FILTERS.some((item) => item.id === requestedFilter) ? requestedFilter as FilterId : "all";
+  const monthParts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit" }).formatToParts(new Date()).map((part) => [part.type, part.value]));
+  const month = `${monthParts.year}-${monthParts.month}`;
+  const bookings = allBookings.filter((booking) => {
+    if (filter === "all") return true;
+    if (filter === "month") return booking.serviceDate.startsWith(month);
+    return booking.status === filter;
+  });
+  const active = allBookings.filter((b) => b.status !== "cancelled").length;
+  const awaiting = allBookings.filter((b) => b.status === "quoted" || b.status === "inquiry").length;
 
   return (
     <div className="p-10 pt-8">
@@ -31,20 +46,21 @@ export default async function BookingListPage() {
         </OperationCreateButton>
       </div>
 
-      <div className="mb-3.5 flex gap-2">
-        {FILTERS.map((f, i) => (
-          <ActionButton
-            key={f}
-            label={`Filter by ${f}`}
+      <div className="mb-3.5 flex flex-wrap gap-2">
+        {FILTERS.map((item) => (
+          <Link
+            key={item.id}
+            href={item.id === "all" ? "/booking/list" : `/booking/list?filter=${item.id}`}
+            aria-current={filter === item.id ? "page" : undefined}
             className={cn(
-              "h-8 rounded-pill border px-3.5 text-[13px] font-medium cursor-pointer",
-              i === 0
+              "inline-flex h-8 items-center rounded-pill border px-3.5 text-[13px] font-medium",
+              filter === item.id
                 ? "border-[var(--color-kahel-500)] bg-[var(--color-kahel-50)] text-[var(--color-kahel-700)]"
-                : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]"
+                : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]"
             )}
           >
-            {f}
-          </ActionButton>
+            {item.label}
+          </Link>
         ))}
       </div>
 
@@ -58,7 +74,7 @@ export default async function BookingListPage() {
         </div>
         {bookings.length === 0 && (
           <div className="px-[18px] py-12 text-center text-sm text-[var(--color-text-muted)]">
-            No bookings yet. The checkout form will populate this list.
+            {filter === "all" ? "No bookings yet. The checkout form will populate this list." : `No ${FILTERS.find((item) => item.id === filter)?.label.toLowerCase()} bookings found.`}
           </div>
         )}
         {bookings.map((b) => {
