@@ -18,7 +18,7 @@ export default function JsonLd() {
         logo: logoUrl,
         url: siteUrl,
         telephone: "+63 969 153 2992",
-        email: "hello@kahelstudio.com",
+        email: "hello[@]kahelstudio.com",
         priceRange: "₱₱",
         address: {
           "@type": "PostalAddress",

@@ -21,7 +21,7 @@ const inter = Inter({
 export function generateMetadata(): Metadata {
   const isProduction = String(process.env.APP_ENV) === "production";
   return {
-    title: "Kahel Studio",
+    title: "Kahel Studio | Creating Visual Experiences",
     description: "Photography studio in Tabaco City, Albay.",
     metadataBase: new URL(process.env.PUBLIC_SITE_URL ?? "https://kahelstudio.com"),
     robots: isProduction ? undefined : { index: false, follow: false },

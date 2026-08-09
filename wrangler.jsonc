@@ -12,7 +12,7 @@
     "dev": {
       "name": "kahelstudio-os-dev",
       "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "kahelstudio-os-dev" }],
-      "vars": { "APP_ENV": "development", "MEDIA_INFRASTRUCTURE_ENABLED": "false", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "false", "AUTH_REDIRECT_URL": "http://localhost:3000/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "http://localhost:3000/auth/callback", "PUBLIC_SITE_URL": "http://localhost:3000", "TURNSTILE_SITE_KEY": "1x00000000000000000000AA" }
+      "vars": { "APP_ENV": "development", "MEDIA_INFRASTRUCTURE_ENABLED": "false", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "true", "AUTH_REDIRECT_URL": "http://localhost:3000/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "http://localhost:3000/auth/callback", "PUBLIC_SITE_URL": "http://localhost:3000", "TURNSTILE_SITE_KEY": "1x00000000000000000000AA" }
     },
     "staging": {
       "name": "kahelstudio-os-staging",

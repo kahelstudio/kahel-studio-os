@@ -22,7 +22,7 @@ function isPublicPath(pathname: string) {
   return pathname === "/api/loyalty/redeem" || /^\/api\/client-portals\/[^/]+\/(access|activity|loyalty)$/.test(pathname);
 }
 
-// OpenNext currently requires Edge Middleware; Next 16 Node Proxy is not supported by the adapter.
+// OpenNext Cloudflare 1.20.2 does not support the Node.js runtime used by Next.js Proxy.
 export async function middleware(request: NextRequest) {
   if (process.env.APP_ENV && request.nextUrl.protocol === "http:") {
     const secureUrl = request.nextUrl.clone();
