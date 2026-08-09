@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { Download, TrendingUp, TriangleAlert, Plus } from "lucide-react";
 import { getPayrollOverview } from "@/lib/server/payroll-data";
 import { ActionButton } from "@/components/shared/action-button";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 function formatPHP(n: number) {
   return `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
@@ -43,9 +44,9 @@ export default async function PayrollOverviewPage() {
           <ActionButton label="Export payroll" className="flex h-10 items-center gap-1.5 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-sm font-semibold hover:border-[var(--color-border-strong)]">
             <Download className="h-4 w-4" /> Export
           </ActionButton>
-          <ActionButton label="Create pay run" className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+          <OperationCreateButton kind="payroll-run" className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
             <Plus className="h-4 w-4" /> Create pay run
-          </ActionButton>
+          </OperationCreateButton>
         </div>
       </div>
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { staffEmailAuthorized } from "@/lib/server/staff-auth";
+import { authenticationDisabled, staffEmailAuthorized } from "@/lib/server/staff-auth";
 import { POST as changePassword } from "@/app/api/staff/password-reset/route";
 
 describe("staff email authorization", () => {
@@ -9,6 +9,7 @@ describe("staff email authorization", () => {
     process.env.SUPABASE_PUBLISHABLE_KEY = "publishable-key";
     process.env.AUTH_REDIRECT_URL = "https://kahelstudio.com/reset-password";
     process.env.KAHEL_AUTH_DISABLED = "false";
+    (process.env.APP_ENV as string) = "test";
   });
 
   it("authorizes the Kahel Studio work domain", () => {
@@ -21,6 +22,12 @@ describe("staff email authorization", () => {
 
   it("rejects unrelated domains", () => {
     expect(staffEmailAuthorized("person@example.com")).toBe(false);
+  });
+
+  it("never disables authentication in production", () => {
+    (process.env.APP_ENV as string) = "production";
+    process.env.KAHEL_AUTH_DISABLED = "true";
+    expect(authenticationDisabled()).toBe(false);
   });
 
   it("requires an authenticated session to change a password", async () => {

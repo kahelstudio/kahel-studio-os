@@ -3,14 +3,8 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ActionButton } from "@/components/shared/action-button";
-
-const WEEKS = [
-  { label: "Week of 03 Aug", days: "Mon–Sat" },
-  { label: "Week of 10 Aug", days: "Mon–Sat" },
-  { label: "Week of 17 Aug", days: "Mon–Sat" },
-  { label: "Week of 24 Aug", days: "Mon–Sat" },
-] as const;
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
+import { FutureShifts } from "@/components/shiftboard/future-shifts";
 
 const LEGEND = [
   { label: "Studio Shoot", color: "#F2383A" },
@@ -36,9 +30,9 @@ export default function ShiftboardNextMonthPage() {
             Studio coverage and crew shifts looking ahead
           </p>
         </div>
-        <ActionButton label="New shift" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <OperationCreateButton kind="shift" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> New shift
-        </ActionButton>
+        </OperationCreateButton>
       </div>
 
       <div className="mt-5 flex items-center gap-1.5 rounded-control bg-[var(--color-surface-muted)] p-1 w-fit">
@@ -49,17 +43,7 @@ export default function ShiftboardNextMonthPage() {
         ))}
       </div>
 
-      <div className="mt-[22px] grid grid-cols-4 items-start gap-3.5">
-        {WEEKS.map((w) => (
-          <div key={w.label} className="min-h-[200px] rounded-card border border-[var(--color-border)] bg-[var(--color-canvas)] p-3">
-            <div className="mb-3 px-2 py-1">
-              <div className="font-display text-sm font-semibold text-[var(--color-text-primary)]">{w.label}</div>
-              <div className="mt-0.5 text-xs text-[var(--color-text-muted)]">{w.days}</div>
-            </div>
-            <div className="px-2 py-6 text-center text-xs text-[var(--color-text-muted)]">No shifts yet for next month</div>
-          </div>
-        ))}
-      </div>
+      <FutureShifts mode="month" />
 
       <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-[var(--color-border)] pt-4">
         <span className="text-xs font-semibold uppercase tracking-[0.06em] text-[var(--color-text-muted)]">Legend</span>

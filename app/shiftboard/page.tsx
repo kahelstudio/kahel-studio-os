@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { MapPin, Plus } from "lucide-react";
-import { SHIFT_DEFAULT, type ShiftEntry } from "@/lib/sample-data";
+import { type ShiftEntry } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
-import { ActionButton } from "@/components/shared/action-button";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 function getCurrentWeekMeta(): [string, string, boolean][] {
   const today = new Date();
@@ -26,7 +26,6 @@ function getMondayIso(): string {
   monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
   return monday.toISOString().slice(0, 10);
 }
-const STORAGE_KEY = "ks_shifts";
 
 const STAFF = [
   { name: "Eusebio", initials: "EB", role: "Lead photographer", tint: "#FF5300" },
@@ -47,36 +46,6 @@ const LEGEND = [
   { label: "Remote Work", color: "#3B82C4" },
 ] as const;
 
-function loadLocalShifts(): ShiftEntry[] | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || !parsed.length) return null;
-    return parsed.map(migrateTime);
-  } catch {
-    return null;
-  }
-}
-
-function migrateTime(shift: ShiftEntry): ShiftEntry {
-  const old = shift.time;
-  const m = old.match(/^(\d{1,2}):(\d{2})–(\d{1,2}):(\d{2})$/);
-  if (!m) return shift;
-  const startH = Number(m[1]);
-  const endH = Number(m[3]);
-  const startM = m[2];
-  const endM = m[4];
-  const fmt = (h: number, min: string) => {
-    if (h === 0 || h === 24) return `12:${min}AM`;
-    if (h < 12) return `${h}:${min}AM`;
-    if (h === 12) return `12:${min}PM`;
-    return `${h - 12}:${min}PM`;
-  };
-  return { ...shift, time: `${fmt(startH, startM)} – ${fmt(endH, endM)}` };
-}
-
 type ApiShiftRow = {
   id: string;
   dayOfWeek: number;
@@ -91,7 +60,7 @@ type ApiShiftRow = {
 function mapApiShift(s: ApiShiftRow): ShiftEntry {
   return {
     id: s.id,
-    d: s.dayOfWeek,
+    d: (s.dayOfWeek + 6) % 7,
     ini: s.initials,
     who: s.name,
     role: s.role,
@@ -107,36 +76,21 @@ export default function ShiftboardPage() {
   const [view, setView] = useState<"shift" | "production">("shift");
 
   useEffect(() => {
-    const local = loadLocalShifts();
-    if (local) {
-      queueMicrotask(() => setShifts(local));
-      return;
-    }
-
-    const weekStart = getMondayIso();
-    fetch(`/api/shifts?weekStart=${weekStart}`)
+    const load = () => fetch(`/api/shifts?weekStart=${getMondayIso()}`)
       .then((res) => res.json())
       .then((data) => {
         const rows = data as ApiShiftRow[];
-        if (Array.isArray(rows) && rows.length > 0) {
-          const mapped = rows.map(mapApiShift);
-          setShifts(mapped);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(mapped));
-        } else {
-          setShifts(SHIFT_DEFAULT);
-        }
+        setShifts(Array.isArray(rows) ? rows.map(mapApiShift) : []);
       })
-      .catch(() => {
-        const fallback = loadLocalShifts() ?? SHIFT_DEFAULT;
-        setShifts(fallback);
-      });
+      .catch(() => setShifts([]));
+    const created = (event: Event) => { if ((event as CustomEvent<{ kind: string }>).detail.kind === "shift") void load(); };
+    void load(); window.addEventListener("operation-created", created); return () => window.removeEventListener("operation-created", created);
   }, []);
 
   function moveToDay(dayIndex: number) {
     if (!dragId) return;
     const next = shifts.map((shift) => (shift.id === dragId ? { ...shift, d: dayIndex } : shift));
     setShifts(next);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
     setDragId(null);
   }
 
@@ -151,9 +105,9 @@ export default function ShiftboardPage() {
             Monitor staff schedules and production assignments.
           </p>
         </div>
-        <ActionButton label="New shift" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <OperationCreateButton kind="shift" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> New Shift
-        </ActionButton>
+        </OperationCreateButton>
       </div>
 
       <div className="mt-9 flex border-b border-[var(--color-border)]">

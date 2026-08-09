@@ -6,6 +6,7 @@ import { BOOKING_STATUS } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
 import { getRealBookings } from "@/lib/server/bookings-data";
 import { ActionButton } from "@/components/shared/action-button";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 const FILTERS = ["All", "Quoted", "Confirmed", "In progress", "This month"];
 
@@ -25,9 +26,9 @@ export default async function BookingListPage() {
             {active} active · {awaiting} awaiting confirmation
           </p>
         </div>
-        <ActionButton label="New booking form" className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <OperationCreateButton kind="booking" className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> New booking
-        </ActionButton>
+        </OperationCreateButton>
       </div>
 
       <div className="mb-3.5 flex gap-2">

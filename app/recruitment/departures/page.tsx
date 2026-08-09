@@ -5,6 +5,7 @@ import { getDepartures } from "@/lib/server/recruitment-data";
 import { OFFBOARDING_CHECKLIST } from "@/lib/sample-data";
 import { ProgressList } from "@/components/recruitment/progress-list";
 import type { ProgressPerson } from "@/components/recruitment/progress-list";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 function computeProgress(done: number, total: number): Pick<ProgressPerson, "pct" | "label" | "barColor" | "stBg" | "stColor" | "stLabel"> {
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -39,9 +40,9 @@ export default async function RecruitmentDeparturesPage() {
             Exit checklists, tracked to the final handover
           </p>
         </div>
-        <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <OperationCreateButton kind="offboarding" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> Start offboarding
-        </button>
+        </OperationCreateButton>
       </div>
 
       <ProgressList

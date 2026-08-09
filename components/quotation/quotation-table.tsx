@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react";
 import type { QuotationRow } from "@/lib/server/quotation-data";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 const STATUS_STYLES: Record<string, { bg: string; c: string; l: string }> = {
   draft: { bg: "var(--color-surface-muted)", c: "var(--color-text-primary)", l: "Draft" },
@@ -32,9 +33,9 @@ export function QuotationTable({
               : "Draft, send and track client quotes across the studio"}
           </p>
         </div>
-        <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <OperationCreateButton kind="quotation" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> New quotation
-        </button>
+        </OperationCreateButton>
       </div>
 
       <div className="mt-6 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">

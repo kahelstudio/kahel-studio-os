@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { Plus } from "lucide-react";
 import { getPayrollAdjustments } from "@/lib/server/payroll-data";
-import { ActionButton } from "@/components/shared/action-button";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 function formatPHP(n: number) {
   const sign = n < 0 ? "−" : "+";
@@ -32,9 +32,9 @@ export default async function PayrollAdjustmentsPage() {
             One-off earnings and deductions applied to a pay run
           </p>
         </div>
-        <ActionButton label="New payroll adjustment" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <OperationCreateButton kind="payroll-adjustment" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> New adjustment
-        </ActionButton>
+        </OperationCreateButton>
       </div>
 
       <div className="mt-6 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">

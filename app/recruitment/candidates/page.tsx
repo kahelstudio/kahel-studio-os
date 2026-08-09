@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { Plus } from "lucide-react";
 import { getRecruitmentCandidates } from "@/lib/server/recruitment-data";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 const REC_STAGES: Record<string, { label: string; bg: string; c: string }> = {
   applied: { label: "Applied", bg: "var(--color-surface-muted)", c: "var(--color-text-secondary)" },
@@ -24,9 +25,9 @@ export default async function RecruitmentCandidatesPage() {
             Everyone in the hiring pipeline right now
           </p>
         </div>
-        <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <OperationCreateButton kind="candidate" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> Add candidate
-        </button>
+        </OperationCreateButton>
       </div>
 
       <div className="mt-[26px] flex flex-col gap-3.5">

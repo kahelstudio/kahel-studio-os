@@ -9,10 +9,20 @@ export default function FeedbackReportPage() {
   const { fireToast } = useToast();
   const [kind, setKind] = useState<"problem" | "idea">("problem");
   const [text, setText] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
 
-  function send() {
-    fireToast("Report sent · thanks for flagging it", "success");
-    setText("");
+  async function send() {
+    if (pending) return;
+    if (text.trim().length < 10) { setError("Please include at least 10 characters so the team can act on the report."); return; }
+    setPending(true); setError("");
+    try {
+      const app = window.location.pathname.split("/").filter(Boolean)[0] ?? "OS";
+      const response = await fetch("/api/feedback/reports", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ kind, summary: text, app }) });
+      const result = await response.json().catch(() => ({})) as { error?: string }; if (!response.ok) throw new Error(result.error ?? "Unable to send the report.");
+      fireToast("Report sent · thanks for flagging it", "success"); setText("");
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Unable to send the report."); }
+    finally { setPending(false); }
   }
 
   return (
@@ -58,6 +68,7 @@ export default function FeedbackReportPage() {
             placeholder="The balance shown on the Reyes booking doesn't match the deposit I recorded this morning…"
             className="min-h-[120px] w-full resize-none rounded-control border border-[var(--color-border)] p-3.5 text-sm outline-none placeholder:text-[var(--color-text-muted)]"
           />
+          {error ? <p className="mt-2 text-sm text-[var(--color-danger-text)]" role="alert">{error}</p> : null}
 
           <div className="mt-4 flex items-center gap-2.5 rounded-control border border-[var(--color-border)] bg-[var(--color-canvas)] px-3.5 py-3 text-xs text-[var(--color-text-secondary)]">
             <Info className="h-4 w-4 shrink-0" strokeWidth={1.75} />
@@ -66,9 +77,10 @@ export default function FeedbackReportPage() {
 
           <button
             onClick={send}
+            disabled={pending}
             className="mt-[18px] h-12 w-full rounded-control bg-[var(--color-kahel-500)] text-[15px] font-semibold text-white hover:bg-[var(--color-kahel-600)]"
           >
-            Send report
+            {pending ? "Sending..." : "Send report"}
           </button>
         </div>
       </div>

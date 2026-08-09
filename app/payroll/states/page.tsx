@@ -3,6 +3,7 @@
 import { AlertTriangle, Clock, Download, Info, Lock, RefreshCw } from "lucide-react";
 import { PAYROLL_STATES, PAYROLL_STATUS_CHIPS } from "@/lib/sample-data";
 import { useToast } from "@/components/toast/toast-provider";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 const ICONS = [Clock, AlertTriangle, AlertTriangle, RefreshCw, Clock, AlertTriangle, AlertTriangle, Lock, Lock, RefreshCw, Info, Download];
 
@@ -56,12 +57,7 @@ export default function PayrollStatesPage() {
               </div>
               <div className="mt-3.5 font-display text-base font-semibold">{s.title}</div>
               <p className="mt-1.5 flex-1 text-[13px] leading-[1.5] text-[var(--color-text-secondary)]">{s.what}</p>
-              <button
-                onClick={() => fireToast(s.action)}
-                className="mt-4 self-start rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-[13px] font-semibold hover:border-[var(--color-kahel-700)] hover:text-[var(--color-kahel-700)]"
-              >
-                {s.action}
-              </button>
+              {s.action === "Record remittance" ? <OperationCreateButton kind="remittance" className="mt-4 self-start rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-[13px] font-semibold hover:border-[var(--color-kahel-700)] hover:text-[var(--color-kahel-700)]">{s.action}</OperationCreateButton> : s.action === "Create a correction" ? <OperationCreateButton kind="payroll-correction" className="mt-4 self-start rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-[13px] font-semibold hover:border-[var(--color-kahel-700)] hover:text-[var(--color-kahel-700)]">{s.action}</OperationCreateButton> : <button onClick={() => fireToast(s.action)} className="mt-4 self-start rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 py-2 text-[13px] font-semibold hover:border-[var(--color-kahel-700)] hover:text-[var(--color-kahel-700)]">{s.action}</button>}
             </div>
           );
         })}

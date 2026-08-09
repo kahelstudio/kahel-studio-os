@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MoreHorizontal, Plus, Save, X } from "lucide-react";
 import { POS_CATALOGS, type CatalogItem } from "@/lib/sample-data";
+import { useToast } from "@/components/toast/toast-provider";
 
 const inputClass =
   "h-9 w-full rounded-control border border-[var(--color-border-strong)] bg-[var(--color-surface)] px-2 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-kahel-500)] focus:ring-2 focus:ring-[var(--color-kahel-100)]";
@@ -13,39 +14,29 @@ export function CatalogView({
   catalogKey: keyof typeof POS_CATALOGS;
 }) {
   const catalog = POS_CATALOGS[catalogKey];
-  const storageKey = `ks_pos_catalog_${catalogKey}`;
-  const [items, setItems] = useState<CatalogItem[]>(() => {
-    if (typeof window === "undefined") return catalog.data;
-
-    const saved = window.localStorage.getItem(storageKey);
-    return saved ? (JSON.parse(saved) as CatalogItem[]) : catalog.data;
-  });
+  const { fireToast } = useToast();
+  const [items, setItems] = useState<CatalogItem[]>(catalog.data);
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [draft, setDraft] = useState<CatalogItem | null>(null);
   const hasQty = items.some((item) => item.qty);
 
-  function saveItems(next: CatalogItem[]) {
-    setItems(next);
-    window.localStorage.setItem(storageKey, JSON.stringify(next));
-  }
+  useEffect(() => { fetch(`/api/pos/catalog-items?key=${encodeURIComponent(catalogKey)}`).then(async (response) => await response.json() as { items?: Array<{ code: string; name: string; detail: string | null; price: number; quantity_info: string | null }> }).then((result) => { if (result.items?.length) setItems(result.items.map((item) => ({ code: item.code, name: item.name, detail: item.detail ?? "", price: `₱${Number(item.price).toLocaleString("en-PH")}`, ...(item.quantity_info ? { qty: item.quantity_info } : {}) }))); }).catch(() => {}); }, [catalogKey]);
 
   function startEditing(item: CatalogItem) {
     setEditingCode(item.code);
     setDraft({ ...item });
   }
 
-  function saveEdit() {
+  async function saveEdit() {
     if (!editingCode || !draft || !draft.code.trim() || !draft.name.trim()) return;
-
-    saveItems(
-      items.map((item) =>
-        item.code === editingCode
-          ? { ...draft, code: draft.code.trim(), name: draft.name.trim() }
-          : item,
-      ),
-    );
-    setEditingCode(null);
-    setDraft(null);
+    const numericPrice = Number(draft.price.replace(/[^0-9.]/g, ""));
+    try {
+      const response = await fetch("/api/pos/catalog-items", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ catalogKey, catalogTitle: catalog.title, catalogSubtitle: catalog.sub, unitLabel: catalog.unit, originalCode: editingCode, code: draft.code, name: draft.name, detail: draft.detail, price: numericPrice, quantityInfo: draft.qty }) });
+      const result = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(result.error ?? "Unable to save item.");
+      setItems((current) => current.map((item) => item.code === editingCode ? { ...draft, code: draft.code.trim(), name: draft.name.trim(), price: `₱${numericPrice.toLocaleString("en-PH")}` } : item));
+      setEditingCode(null); setDraft(null); fireToast("Catalog item saved.", "success");
+    } catch (error) { fireToast(error instanceof Error ? error.message : "Unable to save item.", "danger"); }
   }
 
   function addItem() {
@@ -57,7 +48,7 @@ export function CatalogView({
       ...(hasQty ? { qty: "0 available" } : {}),
     };
 
-    saveItems([...items, item]);
+    setItems([...items, item]);
     startEditing(item);
   }
 

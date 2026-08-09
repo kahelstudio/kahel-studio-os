@@ -8,6 +8,7 @@ import { getAccountById } from "@/lib/server/crm-data";
 import { BOOKING_STATUS } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
 import { ActionButton } from "@/components/shared/action-button";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 function initials(name: string) {
   return name
@@ -104,9 +105,9 @@ export default async function CrmAccountDetailPage({
           <ActionButton label="Edit account" className="h-[38px] rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-sm font-semibold text-[var(--color-text-primary)]">
             Edit
           </ActionButton>
-          <ActionButton label="New booking" className="h-[38px] rounded-control bg-[var(--color-kahel-500)] px-3.5 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+          <OperationCreateButton kind="booking" defaults={{ clientName: account.name, phone: detail.contacts[0]?.mobile ?? "", email: detail.contacts[0]?.email ?? "" }} className="h-[38px] rounded-control bg-[var(--color-kahel-500)] px-3.5 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
             New booking
-          </ActionButton>
+          </OperationCreateButton>
         </div>
       </div>
 

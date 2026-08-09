@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CalendarDays,
   ChevronDown,
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/toast/toast-provider";
 import { REPORTING_PERIOD } from "@/lib/reporting-sample-data";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 const metrics = [
   { label: "Revenue growth", value: "—", change: "No data yet", color: "#CECBC5", points: "0,40 25,40 50,40 75,40 100,40" },
@@ -29,13 +30,18 @@ const categories = [
   ["Annual reports", "Yearly business performance", "0", "#FFF1CC", "#8A6D00"],
 ] as const;
 
-const reports: { name: string; meta: string }[] = [];
-
 export function ReportsClient() {
   const { fireToast } = useToast();
   const [period, setPeriod] = useState("Last 30 days");
   const [type, setType] = useState("All types");
+  const [reports, setReports] = useState<{ name: string; meta: string }[]>([]);
   const visibleReports = reports;
+
+  useEffect(() => {
+    const load = () => { fetch("/api/operations/report").then(async (response) => response.ok ? await response.json() as { reports?: Array<{ name: string; source: string; period: string; schedule: string }> } : null).then((result) => setReports(result?.reports?.map((report) => ({ name: report.name, meta: `${report.source} · ${report.period} · ${report.schedule}` })) ?? [])).catch(() => {}); };
+    const created = (event: Event) => { if ((event as CustomEvent<{ kind: string }>).detail.kind === "report") load(); };
+    load(); window.addEventListener("operation-created", created); return () => window.removeEventListener("operation-created", created);
+  }, []);
 
   function exportReport(name: string) {
     fireToast(`${name} is being prepared for download.`, "success");
@@ -48,7 +54,7 @@ export function ReportsClient() {
           <h1 className="font-display text-[30px] font-semibold tracking-[-0.025em] sm:text-[34px]">Reports</h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">Access and download your studio reports and statements.</p>
         </div>
-        <button onClick={() => fireToast("Custom report builder opened.", "info")} className="flex h-11 items-center justify-center gap-2 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]"><Plus className="h-4 w-4" /> Create report</button>
+        <OperationCreateButton kind="report" className="flex h-11 items-center justify-center gap-2 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]"><Plus className="h-4 w-4" /> Create report</OperationCreateButton>
       </header>
 
       <section className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -82,7 +88,7 @@ export function ReportsClient() {
             <Sparkles className="h-5 w-5 text-[var(--color-kahel-200)]" />
             <h2 className="mt-5 font-display text-2xl font-semibold tracking-[-0.02em]">Generate a custom report</h2>
             <p className="mt-2 max-w-lg text-sm leading-5 text-white/80">Build a focused report with your own date range, categories, and delivery schedule.</p>
-            <button onClick={() => fireToast("Custom report builder opened.", "info")} className="mt-5 h-11 rounded-control bg-white px-4 text-sm font-semibold text-[#00575c] hover:bg-[var(--color-surface-muted)]">Create report</button>
+            <OperationCreateButton kind="report" className="mt-5 h-11 rounded-control bg-white px-4 text-sm font-semibold text-[#00575c] hover:bg-[var(--color-surface-muted)]">Create report</OperationCreateButton>
           </section>
         </div>
 

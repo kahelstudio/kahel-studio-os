@@ -3,6 +3,7 @@ import { getSupabaseAuthClient } from "@/lib/server/supabase-admin";
 import { IS_PRODUCTION, staffEmailAuthorized, STAFF_REFRESH_COOKIE, STAFF_SESSION_COOKIE } from "@/lib/server/staff-auth";
 
 export const runtime = "nodejs";
+const MFA_REMEMBER_COOKIE = "kahel_staff_mfa_remember";
 
 function accessToken(request: Request) {
   const encoded = request.headers.get("cookie")?.match(new RegExp(`(?:^|; )${STAFF_SESSION_COOKIE}=([^;]+)`))?.[1];
@@ -41,7 +42,8 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   const client = await authenticatedClient(request);
   if (!client) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  const body = await request.json() as { factorId?: unknown; code?: unknown };
+  let body: { factorId?: unknown; code?: unknown };
+  try { body = await request.json() as typeof body; } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   if (typeof body.code !== "string" || !/^\d{6}$/.test(body.code)) return NextResponse.json({ error: "Enter the 6-digit authentication code." }, { status: 400 });
   let factorId = typeof body.factorId === "string" ? body.factorId : "";
   if (!factorId) {
@@ -54,14 +56,17 @@ export async function PUT(request: Request) {
   const response = NextResponse.json({ verified: true });
   const secure = { httpOnly: true, sameSite: "lax" as const, secure: IS_PRODUCTION, path: "/" };
   response.cookies.set(STAFF_SESSION_COOKIE, data.access_token, { ...secure, maxAge: data.expires_in });
-  response.cookies.set(STAFF_REFRESH_COOKIE, data.refresh_token, { ...secure, maxAge: 60 * 60 * 24 * 30 });
+  const rememberMfa = request.headers.get("cookie")?.match(new RegExp(`(?:^|; )${MFA_REMEMBER_COOKIE}=([^;]+)`))?.[1];
+  if (rememberMfa === "1") response.cookies.set(STAFF_REFRESH_COOKIE, data.refresh_token, { ...secure, maxAge: 60 * 60 * 24 * 30 });
+  if (rememberMfa) response.cookies.set(MFA_REMEMBER_COOKIE, "", { ...secure, maxAge: 0 });
   return response;
 }
 
 export async function DELETE(request: Request) {
   const client = await authenticatedClient(request);
   if (!client) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  const body = await request.json() as { factorId?: unknown };
+  let body: { factorId?: unknown };
+  try { body = await request.json() as typeof body; } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   if (typeof body.factorId !== "string") return NextResponse.json({ error: "Authenticator not found." }, { status: 400 });
   const { error } = await client.auth.mfa.unenroll({ factorId: body.factorId });
   return error ? NextResponse.json({ error: "Verify with your authenticator before disabling two-factor authentication." }, { status: 400 }) : NextResponse.json({ enabled: false });

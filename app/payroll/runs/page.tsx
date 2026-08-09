@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 
 import { Plus } from "lucide-react";
 import { getPayrollRuns } from "@/lib/server/payroll-data";
-import { ActionButton } from "@/components/shared/action-button";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 function formatPHP(n: number) {
   return `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
@@ -34,9 +34,9 @@ export default async function PayrollRunsPage() {
             Every payroll cycle, current and historical
           </p>
         </div>
-        <ActionButton label="Create pay run" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <OperationCreateButton kind="payroll-run" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> Create pay run
-        </ActionButton>
+        </OperationCreateButton>
       </div>
 
       <div className="mt-6 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">

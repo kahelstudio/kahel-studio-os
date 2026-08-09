@@ -7,9 +7,13 @@ import { useToast } from "@/components/toast/toast-provider";
 
 export function NewAccountButton() {
   const [open, setOpen] = useState(false);
+  const [allowed, setAllowed] = useState(false);
   const router = useRouter();
   const { fireToast } = useToast();
 
+  useEffect(() => { fetch("/api/staff/me").then(async (response) => response.ok ? await response.json() as { permissions?: string[] } : null).then((data) => setAllowed(Boolean(data?.permissions?.includes("bookings.manage")))).catch(() => setAllowed(false)); }, []);
+  useEffect(() => { if (allowed && new URLSearchParams(window.location.search).get("create") === "account") queueMicrotask(() => setOpen(true)); }, [allowed]);
+  if (!allowed) return null;
   return <><button type="button" onClick={() => setOpen(true)} className="flex min-h-11 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]"><Plus className="h-4 w-4" /> New account</button>{open && <NewAccountDialog onClose={() => setOpen(false)} onCreated={(id) => { setOpen(false); fireToast("Account created.", "success"); router.push(`/crm/accounts/${id}`); router.refresh(); }} />}</>;
 }
 

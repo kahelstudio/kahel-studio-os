@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, ChevronRight, ShoppingCart, Users, X } from "lucide-react";
 import { ACCENTS } from "@/lib/apps-config";
@@ -10,7 +10,7 @@ const ITEMS = [
     id: "booking",
     title: "New booking",
     description: "Start an inquiry or quote",
-    href: "/booking/list",
+    href: "/booking/list?create=booking",
     icon: Camera,
     accent: ACCENTS.orange,
   },
@@ -18,7 +18,7 @@ const ITEMS = [
     id: "account",
     title: "New account",
     description: "Corporate or consumer",
-    href: "/crm/accounts",
+    href: "/crm/accounts?create=account",
     icon: Users,
     accent: ACCENTS.indigo,
   },
@@ -34,6 +34,9 @@ const ITEMS = [
 
 export function QuickCreateSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const router = useRouter();
+  const [canManageBookings, setCanManageBookings] = useState(false);
+
+  useEffect(() => { fetch("/api/staff/me").then(async (response) => response.ok ? await response.json() as { permissions?: string[] } : null).then((data) => setCanManageBookings(Boolean(data?.permissions?.includes("bookings.manage")))).catch(() => setCanManageBookings(false)); }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -68,7 +71,7 @@ export function QuickCreateSheet({ open, onClose }: { open: boolean; onClose: ()
           </button>
         </div>
         <div className="flex flex-col gap-3 p-4">
-          {ITEMS.map((item) => (
+          {ITEMS.filter((item) => canManageBookings || (item.id !== "booking" && item.id !== "account")).map((item) => (
             <button
               key={item.id}
               onClick={() => {

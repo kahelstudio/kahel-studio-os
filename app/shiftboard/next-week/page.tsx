@@ -3,16 +3,8 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ActionButton } from "@/components/shared/action-button";
-
-const DAYS = [
-  ["Mon", "28"],
-  ["Tue", "29"],
-  ["Wed", "30"],
-  ["Thu", "31"],
-  ["Fri", "01"],
-  ["Sat", "02"],
-] as const;
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
+import { FutureShifts } from "@/components/shiftboard/future-shifts";
 
 const LEGEND = [
   { label: "Studio Shoot", color: "#F2383A" },
@@ -38,9 +30,9 @@ export default function ShiftboardNextWeekPage() {
             Studio coverage and crew shifts for next week
           </p>
         </div>
-        <ActionButton label="New shift" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <OperationCreateButton kind="shift" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> New shift
-        </ActionButton>
+        </OperationCreateButton>
       </div>
 
       <div className="mt-5 flex items-center gap-1.5 rounded-control bg-[var(--color-surface-muted)] p-1 w-fit">
@@ -51,17 +43,7 @@ export default function ShiftboardNextWeekPage() {
         ))}
       </div>
 
-      <div className="mt-[22px] grid grid-cols-6 items-start gap-3.5">
-        {DAYS.map(([day, date]) => (
-          <div key={day} className="min-h-[200px] rounded-card border border-[var(--color-border)] bg-[var(--color-canvas)] p-3">
-            <div className="mb-3 flex items-baseline gap-1.5 px-2 py-1">
-              <span className="font-display text-sm font-semibold text-[var(--color-text-primary)]">{day}</span>
-              <span className="text-xs text-[var(--color-text-muted)]">{date}</span>
-            </div>
-            <div className="px-2 py-6 text-center text-xs text-[var(--color-text-muted)]">No shifts yet for next week</div>
-          </div>
-        ))}
-      </div>
+      <FutureShifts mode="week" />
 
       <div className="mt-6 flex flex-wrap items-center gap-4 border-t border-[var(--color-border)] pt-4">
         <span className="text-xs font-semibold uppercase tracking-[0.06em] text-[var(--color-text-muted)]">Legend</span>

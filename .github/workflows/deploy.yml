@@ -125,6 +125,10 @@ jobs:
         with: { node-version: 22, cache: "npm" }
       - run: npm ci
       - run: |
+          if [[ "$SUPABASE_PROJECT_REF" != "oscoovosnnuqsuhevmia" ]]; then
+            echo "Refusing to seed an unapproved Supabase project."
+            exit 1
+          fi
           npx supabase link \
             --project-ref "$SUPABASE_PROJECT_REF" \
             --password "$SUPABASE_DB_PASSWORD"

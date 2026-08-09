@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react";
 import type { MaintenanceRecord } from "@/lib/server/maintenance-data";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 const STATUS_STYLES: Record<string, { bg: string; c: string; l: string }> = {
   reported: { bg: "var(--color-danger-bg)", c: "var(--color-danger-text)", l: "Reported" },
@@ -33,9 +34,9 @@ export function MaintenanceTable({
               : "Recurring studio & equipment upkeep — a staff task is raised as each item nears its due date"}
           </p>
         </div>
-        <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <OperationCreateButton kind="maintenance" defaults={{ status: historyOnly ? "completed" : "reported" }} className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> New item
-        </button>
+        </OperationCreateButton>
       </div>
 
       <div className="mt-6 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">

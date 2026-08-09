@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { Plus } from "lucide-react";
 import { getCampaigns, getMarketingKpis } from "@/lib/server/marketing-data";
 import { KpiStrip } from "@/components/finance/kpi-strip";
-import { ActionButton } from "@/components/shared/action-button";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 const MKT_STATUS: Record<string, { bg: string; c: string; label: string }> = {
   live: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "Live" },
@@ -32,9 +32,9 @@ export default async function MarketingCampaignsPage() {
             Spend, reach, and the bookings each channel actually drove
           </p>
         </div>
-        <ActionButton label="New campaign" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <OperationCreateButton kind="campaign" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> New campaign
-        </ActionButton>
+        </OperationCreateButton>
       </div>
 
       <KpiStrip kpis={kpiItems} />

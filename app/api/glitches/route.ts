@@ -15,7 +15,8 @@ function glitchReference() {
 export async function POST(request: Request) {
   const principal = await getStaffPrincipal(request);
   if (!principal?.userId) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  const body = await request.json() as { title?: unknown; area?: unknown; severity?: unknown };
+  let body: { title?: unknown; area?: unknown; severity?: unknown };
+  try { body = await request.json() as typeof body; } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   const title = typeof body.title === "string" ? body.title.trim().replace(/\s+/g, " ") : "";
   const area = typeof body.area === "string" ? body.area.trim().replace(/\s+/g, " ") : "";
   const severity = typeof body.severity === "string" ? body.severity : "";

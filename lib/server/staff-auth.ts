@@ -20,7 +20,8 @@ type AuthConfig = {
 };
 
 export function authenticationDisabled() {
-  return process.env.KAHEL_AUTH_DISABLED === "true";
+  const environment = process.env.APP_ENV as string | undefined;
+  return environment !== "production" && process.env.NODE_ENV !== "production" && process.env.KAHEL_AUTH_DISABLED === "true";
 }
 
 function config(): AuthConfig | null {
@@ -74,7 +75,7 @@ export type StaffPrincipal = {
 
 export async function getStaffPrincipal(request: Request): Promise<StaffPrincipal | null> {
   if (authenticationDisabled()) {
-    return { userId: null, email: "development@kahel.local", role: "super_admin", permissions: ["loyalty.read", "loyalty.issue", "loyalty.correct_progress", "loyalty.exclude_booking", "loyalty.restore_booking", "loyalty.cancel_reward", "loyalty.reinstate_reward", "loyalty.redeem_reward", "loyalty.resend", "galleries.read", "galleries.manage", "galleries.publish"], accessToken: null };
+    return { userId: null, email: "development@kahel.local", role: "super_admin", permissions: ["bookings.manage", "loyalty.read", "loyalty.issue", "loyalty.correct_progress", "loyalty.exclude_booking", "loyalty.restore_booking", "loyalty.cancel_reward", "loyalty.reinstate_reward", "loyalty.redeem_reward", "loyalty.resend", "galleries.read", "galleries.manage", "galleries.publish"], accessToken: null };
   }
   const settings = config();
   const accessToken = accessTokenFromRequest(request);
@@ -83,7 +84,7 @@ export async function getStaffPrincipal(request: Request): Promise<StaffPrincipa
   const user = data.user;
   if (error || !user?.email || !isStaffEmail(user.email, settings)) return null;
   const assurance = await client(settings, accessToken).auth.mfa.getAuthenticatorAssuranceLevel();
-  if (!assurance.error && assurance.data.nextLevel === "aal2" && assurance.data.currentLevel !== "aal2") return null;
+  if (assurance.error || (assurance.data.nextLevel === "aal2" && assurance.data.currentLevel !== "aal2")) return null;
 
   const admin = getSupabaseAdmin();
   let { data: profile, error: profileError } = await admin.from("staff_profiles")
@@ -129,6 +130,7 @@ export async function getStaffPrincipal(request: Request): Promise<StaffPrincipa
     }
   }
   const permissions = ["loyalty.read"];
+  if (profile.role !== "staff" || profile.can_manage_bookings) permissions.push("bookings.manage");
   if (profile.role !== "staff" || profile.can_manage_loyalty) permissions.push("loyalty.correct_progress", "loyalty.exclude_booking", "loyalty.restore_booking", "loyalty.resend");
   if (profile.role !== "staff" || profile.can_manage_rewards) permissions.push("loyalty.issue", "loyalty.cancel_reward", "loyalty.reinstate_reward", "loyalty.redeem_reward");
   if (profile.role !== "staff" || profile.can_manage_galleries) permissions.push("galleries.read", "galleries.manage");
@@ -159,7 +161,10 @@ export async function requestPasswordReset(email: string) {
     const { error } = await client(settings).auth.resetPasswordForEmail(normalized, { redirectTo: settings.redirectUrl });
     return !error;
   }
-  const user = users.data.users.find((item) => item.user_metadata?.recovery_email?.toLowerCase() === normalized && isStaffEmail(item.email, settings));
+  const recovery = await admin.from("staff_recovery_emails").select("staff_id").eq("recovery_email", normalized).maybeSingle<{ staff_id: string }>();
+  if (recovery.error || !recovery.data) return false;
+  const recoveryStaffId = recovery.data.staff_id;
+  const user = users.data.users.find((item) => item.id === recoveryStaffId && isStaffEmail(item.email, settings));
   if (!user?.email) return false;
   const link = await admin.auth.admin.generateLink({ type: "recovery", email: user.email, options: { redirectTo: settings.redirectUrl } });
   if (link.error) return false;
@@ -200,6 +205,10 @@ export async function tryRefreshStaffSession(request: Request) {
   if (!refreshToken) return null;
   const { data, error } = await client(settings).auth.refreshSession({ refresh_token: refreshToken });
   if (error || !data.session || !data.user?.email || !isStaffEmail(data.user.email, settings)) return null;
+  const assurance = await client(settings, data.session.access_token).auth.mfa.getAuthenticatorAssuranceLevel();
+  if (assurance.error || (assurance.data.nextLevel === "aal2" && assurance.data.currentLevel !== "aal2")) return null;
+  const profile = await getSupabaseAdmin().from("staff_profiles").select("active").eq("user_id", data.user.id).maybeSingle<{ active: boolean }>();
+  if (profile.error || !profile.data?.active) return null;
   return data.session;
 }
 

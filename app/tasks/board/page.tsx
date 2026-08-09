@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CalendarDays, Ellipsis, LayoutList, ListChecks, Plus, Share2, Users, X } from "lucide-react";
 import { useToast } from "@/components/toast/toast-provider";
 
@@ -47,6 +47,7 @@ export default function TasksBoardPage() {
   const [view, setView] = useState("Kanban");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [editor, setEditor] = useState<{ task?: Task; draft: TaskDraft } | null>(null);
+  const savingTask = useRef(false);
 
   useEffect(() => {
     fetch("/api/tasks")
@@ -55,20 +56,24 @@ export default function TasksBoardPage() {
       .catch(() => {});
   }, []);
 
-  function saveTask(draft: TaskDraft) {
-    if (!draft.title.trim()) return;
-    if (editor?.task) {
-      setTasks((current) => current.map((task) => task.id === editor.task?.id ? { ...task, ...draft, title: draft.title.trim() } : task));
-      fireToast("Task updated.", "success");
-    } else {
-      setTasks((current) => [...current, { ...draft, id: crypto.randomUUID(), title: draft.title.trim() }]);
-      fireToast("Task created.", "success");
-    }
-    setEditor(null);
+  async function saveTask(draft: TaskDraft) {
+    if (!draft.title.trim() || savingTask.current) return;
+    savingTask.current = true;
+    try {
+      const response = await fetch("/api/tasks", { method: editor?.task ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editor?.task?.id, ...draft, title: draft.title.trim() }) });
+      const result = await response.json().catch(() => ({})) as { id?: string; error?: string }; if (!response.ok || (!editor?.task && !result.id)) throw new Error(result.error ?? "Unable to save task.");
+      if (editor?.task) setTasks((current) => current.map((task) => task.id === editor.task?.id ? { ...task, ...draft, title: draft.title.trim() } : task));
+      else setTasks((current) => [...current, { ...draft, id: result.id!, title: draft.title.trim() }]);
+      fireToast(editor?.task ? "Task updated." : "Task created.", "success"); setEditor(null);
+    } catch (error) { fireToast(error instanceof Error ? error.message : "Unable to save task.", "danger"); }
+    finally { savingTask.current = false; }
   }
 
-  function moveTask(taskId: string, status: Status) {
+  async function moveTask(taskId: string, status: Status) {
+    const previous = tasks.find((task) => task.id === taskId)?.status;
     setTasks((current) => current.map((task) => task.id === taskId ? { ...task, status } : task));
+    const response = await fetch("/api/tasks", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: taskId, status }) });
+    if (!response.ok) { setTasks((current) => current.map((task) => task.id === taskId ? { ...task, status: previous ?? task.status } : task)); fireToast("Unable to move the task.", "danger"); return; }
     fireToast(`Task moved to ${statuses.find((item) => item.key === status)?.label}.`, "success");
   }
 

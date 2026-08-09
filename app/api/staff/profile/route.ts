@@ -15,7 +15,8 @@ export async function PATCH(request: Request) {
   const principal = await getStaffPrincipal(request);
   if (!principal?.userId) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
 
-  const body = await request.json() as { displayName?: unknown };
+  let body: { displayName?: unknown };
+  try { body = await request.json() as typeof body; } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   const displayName = typeof body.displayName === "string" ? body.displayName.trim().replace(/\s+/g, " ") : "";
   if (displayName.length < 2 || displayName.length > 100) {
     return NextResponse.json({ error: "Display name must be between 2 and 100 characters." }, { status: 400 });

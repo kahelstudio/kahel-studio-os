@@ -210,6 +210,12 @@ export async function getExpenses(): Promise<ExpenseRow[]> {
   try {
     const admin = getSupabaseAdmin();
 
+    let recordedExpenses: ExpenseRow[] = [];
+    try {
+      const { data: recorded, error } = await admin.from("expenses").select("id,reference,category,description,expense_date,amount_php").order("expense_date", { ascending: false }).limit(500);
+      if (!error) recordedExpenses = (recorded ?? []).map((item) => ({ id: item.id, ref: item.reference, category: item.category, type: "Recorded", description: item.description, amount: item.amount_php, date: item.expense_date, status: "recorded" }));
+    } catch {}
+
     let maintenanceExpenses: ExpenseRow[] = [];
     try {
       const { data: maintenance, error: mError } = await admin
@@ -226,7 +232,7 @@ export async function getExpenses(): Promise<ExpenseRow[]> {
           category: "Maintenance",
           type: m.maintenance_type,
           description: m.task,
-          amount: Number(m.estimated_cost) ?? 0,
+          amount: Math.round((Number(m.estimated_cost) || 0) * 100),
           date: m.created_at?.split("T")[0] ?? "",
           status: m.status,
         }));
@@ -248,14 +254,14 @@ export async function getExpenses(): Promise<ExpenseRow[]> {
           category: "Payroll",
           type: "Salary",
           description: p.period_label,
-          amount: Number(p.gross_total) ?? 0,
+          amount: Math.round((Number(p.gross_total) || 0) * 100),
           date: p.created_at?.split("T")[0] ?? "",
           status: p.status,
         }));
       }
     } catch {}
 
-    return [...maintenanceExpenses, ...payrollExpenses]
+    return [...recordedExpenses, ...maintenanceExpenses, ...payrollExpenses]
       .sort((a, b) => b.date.localeCompare(a.date));
   } catch (error) {
     console.error("getExpenses: table not available", (error as Error).message);

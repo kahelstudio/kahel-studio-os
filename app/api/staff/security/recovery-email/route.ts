@@ -8,56 +8,61 @@ export const runtime = "nodejs";
 const validEmail = (value: string) => value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 const hashCode = async (userId: string, code: string) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${userId}:${code}`)))].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 
-async function userFor(request: Request) {
+async function currentStaff(request: Request) {
   const principal = await getStaffPrincipal(request);
   if (!principal?.userId) return null;
-  const admin = getSupabaseAdmin();
-  const { data, error } = await admin.auth.admin.getUserById(principal.userId);
-  return !error && data.user ? { principal, user: data.user, admin } : null;
+  return { principal, admin: getSupabaseAdmin() };
 }
 
 export async function GET(request: Request) {
-  const current = await userFor(request);
+  const current = await currentStaff(request);
   if (!current) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  const recoveryEmail = typeof current.user.user_metadata?.recovery_email === "string" ? current.user.user_metadata.recovery_email : null;
-  return NextResponse.json({ recoveryEmail });
+  const result = await current.admin.from("staff_recovery_emails").select("recovery_email").eq("staff_id", current.principal.userId!).maybeSingle<{ recovery_email: string | null }>();
+  if (result.error) return NextResponse.json({ error: "Unable to load the recovery email." }, { status: 500 });
+  return NextResponse.json({ recoveryEmail: result.data?.recovery_email ?? null });
 }
 
 export async function POST(request: Request) {
-  const current = await userFor(request);
+  const current = await currentStaff(request);
   if (!current) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  const body = await request.json() as { email?: unknown };
+  let body: { email?: unknown };
+  try { body = await request.json() as typeof body; } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-  if (!validEmail(email) || email === current.user.email?.toLowerCase()) return NextResponse.json({ error: "Enter a different valid recovery email." }, { status: 400 });
+  if (!validEmail(email) || email === current.principal.email.toLowerCase()) return NextResponse.json({ error: "Enter a different valid recovery email." }, { status: 400 });
+
   const code = String(crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000).padStart(6, "0");
-  const metadata = { ...current.user.user_metadata, pending_recovery_email: email, recovery_email_code_hash: await hashCode(current.principal.userId!, code), recovery_email_code_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString() };
-  const updated = await current.admin.auth.admin.updateUserById(current.principal.userId!, { user_metadata: metadata });
-  if (updated.error) return NextResponse.json({ error: "Unable to start recovery email verification." }, { status: 500 });
+  const pending = await current.admin.from("staff_recovery_emails").upsert({
+    staff_id: current.principal.userId!,
+    pending_email: email,
+    verification_code_hash: await hashCode(current.principal.userId!, code),
+    verification_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    updated_at: new Date().toISOString(),
+  });
+  if (pending.error) return NextResponse.json({ error: pending.error.code === "23505" ? "That recovery email is already in use." : "Unable to start recovery email verification." }, { status: pending.error.code === "23505" ? 409 : 500 });
   if (!await sendRecoveryEmailCode(email, code)) {
-    await current.admin.auth.admin.updateUserById(current.principal.userId!, { user_metadata: { ...metadata, pending_recovery_email: null, recovery_email_code_hash: null, recovery_email_code_expires_at: null } });
+    await current.admin.from("staff_recovery_emails").update({ pending_email: null, verification_code_hash: null, verification_expires_at: null, updated_at: new Date().toISOString() }).eq("staff_id", current.principal.userId!);
     return NextResponse.json({ error: "Unable to send the verification email." }, { status: 503 });
   }
   return NextResponse.json({ verificationRequired: true });
 }
 
 export async function PUT(request: Request) {
-  const current = await userFor(request);
+  const current = await currentStaff(request);
   if (!current) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  const body = await request.json() as { code?: unknown };
+  let body: { code?: unknown };
+  try { body = await request.json() as typeof body; } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   const code = typeof body.code === "string" ? body.code : "";
-  const metadata = current.user.user_metadata ?? {};
-  const pendingEmail = typeof metadata.pending_recovery_email === "string" ? metadata.pending_recovery_email : "";
-  const expectedHash = typeof metadata.recovery_email_code_hash === "string" ? metadata.recovery_email_code_hash : "";
-  const expiresAt = typeof metadata.recovery_email_code_expires_at === "string" ? Date.parse(metadata.recovery_email_code_expires_at) : 0;
-  if (!/^\d{6}$/.test(code) || !pendingEmail || expiresAt < Date.now() || await hashCode(current.principal.userId!, code) !== expectedHash) return NextResponse.json({ error: "The verification code is invalid or expired." }, { status: 400 });
-  const result = await current.admin.auth.admin.updateUserById(current.principal.userId!, { user_metadata: { ...metadata, recovery_email: pendingEmail, pending_recovery_email: null, recovery_email_code_hash: null, recovery_email_code_expires_at: null } });
-  return result.error ? NextResponse.json({ error: "Unable to verify the recovery email." }, { status: 500 }) : NextResponse.json({ recoveryEmail: pendingEmail });
+  const result = await current.admin.from("staff_recovery_emails").select("pending_email,verification_code_hash,verification_expires_at").eq("staff_id", current.principal.userId!).maybeSingle<{ pending_email: string | null; verification_code_hash: string | null; verification_expires_at: string | null }>();
+  const row = result.data;
+  const valid = /^\d{6}$/.test(code) && row?.pending_email && row.verification_code_hash && row.verification_expires_at && Date.parse(row.verification_expires_at) >= Date.now() && await hashCode(current.principal.userId!, code) === row.verification_code_hash;
+  if (!valid) return NextResponse.json({ error: "The verification code is invalid or expired." }, { status: 400 });
+  const updated = await current.admin.from("staff_recovery_emails").update({ recovery_email: row.pending_email, pending_email: null, verification_code_hash: null, verification_expires_at: null, updated_at: new Date().toISOString() }).eq("staff_id", current.principal.userId!);
+  return updated.error ? NextResponse.json({ error: "Unable to verify the recovery email." }, { status: 500 }) : NextResponse.json({ recoveryEmail: row.pending_email });
 }
 
 export async function DELETE(request: Request) {
-  const current = await userFor(request);
+  const current = await currentStaff(request);
   if (!current) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
-  const metadata = current.user.user_metadata ?? {};
-  const result = await current.admin.auth.admin.updateUserById(current.principal.userId!, { user_metadata: { ...metadata, recovery_email: null, pending_recovery_email: null, recovery_email_code_hash: null, recovery_email_code_expires_at: null } });
+  const result = await current.admin.from("staff_recovery_emails").delete().eq("staff_id", current.principal.userId!);
   return result.error ? NextResponse.json({ error: "Unable to remove the recovery email." }, { status: 500 }) : NextResponse.json({ recoveryEmail: null });
 }

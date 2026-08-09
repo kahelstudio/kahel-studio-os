@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { Plus } from "lucide-react";
 import { getInvoices, getFinanceKpis } from "@/lib/server/finance-data";
 import { KpiStrip } from "@/components/finance/kpi-strip";
-import { ActionButton } from "@/components/shared/action-button";
+import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 const KIND_COLORS: Record<string, { bg: string; c: string }> = {
   deposit: { bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
@@ -14,7 +14,7 @@ const KIND_COLORS: Record<string, { bg: string; c: string }> = {
 };
 
 function getInvoiceKindAndColors(invoice: { total: number; paid: number; status: string }) {
-  if (invoice.status === "cancelled") return { kind: "Void", bg: KIND_COLORS.void.bg, color: KIND_COLORS.void.c };
+  if (invoice.status === "cancelled" || invoice.status === "void") return { kind: "Void", bg: KIND_COLORS.void.bg, color: KIND_COLORS.void.c };
   if (invoice.total === invoice.paid) return { kind: "Full", bg: KIND_COLORS.full.bg, color: KIND_COLORS.full.c };
   if (invoice.paid > 0) return { kind: "Deposit", bg: KIND_COLORS.deposit.bg, color: KIND_COLORS.deposit.c };
   if (invoice.status === "overdue") return { kind: "Balance", bg: KIND_COLORS.balance.bg, color: KIND_COLORS.balance.c };
@@ -64,9 +64,9 @@ export default async function FinanceInvoicesPage() {
             Recorded from printed BIR booklets — the system never generates an invoice
           </p>
         </div>
-        <ActionButton label="New invoice serial" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+        <OperationCreateButton kind="invoice" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> Record serial
-        </ActionButton>
+        </OperationCreateButton>
       </div>
 
       <KpiStrip kpis={kpis} />
