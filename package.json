@@ -17,6 +17,7 @@
     "deploy:production": "opennextjs-cloudflare build && opennextjs-cloudflare deploy --env production",
     "cf:typegen": "wrangler types --env staging --env-interface CloudflareEnv && wrangler types --config wrangler.media.jsonc --env staging --env-interface MediaProcessorEnv worker-media-configuration.d.ts",
     "set-staff-password": "node scripts/set-staff-password.mjs",
+    "db:reset": "supabase db reset",
     "cf:check": "wrangler deploy --dry-run --env staging"
   },
   "dependencies": {

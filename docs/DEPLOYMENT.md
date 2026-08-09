@@ -11,7 +11,7 @@ This is the existing compatible hosting model. It is safer than converting the a
 
 ## Local development
 
-Use `npm run dev` for the local Next development server. Put local application values in `.env.local`; use `.dev.vars` when testing the OpenNext/Workers runtime. Both files are ignored. Start a local Supabase stack when Docker is available with `npx supabase start`, then obtain local URLs and keys with `npx supabase status`. Do not link a local workspace to either hosted project for normal development.
+Use `npm run dev` for the local Next development server. Put local application values in `.env.local`; use `.dev.vars` when testing the OpenNext/Workers runtime. Both files are ignored. Start a local Supabase stack when Docker is available with `npx supabase start`, then obtain local URLs and keys with `npx supabase status`. Run `npm run db:reset` whenever you need a clean schema and refreshed date-relative sample data. Do not link a local workspace to either hosted project for normal development.
 
 Copy the safe placeholders from `.env.example` and `.dev.vars.example`. `SUPABASE_SECRET_KEY` is server-only. Never add it, a service-role key, a database password, an access token, or an API token to browser code or any `NEXT_PUBLIC_*` variable.
 
@@ -97,7 +97,7 @@ The media worker sends gallery emails through the `EMAIL` binding. Listing the e
 2. Enable Supabase Auth email/password sign-in in each project. Create or invite each staff user listed in the comma-separated `KAHEL_STAFF_EMAILS` allowlist. `KAHEL_STAFF_EMAIL` remains a single-user fallback when the list is not set.
 3. Set the staging Auth Site URL to `https://kahel.studio` and the production Auth Site URL to `https://kahelstudio.com`; invitation and confirmation emails fall back to this value when no explicit redirect is supplied. Add `https://kahel.studio/reset-password` to the staging Auth redirect allowlist and `https://kahelstudio.com/reset-password` to production. Add `http://localhost:3000/reset-password` locally.
 4. Configure the reset-password email template and SMTP sender independently in each project. This repository currently has no committed Storage configuration or Edge Functions.
-5. Put each project reference, database password, URL, publishable key, and least-privilege access token into its correctly scoped GitLab variables. The migration job runs only `supabase db push --linked`; it never uses `--include-seed`, `db reset`, or destructive remote commands.
+5. Put each project reference, database password, URL, publishable key, and least-privilege access token into its correctly scoped CI variables. The staging migration job uses `--include-seed` to refresh deterministic fictional sample data. Production runs `supabase db push --linked` without seeds, and no hosted job uses `db reset` or another destructive remote command.
 6. Commit all schema changes as ordered files in `supabase/migrations`. Do not add remote-only schema changes. The pipeline starts an isolated local Supabase stack and runs `migration list` plus `db lint` before any remote migration.
 7. Add Edge Functions under `supabase/functions/<function-name>/`. The staging and production function jobs deploy all committed functions only when that directory exists. They never use `--prune`, so a deployment cannot remove a remote function.
 

@@ -103,6 +103,7 @@ jobs:
         with: { node-version: 22, cache: "npm" }
       - run: npm ci
       - run: npx supabase start --ignore-health-check
+      - run: npx supabase db reset --local
       - run: npx supabase migration list --local
       - run: npx supabase db lint --local --fail-on error
 
@@ -127,7 +128,7 @@ jobs:
           npx supabase link \
             --project-ref "$SUPABASE_PROJECT_REF" \
             --password "$SUPABASE_DB_PASSWORD"
-          npx supabase db push --linked --password "$SUPABASE_DB_PASSWORD"
+          npx supabase db push --linked --include-seed --password "$SUPABASE_DB_PASSWORD"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
