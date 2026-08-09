@@ -36,6 +36,52 @@ export type DashboardInquiry = {
   created_at: string;
 };
 
+export type LauncherSummary = {
+  eventsToday: number;
+  studioSessionsToday: number;
+  salesMonthPhp: number;
+};
+
+const eventServices = new Set(["Baby Shower", "Engagement Party", "Birthday", "Christening", "Debut", "Anniversary Celebration"]);
+
+function manilaDateRange() {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).map((part) => [part.type, part.value]));
+  const year = Number(parts.year);
+  const month = Number(parts.month);
+  const day = Number(parts.day);
+  const today = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const nextMonthYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const monthStartDate = `${year}-${String(month).padStart(2, "0")}-01`;
+  const nextMonthDate = `${nextMonthYear}-${String(nextMonth).padStart(2, "0")}-01`;
+  const monthStartIso = new Date(`${monthStartDate}T00:00:00+08:00`).toISOString();
+  const nextMonthIso = new Date(`${nextMonthDate}T00:00:00+08:00`).toISOString();
+  return { today, monthStartDate, nextMonthDate, monthStartIso, nextMonthIso };
+}
+
+export async function getLauncherSummary(): Promise<LauncherSummary> {
+  try {
+    const admin = getSupabaseAdmin();
+    const range = manilaDateRange();
+    const [todayResult, monthlyBookingsResult, posResult] = await Promise.all([
+      admin.from("bookings").select("service_type").eq("service_date", range.today).not("status", "in", '("cancelled","inquiry")'),
+      admin.from("bookings").select("total_amount_php").gte("service_date", range.monthStartDate).lt("service_date", range.nextMonthDate).not("status", "in", '("cancelled","inquiry")'),
+      admin.from("pos_sales").select("total").gte("recorded_at", range.monthStartIso).lt("recorded_at", range.nextMonthIso),
+    ]);
+    if (todayResult.error) throw todayResult.error;
+    if (monthlyBookingsResult.error) throw monthlyBookingsResult.error;
+
+    const eventsToday = (todayResult.data ?? []).filter((booking) => eventServices.has(booking.service_type)).length;
+    const studioSessionsToday = (todayResult.data ?? []).length - eventsToday;
+    const bookingSalesCentavos = (monthlyBookingsResult.data ?? []).reduce((sum, booking) => sum + (booking.total_amount_php ?? 0), 0);
+    const posSalesPhp = posResult.error ? 0 : (posResult.data ?? []).reduce((sum, sale) => sum + Number(sale.total ?? 0), 0);
+    return { eventsToday, studioSessionsToday, salesMonthPhp: Math.round(bookingSalesCentavos / 100 + posSalesPhp) };
+  } catch (error) {
+    console.error("getLauncherSummary: data unavailable", (error as Error).message);
+    return { eventsToday: 0, studioSessionsToday: 0, salesMonthPhp: 0 };
+  }
+}
+
 export async function getDashboardKpis(): Promise<DashboardKpis> {
   try {
     const admin = getSupabaseAdmin();

@@ -85,6 +85,17 @@ function mapBookingRow(row: BookingRow): RealBookingRow {
   };
 }
 
+function sortByUpcomingDate(a: BookingRow, b: BookingRow, today: string) {
+  const aIsPast = a.service_date < today;
+  const bIsPast = b.service_date < today;
+
+  if (aIsPast !== bIsPast) return aIsPast ? 1 : -1;
+  const dateComparison = a.service_date.localeCompare(b.service_date);
+  if (dateComparison !== 0) return aIsPast ? -dateComparison : dateComparison;
+  const timeComparison = a.service_time.localeCompare(b.service_time);
+  return aIsPast ? -timeComparison : timeComparison;
+}
+
 export async function getRealBookings(): Promise<RealBookingRow[]> {
   try {
     const admin = getSupabaseAdmin();
@@ -108,7 +119,10 @@ export async function getRealBookings(): Promise<RealBookingRow[]> {
     `).order("created_at", { ascending: false }).limit(200);
 
     if (error) throw error;
-    return (data as unknown as BookingRow[]).map(mapBookingRow);
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
+    return (data as unknown as BookingRow[])
+      .sort((a, b) => sortByUpcomingDate(a, b, today))
+      .map(mapBookingRow);
   } catch (error) {
     console.error("getRealBookings: table not available", (error as Error).message);
     return [];

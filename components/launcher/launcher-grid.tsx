@@ -24,6 +24,16 @@ const SECTION_META: Record<LauncherGroup, { title: string; description: string; 
   },
 };
 
+type LauncherSummary = { eventsToday: number; studioSessionsToday: number; salesMonthPhp: number };
+const peso = new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP", maximumFractionDigits: 0 });
+
+function timeGreeting() {
+  const hour = Number(new Intl.DateTimeFormat("en-PH", { hour: "numeric", hourCycle: "h23", timeZone: "Asia/Manila" }).format(new Date()));
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 function loadOrder(key: string, fallback: string[]): string[] {
   if (typeof window === "undefined") return fallback;
   try {
@@ -125,17 +135,53 @@ export function LauncherGrid() {
   const live = APPS.filter((a) => a.launcherGroup === "live");
   const operations = APPS.filter((a) => a.launcherGroup === "operations");
   const system = APPS.filter((a) => a.launcherGroup === "system");
+  const [greeting, setGreeting] = useState(timeGreeting);
+  const [firstName, setFirstName] = useState("there");
+  const [summary, setSummary] = useState<LauncherSummary>({ eventsToday: 0, studioSessionsToday: 0, salesMonthPhp: 0 });
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setGreeting(timeGreeting()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadSummary = () => fetch("/api/dashboard/launcher-summary", { cache: "no-store" })
+      .then(async (response) => response.ok ? await response.json() as LauncherSummary : null)
+      .then((data) => { if (active && data) setSummary(data); })
+      .catch(() => undefined);
+    void loadSummary();
+    const timer = window.setInterval(loadSummary, 60_000);
+    return () => { active = false; window.clearInterval(timer); };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadProfile = () => fetch("/api/staff/profile")
+      .then(async (response) => response.ok ? await response.json() as { displayName: string } : null)
+      .then((profile) => {
+        const name = profile?.displayName.trim().split(/\s+/)[0];
+        if (active && name) setFirstName(name);
+      })
+      .catch(() => undefined);
+    void loadProfile();
+    window.addEventListener("staff-profile-updated", loadProfile);
+    return () => {
+      active = false;
+      window.removeEventListener("staff-profile-updated", loadProfile);
+    };
+  }, []);
 
   return (
     <div className="px-4 pb-8 pt-5 sm:px-6 sm:pb-10 sm:pt-6 xl:px-12 xl:pb-14">
       <div>
         <div className="font-display text-[clamp(2rem,5vw,2.75rem)] font-semibold leading-[1.08] tracking-[-0.025em] text-[var(--color-text-primary)]">
-          Good morning, Eusebio
+          {greeting}, {firstName}
         </div>
         <div className="mt-2 text-base leading-6 text-[var(--color-text-secondary)]">
-          <span className="font-light">0 events and 0 studio sessions today</span>{" "}
+          <span className="font-light">{summary.eventsToday} {summary.eventsToday === 1 ? "event" : "events"} and {summary.studioSessionsToday} studio {summary.studioSessionsToday === 1 ? "session" : "sessions"} today</span>{" "}
           <span aria-hidden>|</span>{" "}
-          <span className="font-medium text-[#FF5300]">₱0</span>{" "}
+          <span className="font-medium text-[#FF5300]">{peso.format(summary.salesMonthPhp)}</span>{" "}
           <span className="font-light">sales this month</span>
         </div>
       </div>
