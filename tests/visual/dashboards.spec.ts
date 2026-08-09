@@ -20,7 +20,7 @@ for (const viewport of viewports) {
   test(`Tasks dashboard at ${viewport.name}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.goto("/tasks/board");
-    await expect(page.getByRole("heading", { name: "Studio operations" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tasks", exact: true })).toBeVisible();
 
     const board = page.locator("main.min-w-0");
     await expect(page.locator("html")).toHaveJSProperty("scrollWidth", viewport.width);
