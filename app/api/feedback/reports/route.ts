@@ -3,7 +3,8 @@ import { getFeedbackReports } from "@/lib/server/feedback-data";
 import { getStaffPrincipal } from "@/lib/server/staff-auth";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (!await getStaffPrincipal(request)) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   try {
     const reports = await getFeedbackReports();
     return NextResponse.json(reports);

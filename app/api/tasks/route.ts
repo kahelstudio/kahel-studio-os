@@ -7,11 +7,12 @@ export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
   try {
+    const principal = await getStaffPrincipal(request);
+    if (!principal) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
     const { searchParams } = new URL(request.url);
     const mine = searchParams.get("mine");
 
     if (mine) {
-      const principal = await getStaffPrincipal(request);
       const userId = principal?.userId;
       if (!userId) return NextResponse.json([], { status: 401 });
       const tasks = await getMyTasks(userId);
@@ -46,6 +47,9 @@ export async function PATCH(request: NextRequest) {
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   const id = typeof body?.id === "string" ? body.id : "";
   if (!id) return NextResponse.json({ error: "Task ID is required." }, { status: 400 });
+  if (typeof body?.title === "string" && !body.title.trim()) return NextResponse.json({ error: "Task title cannot be empty." }, { status: 400 });
+  if (typeof body?.category === "string" && !body.category.trim()) return NextResponse.json({ error: "Task category cannot be empty." }, { status: 400 });
+  if (typeof body?.dueDate === "string" && body.dueDate && !/^\d{4}-\d{2}-\d{2}$/.test(body.dueDate)) return NextResponse.json({ error: "Enter a valid due date." }, { status: 400 });
   const update: { updated_at: string; column_status?: string; title?: string; description?: string | null; category?: string; priority?: string; assignee?: string | null; due_date?: string | null } = { updated_at: new Date().toISOString() };
   if (typeof body?.status === "string" && statuses.has(body.status)) update.column_status = body.status;
   if (typeof body?.title === "string") update.title = body.title.trim();

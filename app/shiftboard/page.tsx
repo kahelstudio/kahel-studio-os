@@ -7,24 +7,24 @@ import { cn } from "@/lib/utils";
 import { OperationCreateButton } from "@/components/shared/operation-create-button";
 
 function getCurrentWeekMeta(): [string, string, boolean][] {
-  const today = new Date();
-  const dayOfWeek = today.getDay(); // 0=Sun
+  const todayIso = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const today = new Date(`${todayIso}T12:00:00+08:00`);
   const monday = new Date(today);
-  monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7));
+  monday.setUTCDate(today.getUTCDate() - ((today.getUTCDay() + 6) % 7));
   const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   return days.map((name, i) => {
     const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    const isToday = d.toDateString() === today.toDateString();
-    return [name, String(d.getDate()), isToday];
+    d.setUTCDate(monday.getUTCDate() + i);
+    const iso = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+    return [name, new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", day: "numeric" }).format(d), iso === todayIso];
   });
 }
 
 function getMondayIso(): string {
-  const today = new Date();
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
-  return monday.toISOString().slice(0, 10);
+  const manilaToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const monday = new Date(`${manilaToday}T12:00:00+08:00`);
+  monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).format(monday);
 }
 
 const STAFF = [

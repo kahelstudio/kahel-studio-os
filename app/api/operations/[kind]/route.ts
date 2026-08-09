@@ -55,10 +55,10 @@ async function createBooking(body: Body, principal: StaffPrincipal) {
   if (!serviceType || !serviceDate || !/^\d{2}:[0-5]\d$/.test(serviceTime) || Number(serviceTime.slice(0, 2)) > 23 || !location || !["cash", "gcash", "maya", "bank_transfer", "card"].includes(paymentType)) return bad("Complete the service date, time, location, and valid payment method.");
   if (!Number.isFinite(total) || total < 0) return bad("Enter a valid booking total.");
 
-  const profiles = await admin.from("client_profiles").select("id,client_id,mobile,email").not("mobile", "is", null);
-  const phoneMatches = (profiles.data as BookingProfile[] | null)?.filter((item) => normalizePhilippinePhone(item.mobile ?? "") === phone) ?? [];
-  if (phoneMatches.length > 1) return NextResponse.json({ error: "More than one client uses that phone number. Resolve the duplicate client records first." }, { status: 409 });
-  let profile: BookingProfile | undefined = phoneMatches[0];
+  const phoneProfiles = await admin.from("client_profiles").select("id,client_id,mobile,email").eq("normalized_mobile", phone).limit(2);
+  if (phoneProfiles.error) return NextResponse.json({ error: "Unable to securely match the client phone number." }, { status: 500 });
+  if ((phoneProfiles.data?.length ?? 0) > 1) return NextResponse.json({ error: "More than one client uses that phone number. Resolve the duplicate client records first." }, { status: 409 });
+  let profile: BookingProfile | undefined = phoneProfiles.data?.[0] as BookingProfile | undefined;
   if (profile && profile.email.trim().toLowerCase() !== email) return NextResponse.json({ error: "That phone number belongs to a client with a different email address." }, { status: 409 });
   if (!profile) {
     const emailProfile = await admin.from("client_profiles").select("id,client_id,mobile,email").eq("normalized_email", email).maybeSingle();

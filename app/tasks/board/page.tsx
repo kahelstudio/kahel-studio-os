@@ -26,11 +26,11 @@ type TaskDraft = Omit<Task, "id">;
 function mapBoardToTasks(data: { todo?: unknown[]; doing?: unknown[]; blocked?: unknown[]; done?: unknown[] }): Task[] {
   const columns: [Status, string][] = [["todo", "To do"], ["doing", "In progress"], ["blocked", "Blocked"], ["done", "Done"]];
   return columns.flatMap(([key]) => {
-    const rows = (data[key] ?? []) as Array<{ id: string; title: string; category: string; assignee: string | null; dueDate: string | null; priority: string }>;
+    const rows = (data[key] ?? []) as Array<{ id: string; title: string; description: string | null; category: string; assignee: string | null; dueDate: string | null; priority: string }>;
     return rows.map((task) => ({
       id: task.id,
       title: task.title,
-      context: task.category,
+      context: task.description ?? task.category,
       assignee: task.assignee ?? "Unassigned",
       dueDate: task.dueDate ?? "",
       priority: (task.priority === "High" || task.priority === "Med" || task.priority === "Low" ? task.priority : "Med") as Task["priority"],

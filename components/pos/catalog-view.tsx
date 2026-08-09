@@ -15,12 +15,15 @@ export function CatalogView({
 }) {
   const catalog = POS_CATALOGS[catalogKey];
   const { fireToast } = useToast();
-  const [items, setItems] = useState<CatalogItem[]>(catalog.data);
+  const [items, setItems] = useState<CatalogItem[]>([]);
   const [editingCode, setEditingCode] = useState<string | null>(null);
+  const [creatingCode, setCreatingCode] = useState<string | null>(null);
   const [draft, setDraft] = useState<CatalogItem | null>(null);
+  const [canManage, setCanManage] = useState(false);
   const hasQty = items.some((item) => item.qty);
 
-  useEffect(() => { fetch(`/api/pos/catalog-items?key=${encodeURIComponent(catalogKey)}`).then(async (response) => await response.json() as { items?: Array<{ code: string; name: string; detail: string | null; price: number; quantity_info: string | null }> }).then((result) => { if (result.items?.length) setItems(result.items.map((item) => ({ code: item.code, name: item.name, detail: item.detail ?? "", price: `₱${Number(item.price).toLocaleString("en-PH")}`, ...(item.quantity_info ? { qty: item.quantity_info } : {}) }))); }).catch(() => {}); }, [catalogKey]);
+  useEffect(() => { fetch(`/api/pos/catalog-items?key=${encodeURIComponent(catalogKey)}`).then(async (response) => await response.json() as { items?: Array<{ code: string; name: string; detail: string | null; price: number; quantity_info: string | null }> }).then((result) => { setItems(result.items?.map((item) => ({ code: item.code, name: item.name, detail: item.detail ?? "", price: `₱${Number(item.price).toLocaleString("en-PH")}`, ...(item.quantity_info ? { qty: item.quantity_info } : {}) })) ?? []); }).catch(() => {}); }, [catalogKey]);
+  useEffect(() => { fetch("/api/staff/me").then(async (response) => response.ok ? await response.json() as { role?: string } : null).then((data) => setCanManage(data?.role === "admin" || data?.role === "super_admin")).catch(() => setCanManage(false)); }, []);
 
   function startEditing(item: CatalogItem) {
     setEditingCode(item.code);
@@ -35,7 +38,7 @@ export function CatalogView({
       const result = await response.json().catch(() => ({})) as { error?: string };
       if (!response.ok) throw new Error(result.error ?? "Unable to save item.");
       setItems((current) => current.map((item) => item.code === editingCode ? { ...draft, code: draft.code.trim(), name: draft.name.trim(), price: `₱${numericPrice.toLocaleString("en-PH")}` } : item));
-      setEditingCode(null); setDraft(null); fireToast("Catalog item saved.", "success");
+      setEditingCode(null); setCreatingCode(null); setDraft(null); fireToast("Catalog item saved.", "success");
     } catch (error) { fireToast(error instanceof Error ? error.message : "Unable to save item.", "danger"); }
   }
 
@@ -49,6 +52,7 @@ export function CatalogView({
     };
 
     setItems([...items, item]);
+    setCreatingCode(item.code);
     startEditing(item);
   }
 
@@ -63,12 +67,12 @@ export function CatalogView({
             {catalog.sub}
           </p>
         </div>
-        <button
+        {canManage ? <button
           onClick={addItem}
           className="flex h-11 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]"
         >
           <Plus className="h-4 w-4" /> New item
-        </button>
+        </button> : null}
       </div>
 
       <div className="overflow-x-auto rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
@@ -97,7 +101,7 @@ export function CatalogView({
                     <input aria-label="Item price" className={`${inputClass} text-left`} value={draft.price} onChange={(event) => setDraft({ ...draft, price: event.target.value })} />
                     <div className="flex justify-start gap-1">
                       <button onClick={saveEdit} className="grid h-9 w-9 place-items-center rounded-control bg-[var(--color-kahel-500)] text-white" aria-label="Save item"><Save className="h-4 w-4" /></button>
-                      <button onClick={() => { setEditingCode(null); setDraft(null); }} className="grid h-9 w-9 place-items-center rounded-control border border-[var(--color-border)]" aria-label="Cancel edit"><X className="h-4 w-4" /></button>
+                      <button onClick={() => { if (creatingCode === editingCode) setItems((current) => current.filter((item) => item.code !== editingCode)); setEditingCode(null); setCreatingCode(null); setDraft(null); }} className="grid h-9 w-9 place-items-center rounded-control border border-[var(--color-border)]" aria-label="Cancel edit"><X className="h-4 w-4" /></button>
                     </div>
                   </>
                 ) : (
@@ -107,7 +111,7 @@ export function CatalogView({
                     <div className="text-[13px] text-[var(--color-text-secondary)]">{item.detail}</div>
                     <div className="text-left text-[13px] text-[var(--color-text-muted)]">{item.qty ?? ""}</div>
                     <div className="flex w-full justify-start text-left font-display font-semibold">{item.price}</div>
-                    <button onClick={() => startEditing(item)} className="mr-auto grid h-10 w-10 place-items-center rounded-control text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-kahel-700)]" aria-label={`Edit ${item.name}`}><MoreHorizontal className="h-5 w-5" /></button>
+                    {canManage ? <button onClick={() => startEditing(item)} className="mr-auto grid h-10 w-10 place-items-center rounded-control text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-kahel-700)]" aria-label={`Edit ${item.name}`}><MoreHorizontal className="h-5 w-5" /></button> : <span />}
                   </>
                 )}
               </div>
