@@ -90,7 +90,6 @@ export const APPS: AppDef[] = [
     nav: [
       { id: "list", label: "Bookings", href: "/booking/list" },
       { id: "calendar", label: "Calendar", href: "/booking/calendar" },
-      { id: "emails", label: "Email templates", href: "/booking/emails" },
     ],
   },
   {
@@ -406,13 +405,14 @@ export const APPS: AppDef[] = [
   {
     id: "settings",
     name: "Settings",
-    description: "Workspace, team & roles, billing, payroll, and audit",
+    description: "Workspace, email, team & roles, billing, payroll, and audit",
     accent: "ink",
     icon: Settings,
     href: "/settings/general",
     launcherGroup: "system",
     nav: [
       { id: "general", label: "General", href: "/settings/general" },
+      { id: "emails", label: "Email templates", href: "/settings/emails" },
       { id: "team", label: "Team & roles", href: "/settings/team" },
       { id: "billing", label: "Billing & BIR", href: "/settings/billing" },
       { id: "payroll", label: "Payroll", href: "/settings/payroll" },

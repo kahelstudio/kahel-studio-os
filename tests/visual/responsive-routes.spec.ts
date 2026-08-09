@@ -4,7 +4,7 @@ test.setTimeout(180_000);
 test.skip(Boolean(process.env.CI), "Requires local application data services");
 
 const routes = [
-  "/", "/attendance/engagements", "/attendance/timesheets", "/booking/calendar", "/booking/emails",
+  "/", "/attendance/engagements", "/attendance/timesheets", "/booking/calendar",
   "/booking/list", "/client-portal", "/compliance/dashboard", "/compliance/register", "/crm/accounts",
   "/crm/queue", "/dashboard", "/docs", "/feedback/myreports", "/feedback/report", "/finance/expenses",
   "/finance/invoices", "/finance/payments", "/finance/reconciliation", "/finance/sales", "/glitches/closed",
@@ -19,7 +19,7 @@ const routes = [
   "/profile/me", "/profile/security", "/projects/deliveries", "/projects/pipeline", "/quotation/drafts",
   "/quotation/list", "/recruitment/candidates", "/recruitment/checklist", "/recruitment/departures",
   "/recruitment/hires", "/recruitment/roles", "/recruitment/templates", "/reports", "/reset-password",
-  "/settings/audit", "/settings/billing", "/settings/general", "/settings/payroll", "/settings/team",
+  "/settings/audit", "/settings/billing", "/settings/emails", "/settings/general", "/settings/payroll", "/settings/team",
   "/shiftboard", "/shiftboard/next-month", "/shiftboard/next-week", "/tasks/board", "/tasks/mine", "/usage",
   "/website/pages", "/website/portfolio",
 ] as const;
