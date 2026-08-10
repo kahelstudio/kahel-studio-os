@@ -76,6 +76,7 @@ insert into public.glitch_reference_counters(reference_year, last_value)
 select matched[1]::integer, max(matched[2]::integer)
 from public.glitches,
      lateral regexp_match(reference, '^GL-([0-9]{4})-([0-9]{4})$') matched
+where matched[1] is not null and matched[2] is not null
 group by matched[1]
 on conflict (reference_year) do update set last_value = greatest(public.glitch_reference_counters.last_value, excluded.last_value);
 
