@@ -24,7 +24,7 @@ async function loadWorkspace(page: Page) {
 test("reports, filters, opens, and resolves a glitch", async ({ page }) => {
   await mockGlitches(page);
   await loadWorkspace(page);
-  await page.getByRole("button", { name: /Critical/ }).click();
+  await page.getByRole("button", { name: "Critical 1", exact: true }).click();
   await expect(page.getByText("Severity: Critical")).toBeVisible();
   await page.getByText("GL-2026-0001").click();
   await expect(page.getByRole("dialog", { name: /Client upload blocked/ })).toBeVisible();
