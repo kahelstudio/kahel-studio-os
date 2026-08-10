@@ -25,7 +25,7 @@ async function signedRequest(body: string, legacyField?: "te" | "li") {
 }
 
 function paidEvent() {
-  return JSON.stringify({ data: { id: "evt_test", type: "event", attributes: { type: "checkout_session.payment.paid", livemode: true, data: { id: "cs_test", attributes: { payments: [{ id: "pay_test" }], metadata: { booking_id: "booking-test" } } } } } });
+  return JSON.stringify({ data: { id: "evt_test", type: "event", attributes: { type: "checkout_session.payment.paid", livemode: true, data: { id: "cs_test", attributes: { description: "Mini Session photography booking", payment_method_used: "gcash", payments: [{ id: "pay_test", attributes: { available_at: 1786386400, description: "Mini Session photography booking", paid_at: 1786300000, payment_intent_id: "pi_test", source: { type: "gcash" } } }], metadata: { booking_id: "booking-test" } } } } } });
 }
 
 describe("PayMongo webhook", () => {
@@ -47,7 +47,7 @@ describe("PayMongo webhook", () => {
     const response = await POST(await signedRequest(paidEvent()));
 
     expect(response.status).toBe(200);
-    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ paid_amount_php: 150000, payment_status: "paid", paymongo_payment_intent_id: "pay_test", status: "confirmed" }));
+    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ paid_amount_php: 150000, payment_status: "paid", paymongo_payment_id: "pay_test", paymongo_payment_intent_id: "pi_test", paymongo_payment_method: "gcash", paymongo_payment_description: "Mini Session photography booking", paymongo_paid_at: "2026-08-09T18:26:40.000Z", paymongo_available_at: "2026-08-10T18:26:40.000Z", status: "confirmed" }));
   });
 
   it("records a deposit and accepts legacy live signatures", async () => {

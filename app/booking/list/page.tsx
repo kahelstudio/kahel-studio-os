@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { Plus } from "lucide-react";
 import { BOOKING_STATUS } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
 import { getRealBookings } from "@/lib/server/bookings-data";
@@ -42,7 +41,7 @@ export default async function BookingListPage({ searchParams }: { searchParams: 
           </p>
         </div>
         <OperationCreateButton kind="booking" className="flex h-10 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
-          <Plus className="h-4 w-4" /> New booking
+          +New Booking
         </OperationCreateButton>
       </div>
 

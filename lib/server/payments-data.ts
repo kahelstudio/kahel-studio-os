@@ -2,15 +2,15 @@ import { getSupabaseAdmin } from "./supabase-admin";
 
 export type PaymentRow = {
   ref: string;
-  party: string;
-  dirLabel: string;
-  dirBg: string;
-  dirColor: string;
   method: string;
+  paymentId: string | null;
+  paymentIntentId: string | null;
+  description: string;
+  paidAt: string;
+  settlementStatus: string;
   stLabel: string;
   stBg: string;
   stColor: string;
-  dirSign: string;
   amt: string;
 };
 
@@ -21,7 +21,7 @@ export type PaymentKpi = {
 };
 
 const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
-  paid: { label: "Paid", bg: "var(--color-teal-100)", color: "var(--color-teal-800)" },
+  paid: { label: "Paid", bg: "var(--color-success-bg)", color: "var(--color-success-text)" },
   partially_paid: { label: "Deposit", bg: "var(--color-indigo-100)", color: "var(--color-indigo-800)" },
   pending: { label: "Pending", bg: "var(--color-amber-100)", color: "var(--color-amber-800)" },
   unpaid: { label: "Unpaid", bg: "var(--color-surface-muted)", color: "var(--color-text-secondary)" },
@@ -29,10 +29,24 @@ const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }>
   refunded: { label: "Refunded", bg: "var(--color-indigo-100)", color: "var(--color-indigo-800)" },
 };
 
-const RECEIVED = { label: "Received", bg: "var(--color-teal-50)", color: "var(--color-teal-700)" };
-
 function formatCurrency(centavos: number) {
-  return `\u20B1${(centavos / 100).toLocaleString("en-PH")}`;
+  return `\u20B1${(centavos / 100).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatPaymentMethod(method: string | null) {
+  const labels: Record<string, string> = { card: "Card", gcash: "GCash", grab_pay: "GrabPay", paymaya: "Maya", qrph: "QR Ph", shopee_pay: "ShopeePay" };
+  return method ? labels[method] ?? method.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) : "PayMongo";
+}
+
+function formatPaidAt(value: string | null) {
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("en-PH", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Asia/Manila" });
+}
+
+function settlementStatus(availableAt: string | null, creditedAt: string | null) {
+  if (creditedAt && Date.parse(creditedAt) <= Date.now()) return "Settled";
+  if (availableAt || creditedAt) return "Scheduled";
+  return "Pending";
 }
 
 export async function getPayments(): Promise<{ rows: PaymentRow[]; kpis: PaymentKpi[] }> {
@@ -44,8 +58,13 @@ export async function getPayments(): Promise<{ rows: PaymentRow[]; kpis: Payment
     payment_type,
     total_amount_php,
     paid_amount_php,
-    client_id,
-    clients:client_id ( name )
+    paymongo_payment_id,
+    paymongo_payment_intent_id,
+    paymongo_payment_method,
+    paymongo_payment_description,
+    paymongo_paid_at,
+    paymongo_available_at,
+    paymongo_credited_at
   `).gt("paid_amount_php", 0).order("created_at", { ascending: false }).limit(200);
 
   if (error) throw error;
@@ -56,23 +75,28 @@ export async function getPayments(): Promise<{ rows: PaymentRow[]; kpis: Payment
     payment_type: string;
     total_amount_php: number;
     paid_amount_php: number;
-    client_id: string;
-    clients: { name: string } | null;
+    paymongo_payment_id: string | null;
+    paymongo_payment_intent_id: string | null;
+    paymongo_payment_method: string | null;
+    paymongo_payment_description: string | null;
+    paymongo_paid_at: string | null;
+    paymongo_available_at: string | null;
+    paymongo_credited_at: string | null;
   }>;
 
   const rows: PaymentRow[] = bookings.map((b) => {
     const badge = STATUS_BADGE[b.payment_status] ?? STATUS_BADGE.unpaid;
     return {
       ref: b.reference,
-      party: b.clients?.name ?? "Unknown",
-      dirLabel: RECEIVED.label,
-      dirBg: RECEIVED.bg,
-      dirColor: RECEIVED.color,
-      method: "PayMongo",
+      method: formatPaymentMethod(b.paymongo_payment_method),
+      paymentId: b.paymongo_payment_id,
+      paymentIntentId: b.paymongo_payment_intent_id,
+      description: b.service_type,
+      paidAt: formatPaidAt(b.paymongo_paid_at),
+      settlementStatus: settlementStatus(b.paymongo_available_at, b.paymongo_credited_at),
       stLabel: badge.label,
       stBg: badge.bg,
       stColor: badge.color,
-      dirSign: "+",
       amt: formatCurrency(b.paid_amount_php),
     };
   });

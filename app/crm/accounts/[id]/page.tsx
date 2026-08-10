@@ -7,8 +7,8 @@ import { LoyaltyAdminPanel } from "@/components/loyalty/loyalty-admin-panel";
 import { getAccountById } from "@/lib/server/crm-data";
 import { BOOKING_STATUS } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
-import { ActionButton } from "@/components/shared/action-button";
 import { OperationCreateButton } from "@/components/shared/operation-create-button";
+import { EditAccountButton } from "./edit-account-button";
 
 function initials(name: string) {
   return name
@@ -102,11 +102,9 @@ export default async function CrmAccountDetailPage({
           </div>
         </div>
         <div className="flex gap-2 sm:ml-auto">
-          <ActionButton label="Edit account" className="h-[38px] rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-sm font-semibold text-[var(--color-text-primary)]">
-            Edit
-          </ActionButton>
+          <EditAccountButton account={{ id: account.id, name: account.name, type: detail.accountType }} contact={{ firstName: detail.contacts[0]?.firstName ?? "", lastName: detail.contacts[0]?.lastName ?? "", email: detail.contacts[0]?.email ?? "", mobile: detail.contacts[0]?.mobile ?? "" }} />
           <OperationCreateButton kind="booking" defaults={{ clientName: account.name, phone: detail.contacts[0]?.mobile ?? "", email: detail.contacts[0]?.email ?? "" }} className="h-[38px] rounded-control bg-[var(--color-kahel-500)] px-3.5 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
-            New booking
+            +New Booking
           </OperationCreateButton>
         </div>
       </div>

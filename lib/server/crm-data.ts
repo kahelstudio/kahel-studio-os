@@ -207,7 +207,7 @@ export async function getAccountById(id: string): Promise<AccountDetail | null> 
 
     const { data: client, error } = await admin
       .from("clients")
-      .select("id, name, status, account_type, external_ref, created_at")
+      .select("id, name, status, account_type, external_ref, created_at, primary_contact_profile_id")
       .eq("id", id)
       .maybeSingle();
 
@@ -260,7 +260,7 @@ export async function getAccountById(id: string): Promise<AccountDetail | null> 
         date: i.paid_at,
         status: i.status,
       })),
-      contacts: (profiles ?? []).map((p: any) => ({
+      contacts: [...(profiles ?? [])].sort((a: any, b: any) => Number(b.id === (client as any).primary_contact_profile_id) - Number(a.id === (client as any).primary_contact_profile_id)).map((p: any) => ({
         id: p.id,
         firstName: p.first_name,
         lastName: p.last_name,

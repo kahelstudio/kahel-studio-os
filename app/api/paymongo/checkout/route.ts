@@ -112,7 +112,7 @@ export async function POST(request: Request) {
       headers: { Authorization: `Basic ${Buffer.from(`${secretKey}:`).toString("base64")}`, "Content-Type": "application/json" },
       body: JSON.stringify({ data: { attributes: {
         billing: { name: input.name.trim(), email, phone: mobile },
-        cancel_url: `${origin}/?checkout=cancelled`, description: `${input.session} photography booking`,
+        cancel_url: `${origin}/?checkout=cancelled`, description: input.session,
         line_items: [{ amount: amountDue, currency: "PHP", name: `${input.session} ${input.pay === "deposit" ? "50% deposit" : "full payment"}`, quantity: 1 }],
         metadata: { booking_id: booking.id, booking_date: date, booking_time: time, payment_type: input.pay },
         payment_method_types: ["card", "gcash", "qrph"], reference_number: booking.reference, send_email_receipt: true, show_description: true, show_line_items: true,

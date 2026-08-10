@@ -12,7 +12,10 @@ type PayMongoEvent = {
       data?: {
         id?: string;
         attributes?: {
-          payments?: Array<{ id: string }>;
+          description?: string;
+          paid_at?: number;
+          payment_method_used?: string;
+          payments?: Array<{ id: string; attributes?: { available_at?: number; credited_at?: number; description?: string; paid_at?: number; payment_intent_id?: string; source?: { type?: string } } }>;
           metadata?: Record<string, unknown>;
           reference_number?: string;
         };
@@ -20,8 +23,12 @@ type PayMongoEvent = {
     };
   };
 };
-type PaidCheckout = { bookingId: string; paymentId: string | null };
-type BookingRow = { id: string; payment_type: string; total_amount_php: number; paid_amount_php: number; payment_status: string; paymongo_payment_intent_id: string | null };
+type PaidCheckout = { bookingId: string; paymentId: string | null; paymentIntentId: string | null; paymentMethod: string | null; description: string | null; paidAt: string | null; availableAt: string | null; creditedAt: string | null };
+type BookingRow = { id: string; payment_type: string; total_amount_php: number; paid_amount_php: number; payment_status: string; paymongo_payment_id: string | null; paymongo_payment_intent_id: string | null; paymongo_payment_method: string | null; paymongo_payment_description: string | null; paymongo_paid_at: string | null; paymongo_available_at: string | null; paymongo_credited_at: string | null };
+
+function timestamp(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? new Date(value * 1000).toISOString() : null;
+}
 
 function paidCheckout(event: PayMongoEvent): PaidCheckout | null {
   const attrs = event.data?.attributes;
@@ -31,8 +38,18 @@ function paidCheckout(event: PayMongoEvent): PaidCheckout | null {
   if (!checkout) return null;
   const bookingId = checkout.metadata?.booking_id;
   if (typeof bookingId !== "string" || !bookingId) return null;
+  const payment = checkout.payments?.[0];
 
-  return { bookingId, paymentId: checkout.payments?.[0]?.id ?? null };
+  return {
+    bookingId,
+    paymentId: payment?.id ?? null,
+    paymentIntentId: payment?.attributes?.payment_intent_id ?? null,
+    paymentMethod: checkout.payment_method_used ?? payment?.attributes?.source?.type ?? null,
+    description: payment?.attributes?.description ?? checkout.description ?? null,
+    paidAt: timestamp(payment?.attributes?.paid_at ?? checkout.paid_at),
+    availableAt: timestamp(payment?.attributes?.available_at),
+    creditedAt: timestamp(payment?.attributes?.credited_at),
+  };
 }
 
 async function hmac(secret: string, payload: string) {
@@ -88,7 +105,7 @@ export async function POST(request: Request) {
   const admin = getSupabaseAdmin();
 
   const { data: existing, error: fetchError } = await admin.from("bookings")
-    .select("id,payment_type,total_amount_php,paid_amount_php,payment_status,paymongo_payment_intent_id")
+    .select("id,payment_type,total_amount_php,paid_amount_php,payment_status,paymongo_payment_id,paymongo_payment_intent_id,paymongo_payment_method,paymongo_payment_description,paymongo_paid_at,paymongo_available_at,paymongo_credited_at")
     .eq("id", checkout.bookingId)
     .maybeSingle<BookingRow>();
 
@@ -97,14 +114,20 @@ export async function POST(request: Request) {
   }
   const paidAmount = existing.payment_type === "deposit" ? Math.round(existing.total_amount_php * 0.5) : existing.total_amount_php;
   const paymentStatus = paidAmount < existing.total_amount_php ? "partially_paid" : "paid";
-  if (existing.paid_amount_php === paidAmount && existing.payment_status === paymentStatus && existing.paymongo_payment_intent_id === checkout.paymentId) {
+  if (existing.paid_amount_php === paidAmount && existing.payment_status === paymentStatus && existing.paymongo_payment_id === checkout.paymentId && existing.paymongo_payment_intent_id === checkout.paymentIntentId && existing.paymongo_payment_method === checkout.paymentMethod && existing.paymongo_payment_description === checkout.description && existing.paymongo_paid_at === checkout.paidAt && existing.paymongo_available_at === checkout.availableAt && existing.paymongo_credited_at === checkout.creditedAt) {
     return NextResponse.json({ received: true });
   }
 
   const { error: updateError } = await admin.from("bookings").update({
     paid_amount_php: paidAmount,
     payment_status: paymentStatus,
-    paymongo_payment_intent_id: checkout.paymentId,
+    paymongo_payment_id: checkout.paymentId,
+    paymongo_payment_intent_id: checkout.paymentIntentId,
+    paymongo_payment_method: checkout.paymentMethod,
+    paymongo_payment_description: checkout.description,
+    paymongo_paid_at: checkout.paidAt,
+    paymongo_available_at: checkout.availableAt,
+    paymongo_credited_at: checkout.creditedAt,
     status: "confirmed",
     updated_at: new Date().toISOString(),
   }).eq("id", checkout.bookingId);
