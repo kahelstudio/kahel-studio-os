@@ -146,10 +146,10 @@ insert into public.tasks (id, title, description, column_status, priority, categ
   ('d8200000-0000-4000-8000-000000000004', 'Publish September mini-session slots', null, 'done', 'Low', 'Marketing', 'Sofia Lim', current_date - 3, null, 4)
 on conflict (id) do update set column_status = excluded.column_status, priority = excluded.priority, assignee = excluded.assignee, due_date = excluded.due_date, updated_at = now();
 
-insert into public.glitches (id, reference, title, area, reporter, severity, status, reported_at, resolved_at) values
-  ('d8300000-0000-4000-8000-000000000001', 'DEMO-G-001', 'Calendar retains previous month after browser back', 'Booking calendar', 'Sofia Lim', 'Medium', 'progress', now() - interval '3 days', null),
-  ('d8300000-0000-4000-8000-000000000002', 'DEMO-G-002', 'Long client names wrap over balance badge', 'CRM accounts', 'Paolo Cruz', 'Low', 'fixed', now() - interval '9 days', now() - interval '7 days')
-on conflict (id) do update set severity = excluded.severity, status = excluded.status, reported_at = excluded.reported_at, resolved_at = excluded.resolved_at;
+insert into public.glitches (id, reference, title, description, category, location_or_system, reporter_name, severity, status, observed_at, created_at) values
+  ('d8300000-0000-4000-8000-000000000001', 'DEMO-G-001', 'Calendar retains previous month after browser back', 'The booking calendar returns to the previous month after browser navigation.', 'Booking', 'Booking calendar', 'Sofia Lim', 'Medium', 'In Progress', now() - interval '3 days', now() - interval '3 days'),
+  ('d8300000-0000-4000-8000-000000000002', 'DEMO-G-002', 'Long client names wrap over balance badge', 'Long CRM account names overlap the balance indicator at tablet widths.', 'System', 'CRM accounts', 'Paolo Cruz', 'Low', 'Open', now() - interval '9 days', now() - interval '9 days')
+on conflict (id) do update set title = excluded.title, description = excluded.description, category = excluded.category, location_or_system = excluded.location_or_system, severity = excluded.severity, status = excluded.status, observed_at = excluded.observed_at;
 
 insert into public.feedback_reports (id, iid, title, summary, app, kind, status, priority, submitted_at, checked) values
   ('d8400000-0000-4000-8000-000000000001', 'DEMO-F-001', 'Show remaining balance in booking list', 'A balance column would reduce trips into booking details.', 'Bookings', 'Idea', 'Triaged', 'Normal', now() - interval '6 days', true),

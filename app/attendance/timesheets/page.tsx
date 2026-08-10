@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { getPayrollEmployees } from "@/lib/server/payroll-data";
 import { getRealBookings } from "@/lib/server/bookings-data";
 import { AttendanceClockCard } from "./attendance-clock-card";
+import Link from "next/link";
 
 const STATUS_META: Record<string, { bg: string; c: string; label: string }> = {
   active: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "Active" },
@@ -52,7 +53,7 @@ export default async function AttendanceTimesheetsPage() {
             Owner and freelance hours logged against engagements
           </p>
         </div>
-        <span className="text-xs tracking-[0.04em] text-[var(--color-text-muted)]">WEEK OF 21 JUL</span>
+        <div className="flex items-center gap-3"><span className="hidden text-xs tracking-[0.04em] text-[var(--color-text-muted)] sm:inline">WEEK OF 21 JUL</span><Link href="/approvals?create=attendance_correction" className="inline-flex h-10 items-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-semibold text-[#FF5300]">Request correction</Link></div>
       </div>
 
       <AttendanceClockCard />

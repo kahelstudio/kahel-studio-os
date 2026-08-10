@@ -1,5 +1,9 @@
 import { defineConfig } from "@playwright/test";
 
+const isolatedDevServer = process.env.PLAYWRIGHT_DEV_SERVER === "true";
+const port = process.env.PLAYWRIGHT_PORT ?? (process.env.CI ? "3000" : "3100");
+const baseURL = `http://127.0.0.1:${port}`;
+
 export default defineConfig({
   testDir: "./tests/visual",
   fullyParallel: true,
@@ -7,12 +11,12 @@ export default defineConfig({
   reporter: "list",
   snapshotPathTemplate: "{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}{ext}",
   use: {
-    baseURL: process.env.CI ? "http://127.0.0.1:3000" : "http://127.0.0.1:3100",
+    baseURL,
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: process.env.CI ? "npx next dev" : "npm run build && npx next start --port 3100",
-    url: process.env.CI ? "http://127.0.0.1:3000" : "http://127.0.0.1:3100",
+    command: process.env.CI || isolatedDevServer ? `npx next dev --port ${port}` : `npm run build && npx next start --port ${port}`,
+    url: baseURL,
     reuseExistingServer: false,
     env: { ...process.env, KAHEL_AUTH_DISABLED: "true" },
   },

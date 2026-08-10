@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { getExpenses } from "@/lib/server/finance-data";
 import { KpiStrip } from "@/components/finance/kpi-strip";
 import { OperationCreateButton } from "@/components/shared/operation-create-button";
+import Link from "next/link";
 
 const CAT_TONES: Record<string, { bg: string; c: string }> = {
   Maintenance: { bg: "var(--color-info-bg)", c: "var(--color-info-text)" },
@@ -67,9 +68,7 @@ export default async function FinanceExpensesPage() {
             Money out — recorded studio costs by category
           </p>
         </div>
-        <OperationCreateButton kind="expense" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
-          <Plus className="h-4 w-4" /> Record expense
-        </OperationCreateButton>
+        <div className="flex flex-wrap justify-end gap-2"><Link href="/approvals?create=expense_reimbursement" className="flex h-10 shrink-0 items-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-semibold text-[#FF5300]">Request reimbursement</Link><OperationCreateButton kind="expense" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]"><Plus className="h-4 w-4" /> Record expense</OperationCreateButton></div>
       </div>
 
       <KpiStrip kpis={kpis} />

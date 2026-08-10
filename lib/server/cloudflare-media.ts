@@ -3,7 +3,7 @@ import "server-only";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { UPLOAD_URL_TTL_SECONDS, type ApprovedImageType } from "@/lib/media-contract";
+import { UPLOAD_URL_TTL_SECONDS } from "@/lib/media-contract";
 
 export class MediaInfrastructureError extends Error {}
 
@@ -20,7 +20,7 @@ export async function getMediaBindings() {
   };
 }
 
-export async function createDirectUploadUrl(input: { objectKey: string; contentType: ApprovedImageType; byteSize: number }) {
+export async function createDirectUploadUrl(input: { objectKey: string; contentType: string; byteSize: number }) {
   const accountId = process.env.R2_ACCOUNT_ID;
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;

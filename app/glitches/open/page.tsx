@@ -1,9 +1,3 @@
-export const dynamic = "force-dynamic";
+import { redirect } from "next/navigation";
 
-import { getGlitches } from "@/lib/server/glitches-data";
-import { GlitchesTable } from "@/components/glitches/glitches-table";
-
-export default async function Page() {
-  const glitches = await getGlitches();
-  return <GlitchesTable group="open" glitches={glitches} />;
-}
+export default function Page() { redirect("/glitches?view=active"); }

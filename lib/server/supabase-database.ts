@@ -42,7 +42,9 @@ type EquipmentCheckoutRow = { id: string; equipment_id: string; checked_out_by: 
 type MaintenanceRow = { id: string; task: string; asset_label: string; maintenance_type: string; issue: string | null; assignee: string; next_due: string | null; recurrence: string | null; estimated_cost: number | null; warranty: string | null; status: string; created_at: string; updated_at: string };
 type MarketingCampaignRow = { id: string; name: string; channel: string; spend: number; bookings_attributed: number; status: string; starts_at: string | null; ends_at: string | null; created_at: string; created_by: string | null };
 type QuotationRow = { id: string; reference: string; client_id: string | null; service_type: string; total: number; status: string; valid_until: string | null; notes: string | null; created_at: string; updated_at: string; created_by: string | null };
-type GlitchRow = { id: string; reference: string; title: string; area: string; reporter: string; severity: string; status: string; reported_at: string; resolved_at: string | null; created_by: string | null };
+type GlitchRow = { id: string; reference: string; title: string; description: string; category: string; severity: string; status: string; location_or_system: string | null; operations_blocked: boolean; workaround: string | null; resolution_summary: string | null; reporter_name: string | null; reported_by: string | null; assigned_to: string | null; resolved_by: string | null; booking_id: string | null; project_id: string | null; client_id: string | null; linked_task_id: string | null; observed_at: string; resolved_at: string | null; closed_at: string | null; archived_at: string | null; created_at: string; updated_at: string };
+type GlitchActivityRow = { id: number; glitch_id: string; actor_id: string | null; event_type: string; message: string; metadata: Json; created_at: string };
+type GlitchAttachmentRow = { id: string; glitch_id: string; storage_path: string; filename: string; content_type: string; byte_size: number; uploaded_by: string | null; created_at: string };
 type FeedbackReportRow = { id: string; iid: string; title: string; summary: string | null; app: string; kind: string; status: string; priority: string; submitted_at: string; submitted_by: string | null; checked: boolean };
 type TaskRow = { id: string; title: string; description: string | null; column_status: string; priority: string; category: string; assignee: string | null; due_date: string | null; recurrence: string | null; linked_ref: string | null; sort_order: number; created_at: string; updated_at: string; created_by: string | null };
 type ShiftRow = { id: string; day_of_week: number; initials: string; name: string; role: string; time_description: string | null; location: string; week_start: string; created_at: string; created_by: string | null };
@@ -62,6 +64,15 @@ type WebsitePortfolioRow = { id: string; slot: string; title: string; category: 
 type StaffAuditLogRow = { id: number; actor_id: string | null; actor_name: string; event: string; event_type: string; entity_type: string | null; entity_id: string | null; metadata: Json | null; ip_address: string | null; created_at: string };
 type ExpenseRow = { id: string; reference: string; category: string; description: string; expense_date: string; amount_php: number; created_by: string | null; created_at: string };
 type SavedReportRow = { id: string; name: string; source: string; period: string; schedule: string; created_by: string | null; created_at: string };
+export type ApprovalRequestRow = { id: string; reference: string; request_type: string; subject: string; description: string; priority: string; status: string; fulfillment_status: string | null; requester_id: string; current_approver_id: string | null; workflow_rule_id: string | null; source_module: string; source_record_id: string | null; source_reference: string | null; project_id: string | null; booking_id: string | null; client_id: string | null; employee_id: string | null; amount_php: number | null; currency: string; required_by: string | null; details: Json; notes_to_approver: string | null; idempotency_key: string; submitted_at: string | null; approved_at: string | null; rejected_at: string | null; withdrawn_at: string | null; completed_at: string | null; created_at: string; updated_at: string; archived_at: string | null };
+type ApprovalWorkflowRuleRow = { id: string; name: string; request_type: string; min_amount_php: number | null; max_amount_php: number | null; steps: Json; bulk_approval_allowed: boolean; bulk_amount_limit_php: number | null; allow_self_super_admin: boolean; priority: number; active: boolean; created_by: string | null; created_at: string; updated_at: string };
+export type ApprovalStepRow = { id: string; request_id: string; step_number: number; approver_user_id: string | null; approver_role: string | null; status: string; decision: string | null; comment: string | null; acted_by: string | null; acted_at: string | null; due_at: string | null; delegated_from: string | null; created_at: string };
+type ApprovalCommentRow = { id: string; request_id: string; author_id: string; body: string; visibility: string; created_at: string; updated_at: string };
+type ApprovalAttachmentRow = { id: string; request_id: string; media_asset_id: string; label: string | null; uploaded_by: string | null; created_at: string };
+type ApprovalFinancialEventRow = { id: string; request_id: string; event_type: string; amount_php: number; payment_method: string; transaction_reference: string; recorded_by: string; occurred_at: string; notes: string | null; created_at: string };
+type ApprovalLiquidationItemRow = { id: string; request_id: string; expense_date: string; category: string; description: string; amount_php: number; receipt_media_asset_id: string | null; created_at: string };
+type ApprovalAuditRow = { id: number; request_id: string; actor_id: string | null; action: string; previous_state: Json; new_state: Json; comment: string | null; approval_step_id: string | null; metadata: Json; created_at: string };
+type StaffNotificationRow = { id: string; recipient_id: string; request_id: string | null; event_key: string; kind: string; title: string; body: string; href: string; read_at: string | null; created_at: string };
 
 export type Database = {
   public: {
@@ -107,6 +118,8 @@ export type Database = {
       marketing_campaigns: Table<MarketingCampaignRow>;
       quotations: Table<QuotationRow>;
       glitches: Table<GlitchRow>;
+      glitch_activity: Table<GlitchActivityRow>;
+      glitch_attachments: Table<GlitchAttachmentRow>;
       feedback_reports: Table<FeedbackReportRow>;
       tasks: Table<TaskRow>;
       shifts: Table<ShiftRow>;
@@ -126,6 +139,15 @@ export type Database = {
       staff_audit_log: Table<StaffAuditLogRow>;
       expenses: Table<ExpenseRow>;
       saved_reports: Table<SavedReportRow>;
+      approval_workflow_rules: Table<ApprovalWorkflowRuleRow>;
+      approval_requests: Table<ApprovalRequestRow>;
+      approval_steps: Table<ApprovalStepRow>;
+      approval_comments: Table<ApprovalCommentRow>;
+      approval_attachments: Table<ApprovalAttachmentRow>;
+      approval_financial_events: Table<ApprovalFinancialEventRow>;
+      approval_liquidation_items: Table<ApprovalLiquidationItemRow>;
+      approval_audit_log: Table<ApprovalAuditRow>;
+      staff_notifications: Table<StaffNotificationRow>;
     };
     Views: Record<string, never>;
     Functions: {
@@ -142,6 +164,19 @@ export type Database = {
       loyalty_create_reward_booking: { Args: { requested_client_id: string; requested_profile_id: string; requested_reward_id: string; requested_idempotency_key: string; requested_reference: string; requested_date: string; requested_time: string; requested_location: string }; Returns: BookingRow };
       loyalty_claim_email: { Args: { requested_outbox_id?: string | null }; Returns: LoyaltyOutboxRow | null };
       loyalty_finish_email: { Args: { requested_outbox_id: string; succeeded: boolean; provider_id?: string | null; failure?: string | null }; Returns: undefined };
+      next_glitch_reference: { Args: Record<string, never>; Returns: string };
+      approval_create_request: { Args: { requested_requester_id: string; requested_idempotency_key: string; requested_request_type: string; requested_subject: string; requested_description: string; requested_priority: string; requested_source_module: string; requested_details: Json; requested_submit: boolean; requested_required_by?: string | null; requested_amount_php?: number | null; requested_currency?: string; requested_project_id?: string | null; requested_booking_id?: string | null; requested_client_id?: string | null; requested_employee_id?: string | null; requested_source_record_id?: string | null; requested_source_reference?: string | null; requested_notes?: string | null }; Returns: ApprovalRequestRow };
+      approval_submit_request: { Args: { requested_request_id: string; requested_actor_id: string; requested_comment?: string | null }; Returns: ApprovalRequestRow };
+      approval_update_request: { Args: { requested_request_id: string; requested_actor_id: string; requested_subject: string; requested_description: string; requested_priority: string; requested_details: Json; requested_required_by?: string | null; requested_amount_php?: number | null; requested_notes?: string | null; requested_submit?: boolean }; Returns: ApprovalRequestRow };
+      approval_decide_request: { Args: { requested_request_id: string; requested_actor_id: string; requested_action: string; requested_comment?: string | null }; Returns: ApprovalRequestRow };
+      approval_add_comment: { Args: { requested_request_id: string; requested_actor_id: string; requested_body: string; requested_visibility?: string }; Returns: ApprovalCommentRow };
+      approval_reassign_step: { Args: { requested_request_id: string; requested_actor_id: string; requested_target_id: string; requested_comment: string; requested_delegate?: boolean }; Returns: ApprovalRequestRow };
+      approval_bulk_approve: { Args: { requested_request_ids: string[]; requested_actor_id: string; requested_comment?: string | null }; Returns: number };
+      approval_withdraw_request: { Args: { requested_request_id: string; requested_actor_id: string; requested_comment?: string | null }; Returns: ApprovalRequestRow };
+      approval_archive_request: { Args: { requested_request_id: string; requested_actor_id: string; requested_comment: string }; Returns: ApprovalRequestRow };
+      approval_update_workflow_rule: { Args: { requested_rule_id: string; requested_actor_id: string; requested_min_amount_php: number | null; requested_max_amount_php: number | null; requested_bulk_allowed: boolean; requested_bulk_limit_php: number | null; requested_active: boolean }; Returns: ApprovalWorkflowRuleRow };
+      approval_record_financial_event: { Args: { requested_request_id: string; requested_actor_id: string; requested_event_type: string; requested_amount_php: number; requested_payment_method: string; requested_transaction_reference: string; requested_occurred_at: string; requested_notes?: string | null }; Returns: ApprovalRequestRow };
+      approval_enqueue_due_notifications: { Args: Record<string, never>; Returns: number };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Bell, Plus, Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { useTheme } from "@/components/theme/theme-provider";
 import { AvatarMenu } from "@/components/shell/avatar-menu";
 import { QuickCreateSheet } from "@/components/shell/quick-create";
+import { NotificationMenu } from "@/components/shell/notification-menu";
 
 export function LauncherTopbar({ onOpenCommandPalette }: { onOpenCommandPalette: () => void }) {
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
   const { resolved } = useTheme();
 
   const logoSrc =
@@ -49,30 +49,7 @@ export function LauncherTopbar({ onOpenCommandPalette }: { onOpenCommandPalette:
         <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Create</span>
       </button>
 
-      <div className="flex items-center gap-0.5">
-        <div className="relative">
-          <button
-            onClick={() => setNotifOpen((v) => !v)}
-            title="Notifications"
-            aria-expanded={notifOpen}
-            className="relative flex h-11 w-11 items-center justify-center rounded-control text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
-          >
-            <Bell className="h-5 w-5" strokeWidth={1.75} />
-          </button>
-          {notifOpen && (
-            <div className="absolute right-0 top-12 z-[60] w-[360px] overflow-hidden rounded-modal border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[0_18px_48px_-18px_rgba(20,20,20,0.28)]">
-              <div className="border-b border-[var(--color-border)] px-4 py-3.5">
-                <span className="font-display text-[15px] font-semibold">Notifications</span>
-              </div>
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Bell className="h-7 w-7 text-[var(--color-text-muted)]" strokeWidth={1.5} />
-                <p className="mt-3 text-sm font-semibold text-[var(--color-text-primary)]">No notifications</p>
-                <p className="mt-1 text-[13px] text-[var(--color-text-muted)]">You&apos;re all caught up.</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <NotificationMenu />
 
       <AvatarMenu size={44} />
 

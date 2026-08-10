@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { type ReactNode, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useToast } from "@/components/toast/toast-provider";
 
 export type PipelineStage = "pre" | "production" | "post";
@@ -286,6 +287,7 @@ function ProjectsPipelineContent({
           <span className="hidden text-xs font-semibold uppercase tracking-[0.06em] text-[var(--color-text-muted)] sm:block">
             {projects.length} active projects
           </span>
+          <Link href="/approvals?create=scope_change" className="inline-flex h-10 items-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-semibold text-[#FF5300]">Request change</Link>
           <button
             onClick={() => setFiltersOpen(true)}
             className="inline-flex h-10 items-center gap-1.5 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-sm font-semibold xl:hidden"

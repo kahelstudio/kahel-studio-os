@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, LayoutGrid, Menu, Search } from "lucide-react";
+import { LayoutGrid, Menu, Search } from "lucide-react";
 import { ACCENTS, type AppDef } from "@/lib/apps-config";
 import { AvatarMenu } from "@/components/shell/avatar-menu";
+import { NotificationMenu } from "@/components/shell/notification-menu";
 
 
 export function Topbar({
@@ -63,12 +64,7 @@ export function Topbar({
           <Search className="h-5 w-5" />
         </button>
 
-        <button
-          className="hidden h-11 w-11 items-center justify-center rounded-control text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] min-[420px]:flex"
-          aria-label="Notifications"
-        >
-          <Bell className="h-5 w-5" />
-        </button>
+        <div className="hidden min-[420px]:block"><NotificationMenu /></div>
         <AvatarMenu size={44} />
       </div>
     </header>

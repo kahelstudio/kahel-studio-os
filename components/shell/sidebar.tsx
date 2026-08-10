@@ -7,7 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import type { AppDef } from "@/lib/apps-config";
 import { cn } from "@/lib/utils";
 
-export function Sidebar({ app, onNavigate, empty = false }: { app: AppDef; onNavigate?: () => void; empty?: boolean }) {
+export function Sidebar({ app, onNavigate, empty = false, counts = {} }: { app: AppDef; onNavigate?: () => void; empty?: boolean; counts?: Record<string, number> }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
@@ -54,7 +54,8 @@ export function Sidebar({ app, onNavigate, empty = false }: { app: AppDef; onNav
                 )}
               >
                 {open ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
-                {item.label}
+                <span className="min-w-0 flex-1 truncate text-left">{item.label}</span>
+                {(counts[item.id] ?? 0) > 0 && <span className="rounded-pill bg-[var(--color-kahel-500)] px-2 py-0.5 text-[11px] font-semibold text-white" aria-label={`${counts[item.id]} pending`}>{counts[item.id]}</span>}
               </button>
               {open && (
                 <div className="ml-1 mt-0.5 flex flex-col gap-0.5 border-l border-[var(--color-border)] pl-2">
@@ -95,7 +96,8 @@ export function Sidebar({ app, onNavigate, empty = false }: { app: AppDef; onNav
                 : "font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
             )}
           >
-            {item.label}
+            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            {(counts[item.id] ?? 0) > 0 && <span className="rounded-pill bg-[var(--color-kahel-500)] px-2 py-0.5 text-[11px] font-semibold text-white" aria-label={`${counts[item.id]} pending`}>{counts[item.id]}</span>}
           </Link>
         );
       })}

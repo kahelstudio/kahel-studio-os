@@ -22,6 +22,7 @@ export type PaymentKpi = {
 
 const STATUS_BADGE: Record<string, { label: string; bg: string; color: string }> = {
   paid: { label: "Paid", bg: "var(--color-teal-100)", color: "var(--color-teal-800)" },
+  partially_paid: { label: "Deposit", bg: "var(--color-indigo-100)", color: "var(--color-indigo-800)" },
   pending: { label: "Pending", bg: "var(--color-amber-100)", color: "var(--color-amber-800)" },
   unpaid: { label: "Unpaid", bg: "var(--color-surface-muted)", color: "var(--color-text-secondary)" },
   failed: { label: "Failed", bg: "var(--color-red-100)", color: "var(--color-red-800)" },
@@ -45,7 +46,7 @@ export async function getPayments(): Promise<{ rows: PaymentRow[]; kpis: Payment
     paid_amount_php,
     client_id,
     clients:client_id ( name )
-  `).eq("payment_status", "paid").order("created_at", { ascending: false }).limit(200);
+  `).gt("paid_amount_php", 0).order("created_at", { ascending: false }).limit(200);
 
   if (error) throw error;
   const bookings = data as unknown as Array<{
@@ -72,7 +73,7 @@ export async function getPayments(): Promise<{ rows: PaymentRow[]; kpis: Payment
       stBg: badge.bg,
       stColor: badge.color,
       dirSign: "+",
-      amt: formatCurrency(b.total_amount_php),
+      amt: formatCurrency(b.paid_amount_php),
     };
   });
 

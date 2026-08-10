@@ -7,7 +7,7 @@ import { Sidebar } from "@/components/shell/sidebar";
 import { Topbar } from "@/components/shell/topbar";
 import { CommandPalette } from "@/components/shell/command-palette";
 
-export function AppShell({ appId, children, emptySidebar = false }: { appId: string; children: React.ReactNode; emptySidebar?: boolean }) {
+export function AppShell({ appId, children, emptySidebar = false, navCounts = {} }: { appId: string; children: React.ReactNode; emptySidebar?: boolean; navCounts?: Record<string, number> }) {
   const app = APPS_BY_ID[appId];
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -44,7 +44,7 @@ export function AppShell({ appId, children, emptySidebar = false }: { appId: str
       />
         <div className="flex flex-1 overflow-hidden">
           <div className="hidden xl:block">
-            <Suspense fallback={<div className="h-full w-60 border-r border-[var(--color-border)] bg-[var(--color-surface)]" />}><Sidebar app={app} empty={emptySidebar} /></Suspense>
+            <Suspense fallback={<div className="h-full w-60 border-r border-[var(--color-border)] bg-[var(--color-surface)]" />}><Sidebar app={app} empty={emptySidebar} counts={navCounts} /></Suspense>
         </div>
         <main className="app-shell-main flex flex-1 flex-col overflow-y-auto bg-[var(--color-canvas)]">
           {children}
@@ -67,7 +67,7 @@ export function AppShell({ appId, children, emptySidebar = false }: { appId: str
             >
               <X className="h-4 w-4" />
             </button>
-            <Suspense fallback={null}><Sidebar app={app} onNavigate={() => setMobileNavOpen(false)} empty={emptySidebar} /></Suspense>
+            <Suspense fallback={null}><Sidebar app={app} onNavigate={() => setMobileNavOpen(false)} empty={emptySidebar} counts={navCounts} /></Suspense>
           </div>
         </div>
       )}

@@ -19,9 +19,7 @@ function randomToken() {
 export async function POST(request: Request) {
   if (!hasTrustedOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   const principal = await getStaffPrincipal(request);
-  if (!principal || (!principal.permissions.includes("galleries.manage") && principal.role === "staff")) {
-    return NextResponse.json({ error: "Forbidden." }, { status: principal ? 403 : 401 });
-  }
+  if (!principal) return NextResponse.json({ error: "Forbidden." }, { status: 401 });
   const contentLength = Number(request.headers.get("content-length") ?? 0);
   if (!Number.isFinite(contentLength) || contentLength > 16_384) return NextResponse.json({ error: "Request is too large." }, { status: 413 });
 
@@ -32,12 +30,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
   const galleryId = typeof body.galleryId === "string" ? body.galleryId : "";
+  const approvalId = typeof body.approvalId === "string" ? body.approvalId : "";
   const filename = typeof body.filename === "string" ? body.filename.trim() : "";
   const contentType = typeof body.contentType === "string" ? body.contentType.toLowerCase() : "";
   const byteSize = typeof body.byteSize === "number" ? body.byteSize : Number.NaN;
   const checksum = typeof body.checksumSha256 === "string" ? body.checksumSha256.toLowerCase() : null;
-  if (!UUID.test(galleryId) || !filename || filename.length > 500 || !isApprovedImageType(contentType)) {
-    return NextResponse.json({ error: "Choose a valid JPEG, PNG, or WebP image." }, { status: 400 });
+  const approvalDocument = Boolean(approvalId) && contentType === "application/pdf";
+  if ((!UUID.test(galleryId) && !UUID.test(approvalId)) || (galleryId && approvalId) || !filename || filename.length > 500 || (!isApprovedImageType(contentType) && !approvalDocument)) {
+    return NextResponse.json({ error: approvalId ? "Choose a valid PDF, JPEG, PNG, or WebP file." : "Choose a valid JPEG, PNG, or WebP image." }, { status: 400 });
   }
   if (!Number.isSafeInteger(byteSize) || byteSize <= 0 || byteSize > MAX_ORIGINAL_BYTES) {
     return NextResponse.json({ error: "The image size is not allowed." }, { status: 400 });
@@ -45,25 +45,40 @@ export async function POST(request: Request) {
   if (checksum && !SHA256.test(checksum)) return NextResponse.json({ error: "Invalid SHA-256 checksum." }, { status: 400 });
 
   const extension = filename.split(".").pop()?.toLowerCase() ?? "";
-  const acceptedExtensions = contentType === "image/jpeg" ? ["jpg", "jpeg"] : [extensionForMimeType(contentType)];
+  const normalizedExtension = approvalDocument ? "pdf" : extensionForMimeType(contentType as "image/jpeg" | "image/png" | "image/webp");
+  const acceptedExtensions = contentType === "image/jpeg" ? ["jpg", "jpeg"] : [normalizedExtension];
   if (!acceptedExtensions.includes(extension)) return NextResponse.json({ error: "The file extension does not match its content type." }, { status: 400 });
 
   const admin = getSupabaseAdmin();
-  const galleryResult = await admin.from("galleries").select("id,client_id,project_id,status").eq("id", galleryId).maybeSingle();
-  if (galleryResult.error) return NextResponse.json({ error: "Unable to load gallery." }, { status: 500 });
-  const gallery = galleryResult.data;
-  if (!gallery || gallery.status === "archived" || gallery.status === "expired" || gallery.status === "published") {
-    return NextResponse.json({ error: "Uploads are unavailable for this gallery." }, { status: 409 });
+  let clientId: string | null = null;
+  let projectId: string | null = null;
+  let ownerKey: string;
+  if (approvalId) {
+    const approval = await admin.from("approval_requests").select("id,requester_id,client_id,project_id,status").eq("id", approvalId).is("archived_at", null).maybeSingle();
+    if (approval.error) return NextResponse.json({ error: "Unable to load approval request." }, { status: 500 });
+    if (!approval.data || approval.data.status === "withdrawn" || principal.role === "staff" && approval.data.requester_id !== principal.userId) return NextResponse.json({ error: "Uploads are unavailable for this request." }, { status: 403 });
+    clientId = approval.data.client_id;
+    projectId = approval.data.project_id;
+    ownerKey = `approvals/${approvalId}`;
+  } else {
+    if (!principal.permissions.includes("galleries.manage") && principal.role === "staff") return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+    const galleryResult = await admin.from("galleries").select("id,client_id,project_id,status").eq("id", galleryId).maybeSingle();
+    if (galleryResult.error) return NextResponse.json({ error: "Unable to load gallery." }, { status: 500 });
+    const gallery = galleryResult.data;
+    if (!gallery || gallery.status === "archived" || gallery.status === "expired" || gallery.status === "published") return NextResponse.json({ error: "Uploads are unavailable for this gallery." }, { status: 409 });
+    clientId = gallery.client_id;
+    projectId = gallery.project_id;
+    ownerKey = `${gallery.client_id}/${gallery.project_id}/${gallery.id}`;
   }
-  if (checksum) {
-    const duplicate = await admin.from("media_assets").select("id").eq("client_id", gallery.client_id).eq("checksum_sha256", checksum).neq("status", "archived").limit(1);
+  if (checksum && clientId) {
+    const duplicate = await admin.from("media_assets").select("id").eq("client_id", clientId).eq("checksum_sha256", checksum).neq("status", "archived").limit(1);
     if (duplicate.error) return NextResponse.json({ error: "Unable to check duplicate media." }, { status: 500 });
     if (duplicate.data?.length) return NextResponse.json({ error: "This image has already been uploaded.", duplicateMediaAssetId: duplicate.data[0].id }, { status: 409 });
   }
 
   const mediaAssetId = crypto.randomUUID();
   const sessionId = crypto.randomUUID();
-  const objectKey = `originals/${gallery.client_id}/${gallery.project_id}/${gallery.id}/${mediaAssetId}.${extensionForMimeType(contentType)}`;
+  const objectKey = `originals/${ownerKey}/${mediaAssetId}.${normalizedExtension}`;
   let directUpload: { uploadUrl: string; expiresAt: string };
   try {
     directUpload = await createDirectUploadUrl({ objectKey, contentType, byteSize });
@@ -76,8 +91,8 @@ export async function POST(request: Request) {
   const now = new Date().toISOString();
   const mediaResult = await admin.from("media_assets").insert({
     id: mediaAssetId,
-    client_id: gallery.client_id,
-    project_id: gallery.project_id,
+    client_id: clientId,
+    project_id: projectId,
     private_r2_key: objectKey,
     original_filename: filename,
     original_extension: extension,
@@ -93,8 +108,8 @@ export async function POST(request: Request) {
   if (mediaResult.error) return NextResponse.json({ error: "Unable to create media record." }, { status: 500 });
   const sessionResult = await admin.from("media_upload_sessions").insert({
     id: sessionId,
-    client_id: gallery.client_id,
-    project_id: gallery.project_id,
+    client_id: clientId,
+    project_id: projectId,
     created_by: principal.userId,
     upload_token_hash: uploadTokenHash,
     expected_mime_type: contentType,
