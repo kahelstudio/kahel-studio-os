@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { CheckCircle2, FolderKanban } from "lucide-react";
 import {
@@ -10,6 +10,7 @@ import {
   type BookingStatusId,
 } from "@/lib/sample-data";
 import { useToast } from "@/components/toast/toast-provider";
+import { updateBookingStatus } from "./actions";
 
 const STEP_LABELS: Record<BookingStatusId, string> = {
   inquiry: "Inquiry",
@@ -22,13 +23,21 @@ const STEP_LABELS: Record<BookingStatusId, string> = {
 
 export function BookingDetailClient({ booking }: { booking: BookingRow }) {
   const [status, setStatus] = useState<BookingStatusId>(booking.status);
+  const [isPending, startTransition] = useTransition();
   const { fireToast } = useToast();
   const statusMeta = BOOKING_STATUS[status];
   const curIndex = BOOKING_STEPS_ORDER.indexOf(status);
 
   function confirmBooking() {
-    setStatus("confirmed");
-    fireToast(`${booking.ref} confirmed · deposit invoice sent`, "success");
+    startTransition(async () => {
+      try {
+        await updateBookingStatus(booking.ref, "confirmed");
+        setStatus("confirmed");
+        fireToast(`${booking.ref} confirmed · deposit invoice sent`, "success");
+      } catch {
+        fireToast("Failed to confirm booking. Please try again.", "danger");
+      }
+    });
   }
 
   return (
@@ -133,19 +142,23 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
             </div>
           )}
 
-          {status === "quoted" && (
+          {(status === "inquiry" || status === "quoted") && (
             <div className="rounded-card border border-[#FADBB0] bg-[var(--color-kahel-50)] p-5">
               <div className="font-display text-[15px] font-semibold text-[var(--color-kahel-700)]">
                 Ready to confirm?
               </div>
               <p className="my-1.5 text-[13px] leading-[19px] text-[var(--color-text-secondary)]">
-                Sends the deposit invoice and locks the date. This is the moment that matters.
+                {status === "quoted"
+                  ? "Sends the deposit invoice and locks the date. This is the moment that matters."
+                  : "Lock in the date and move this booking to confirmed. You can send an invoice separately."}
               </p>
               <button
                 onClick={confirmBooking}
-                className="flex h-[52px] w-full items-center justify-center gap-2 rounded-control bg-[var(--color-kahel-500)] font-display text-base font-semibold text-white hover:bg-[var(--color-kahel-600)]"
+                disabled={isPending}
+                className="flex h-[52px] w-full items-center justify-center gap-2 rounded-control bg-[var(--color-kahel-500)] font-display text-base font-semibold text-white hover:bg-[var(--color-kahel-600)] disabled:opacity-60"
               >
-                <CheckCircle2 className="h-[18px] w-[18px]" /> Confirm booking
+                <CheckCircle2 className="h-[18px] w-[18px]" />
+                {isPending ? "Confirming…" : "Confirm booking"}
               </button>
             </div>
           )}
