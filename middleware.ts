@@ -54,7 +54,9 @@ export async function middleware(request: NextRequest) {
     return res;
   }
   if (isPublicPath(pathname) || authenticated) {
-    const res = NextResponse.next(withPathname);
+    const reqHeaders = new Headers({ ...Object.fromEntries(request.headers), "x-pathname": pathname });
+    if (accessToken) reqHeaders.set("x-staff-access-token", accessToken);
+    const res = NextResponse.next({ request: { headers: reqHeaders } });
     if (accessToken) res.cookies.set(STAFF_SESSION_COOKIE, accessToken, cookieOptions);
     if (refreshToken) res.cookies.set(STAFF_REFRESH_COOKIE, refreshToken, cookieOptions);
     return res;

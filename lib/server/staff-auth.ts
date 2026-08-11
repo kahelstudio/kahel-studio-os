@@ -62,6 +62,8 @@ export function staffEmailAuthorized(email: string | undefined) {
 }
 
 function accessTokenFromRequest(request: Request) {
+  const headerToken = request.headers.get("x-staff-access-token");
+  if (headerToken) return headerToken;
   return request.headers.get("cookie")?.match(new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]+)`))?.[1];
 }
 
