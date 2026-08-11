@@ -115,7 +115,7 @@ export async function POST(request: Request) {
         cancel_url: `${origin}/?checkout=cancelled`, description: input.session,
         line_items: [{ amount: amountDue, currency: "PHP", name: `${input.session} ${input.pay === "deposit" ? "50% deposit" : "full payment"}`, quantity: 1 }],
         metadata: { booking_id: booking.id, booking_date: date, booking_time: time, payment_type: input.pay },
-        payment_method_types: ["card", "gcash", "qrph"], reference_number: booking.reference, send_email_receipt: true, show_description: true, show_line_items: true,
+        payment_method_types: ["card", "gcash", "paymaya", "grab_pay", "qrph"], reference_number: booking.reference, send_email_receipt: true, show_description: true, show_line_items: true,
         success_url: `${origin}/?checkout=success&reference=${encodeURIComponent(booking.reference)}`,
       } } }), cache: "no-store",
     });
