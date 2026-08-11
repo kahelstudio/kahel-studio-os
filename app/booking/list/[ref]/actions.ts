@@ -15,6 +15,18 @@ export async function updateBookingStatus(ref: string, status: BookingStatusId) 
   revalidatePath("/booking/list");
 }
 
+export async function rescheduleBooking(ref: string, serviceDate: string, serviceTime: string) {
+  const admin = getSupabaseAdmin();
+  const { error } = await admin
+    .from("bookings")
+    .update({ service_date: serviceDate, service_time: serviceTime })
+    .eq("reference", ref);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/booking/list/${ref}`);
+  revalidatePath("/booking/list");
+  revalidatePath("/booking/calendar");
+}
+
 export async function saveDepositVerificationId(ref: string, verificationId: string) {
   const admin = getSupabaseAdmin();
   const { error } = await admin
