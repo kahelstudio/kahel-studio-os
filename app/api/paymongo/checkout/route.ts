@@ -55,6 +55,11 @@ export async function POST(request: Request) {
     if (prior.error) throw prior.error;
     if (prior.data?.paymongo_checkout_url) return NextResponse.json({ checkoutUrl: prior.data.paymongo_checkout_url, reference: prior.data.reference, reused: true });
 
+    if (!prior.data) {
+      const { data: conflict } = await admin.from("bookings").select("id").eq("service_date", date).eq("service_time", time).not("status", "in", '("cancelled","inquiry")').maybeSingle();
+      if (conflict) return NextResponse.json({ error: "This date and time is no longer available. Please select a different slot." }, { status: 409 });
+    }
+
     const names = splitName(input.name);
     const profile = await getProfileByEmail(email) ?? await createCustomerProfile({ ...names, email, mobile });
     const reference = prior.data?.reference ?? `KS-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
