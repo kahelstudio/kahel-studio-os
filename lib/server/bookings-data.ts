@@ -166,7 +166,7 @@ export async function getRealBookingByRef(ref: string): Promise<RealBookingRow |
   }
 }
 
-export type CalendarEvent = { title: string; time: string; accent: "ink" | "orange" | "indigo" | "teal" };
+export type CalendarEvent = { ref: string; title: string; time: string; accent: "ink" | "orange" | "indigo" | "teal" };
 
 export async function getCalendarEventsByDate(startDate: string, endDate: string): Promise<Record<string, CalendarEvent[]>> {
   try {
@@ -193,6 +193,7 @@ export async function getCalendarEventsByDate(startDate: string, endDate: string
     for (const booking of bookings) {
       grouped[booking.service_date] ??= [];
       grouped[booking.service_date].push({
+        ref: booking.reference,
         title: `${booking.clients?.name ?? booking.reference}: ${booking.service_type}`,
         time: booking.service_time.slice(0, 5),
         accent: accentByStatus[booking.status] ?? "ink",

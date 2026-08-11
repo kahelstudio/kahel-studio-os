@@ -45,17 +45,17 @@ export default async function BookingListPage({ searchParams }: { searchParams: 
         </OperationCreateButton>
       </div>
 
-      <div className="mb-3.5 flex flex-wrap gap-2">
+      <div className="mb-3.5 flex gap-6 overflow-x-auto">
         {FILTERS.map((item) => (
           <Link
             key={item.id}
             href={item.id === "all" ? "/booking/list" : `/booking/list?filter=${item.id}`}
             aria-current={filter === item.id ? "page" : undefined}
             className={cn(
-              "inline-flex h-8 items-center rounded-pill border px-3.5 text-[13px] font-medium",
+              "shrink-0 border-b-2 pb-2 pt-1 text-[13px] font-semibold transition-colors",
               filter === item.id
-                ? "border-[var(--color-kahel-500)] bg-[var(--color-kahel-50)] text-[var(--color-kahel-700)]"
-                : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)]"
+                ? "border-[#FF5300] text-[#FF5300]"
+                : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
             )}
           >
             {item.label}

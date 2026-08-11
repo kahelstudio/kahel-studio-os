@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { Camera, Coins, CreditCard, TrendingUp } from "lucide-react";
 import {
   getDashboardKpis,
+  getRevenueTrend,
   getDashboardSchedule,
   getDashboardBalances,
   getDashboardInquiries,
@@ -10,15 +11,7 @@ import {
 
 const KPI_ICONS = [Coins, TrendingUp, Camera, CreditCard];
 
-const REVENUE_CHART = [
-  { month: "FEB", value: 238 },
-  { month: "MAR", value: 296 },
-  { month: "APR", value: 271 },
-  { month: "MAY", value: 344 },
-  { month: "JUN", value: 349 },
-  { month: "JUL", value: 412 },
-];
-const maxRevenue = Math.max(...REVENUE_CHART.map((c) => c.value));
+
 
 function formatCurrency(centavos: number) {
   return `\u20B1${(centavos / 100).toLocaleString("en-PH", { maximumFractionDigits: 0 })}`;
@@ -51,8 +44,9 @@ function toAmPm(time: string) {
 }
 
 export default async function DashboardPage() {
-  const [kpis, schedule, balances, inquiries] = await Promise.all([
+  const [kpis, revenue, schedule, balances, inquiries] = await Promise.all([
     getDashboardKpis(),
+    getRevenueTrend(),
     getDashboardSchedule(),
     getDashboardBalances(),
     getDashboardInquiries(),
@@ -76,7 +70,9 @@ export default async function DashboardPage() {
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">How are we doing this month</p>
         </div>
-        <span className="text-xs tracking-[0.04em] text-[var(--color-text-muted)]">JUL 2026 · MTD</span>
+        <span className="text-xs tracking-[0.04em] text-[var(--color-text-muted)]">
+          {new Date().toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "Asia/Manila" }).toUpperCase()} · MTD
+        </span>
       </div>
 
       <div className="mt-6 grid grid-cols-4 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
@@ -114,30 +110,35 @@ export default async function DashboardPage() {
             </span>
             <span className="text-xs tracking-[0.04em] text-[var(--color-text-muted)]">6 MO</span>
           </div>
-          <div className="relative mt-[22px] flex h-[210px] items-end gap-4 border-b border-[var(--color-border)] pb-[26px]">
-            {REVENUE_CHART.map((b, i) => {
-              const last = i === REVENUE_CHART.length - 1;
-              return (
-                <div key={b.month} className="flex h-full flex-1 flex-col items-center justify-end gap-2.5">
-                  <div
-                    className="font-display text-xs font-semibold"
-                    style={{ color: last ? "var(--color-kahel-700)" : "var(--color-text-muted)" }}
-                  >
-                    ₱{b.value}k
-                  </div>
-                  <div
-                    className="w-full rounded-t-[5px]"
-                    style={{
-                      height: `${Math.round((b.value / maxRevenue) * 150)}px`,
-                      background: last ? "var(--color-kahel-500)" : "var(--color-ink-300)",
-                    }}
-                  />
-                  <div className="absolute bottom-0 text-[11px] tracking-[0.03em] text-[var(--color-text-muted)]">
-                    {b.month}
-                  </div>
+            <div className="relative mt-[22px] flex h-[210px] items-end gap-4 border-b border-[var(--color-border)] pb-[26px]">
+              {revenue.bars.length === 0 && (
+                <div className="flex h-full w-full items-center justify-center text-xs text-[var(--color-text-muted)]">
+                  No data yet.
                 </div>
-              );
-            })}
+              )}
+              {revenue.bars.map((b, i) => {
+                const last = i === revenue.bars.length - 1;
+                return (
+                  <div key={b.month} className="flex h-full flex-1 flex-col items-center justify-end gap-2.5">
+                    <div
+                      className="font-display text-xs font-semibold"
+                      style={{ color: last ? "var(--color-kahel-700)" : "var(--color-text-muted)" }}
+                    >
+                      ₱{b.value}k
+                    </div>
+                    <div
+                      className="w-full rounded-t-[5px]"
+                      style={{
+                        height: `${Math.round((b.value / revenue.maxValue) * 150)}px`,
+                        background: last ? "var(--color-kahel-500)" : "var(--color-ink-300)",
+                      }}
+                    />
+                    <div className="absolute bottom-0 text-[11px] tracking-[0.03em] text-[var(--color-text-muted)]">
+                      {b.month}
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
 

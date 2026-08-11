@@ -55,9 +55,12 @@ export async function PUT(request: Request) {
   if (error) return NextResponse.json({ error: "The authentication code is invalid or expired." }, { status: 400 });
   const response = NextResponse.json({ verified: true });
   const secure = { httpOnly: true, sameSite: "lax" as const, secure: IS_PRODUCTION, path: "/" };
-  response.cookies.set(STAFF_SESSION_COOKIE, data.access_token, { ...secure, maxAge: data.expires_in });
   const rememberMfa = request.headers.get("cookie")?.match(new RegExp(`(?:^|; )${MFA_REMEMBER_COOKIE}=([^;]+)`))?.[1];
-  if (rememberMfa === "1") response.cookies.set(STAFF_REFRESH_COOKIE, data.refresh_token, { ...secure, maxAge: 60 * 60 * 24 * 30 });
+  const sessionMaxAge = rememberMfa === "1" ? 60 * 60 * 24 * 30 : data.expires_in;
+  response.cookies.set(STAFF_SESSION_COOKIE, data.access_token, { ...secure, maxAge: sessionMaxAge });
+  if (data.refresh_token) {
+    response.cookies.set(STAFF_REFRESH_COOKIE, data.refresh_token, { ...secure, maxAge: 60 * 60 * 24 * 30 });
+  }
   if (rememberMfa) response.cookies.set(MFA_REMEMBER_COOKIE, "", { ...secure, maxAge: 0 });
   return response;
 }

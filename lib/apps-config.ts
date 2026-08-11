@@ -104,7 +104,7 @@ export const APPS: AppDef[] = [
     launcherGroup: "live",
     nav: [
       { id: "queue", label: "Follow-up queue", href: "/crm/queue" },
-      { id: "accounts", label: "Accounts", href: "/crm/accounts" },
+      { id: "accounts", label: "Customers", href: "/crm/accounts" },
     ],
   },
   {

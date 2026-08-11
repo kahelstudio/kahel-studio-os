@@ -3,16 +3,11 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getCalendarEvents, getCalendarEventsByDate, type CalendarEvent } from "@/lib/server/bookings-data";
+import { CalendarGrid } from "./calendar-grid";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const EVENT_TINT: Record<CalendarEvent["accent"], { bg: string; c: string }> = {
-  ink: { bg: "var(--color-surface-muted)", c: "var(--color-text-primary)" },
-  orange: { bg: "var(--color-kahel-50)", c: "var(--color-kahel-700)" },
-  indigo: { bg: "var(--color-indigo-100)", c: "var(--color-indigo-800)" },
-  teal: { bg: "var(--color-teal-100)", c: "var(--color-teal-800)" },
-};
-type CalendarView = "month" | "week";
-type CalendarCell = { key: string; day: number | null; today: boolean; inMonth: boolean; events: CalendarEvent[] };
+export type CalendarView = "month" | "week";
+type CalendarCell = { key: string; day: number | null; today: boolean; past: boolean; inMonth: boolean; events: CalendarEvent[] };
 
 export default async function BookingCalendarPage({ searchParams }: { searchParams: Promise<{ date?: string | string[]; view?: string | string[] }> }) {
   const query = await searchParams;
@@ -39,20 +34,9 @@ export default async function BookingCalendarPage({ searchParams }: { searchPara
     <div className="overflow-x-auto rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
       <div className="min-w-[760px]">
         <div className="grid grid-cols-7 border-b border-[var(--color-border)] bg-[var(--color-canvas)]">{WEEKDAYS.map((day) => <div key={day} className="px-3 py-2.5 text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">{day}</div>)}</div>
-        <div className={`grid grid-cols-7 ${view === "week" ? "auto-rows-[minmax(360px,calc(100dvh-245px))]" : "auto-rows-[112px]"}`}>
-          {period.cells.map((cell) => <CalendarDay key={cell.key} cell={cell} expanded={view === "week"} />)}
-        </div>
+        <CalendarGrid cells={period.cells} view={view} />
       </div>
     </div>
-  </div>;
-}
-
-function CalendarDay({ cell, expanded }: { cell: CalendarCell; expanded: boolean }) {
-  const visible = expanded ? cell.events : cell.events.slice(0, 3);
-  return <div className="overflow-hidden border-b border-r border-[var(--color-border)] p-2" style={{ background: cell.today ? "var(--color-kahel-50)" : "var(--color-surface)" }}>
-    <div className="flex items-center gap-1.5 text-[13px]" style={{ fontWeight: cell.today ? 700 : 500, color: !cell.inMonth ? "var(--color-text-muted)" : cell.today ? "var(--color-kahel-700)" : "var(--color-text-secondary)" }}>{cell.day ?? ""}{cell.today && <span className="rounded-pill bg-[var(--color-kahel-100)] px-1.5 py-px text-[10px] font-semibold text-[var(--color-kahel-700)]">Today</span>}</div>
-    <div className={expanded ? "mt-2 space-y-1" : ""}>{visible.map((event, index) => { const tint = EVENT_TINT[event.accent]; return <div key={`${event.time}-${event.title}-${index}`} className={`rounded-[4px] px-1.5 text-[11px] font-medium ${expanded ? "py-1.5 whitespace-normal" : "mb-0.5 truncate py-px"}`} style={{ background: tint.bg, color: tint.c }} title={`${event.title} at ${event.time}`}>{event.time} {event.title}</div>; })}</div>
-    {!expanded && cell.events.length > 3 && <div className="text-[11px] font-medium text-[var(--color-text-muted)]">+{cell.events.length - 3} more</div>}
   </div>;
 }
 
@@ -70,7 +54,7 @@ async function monthPeriod(selected: Date, todayIso: string) {
       const day = index - firstDay + 1;
       const inMonth = day >= 1 && day <= daysInMonth;
       const key = inMonth ? `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}` : `blank-${index}`;
-      return { key, day: inMonth ? day : null, today: key === todayIso, inMonth, events: inMonth ? events[day] ?? [] : [] };
+      return { key, day: inMonth ? day : null, today: key === todayIso, past: inMonth && key < todayIso, inMonth, events: inMonth ? events[day] ?? [] : [] };
     }),
   };
 }
@@ -85,7 +69,7 @@ async function weekPeriod(selected: Date, todayIso: string) {
   const label = sameMonth
     ? `${new Intl.DateTimeFormat("en-US", { month: "long", timeZone: "UTC" }).format(start)} ${start.getUTCDate()}–${end.getUTCDate()}, ${end.getUTCFullYear()}`
     : `${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(start)} – ${new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }).format(end)}`;
-  return { label, cells: Array.from({ length: 7 }, (_, index): CalendarCell => { const date = new Date(start); date.setUTCDate(start.getUTCDate() + index); const key = toIso(date); return { key, day: date.getUTCDate(), today: key === todayIso, inMonth: date.getUTCMonth() === selected.getUTCMonth(), events: events[key] ?? [] }; }) };
+  return { label, cells: Array.from({ length: 7 }, (_, index): CalendarCell => { const date = new Date(start); date.setUTCDate(start.getUTCDate() + index); const key = toIso(date); return { key, day: date.getUTCDate(), today: key === todayIso, past: key < todayIso, inMonth: date.getUTCMonth() === selected.getUTCMonth(), events: events[key] ?? [] }; }) };
 }
 
 function calendarHref(date: string, view: CalendarView) { return `/booking/calendar?date=${date}&view=${view}`; }

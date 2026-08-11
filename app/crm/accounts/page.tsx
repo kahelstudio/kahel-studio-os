@@ -9,15 +9,6 @@ import { NewAccountButton } from "./new-account-button";
 const FILTERS = ["All", "Corporate", "Consumer", "Referral source"] as const;
 type Filter = (typeof FILTERS)[number];
 
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 3)
-    .toUpperCase();
-}
-
 function formatPHP(n: number) {
   return `₱${n.toLocaleString("en-PH")}`;
 }
@@ -34,7 +25,6 @@ export default async function CrmAccountsPage({
   const allAccounts = rows.map((r) => ({
     id: r.id,
     name: r.name,
-    ini: initials(r.name),
     type: r.accountType === "corporate" ? "Corporate" as const : "Consumer" as const,
     accent: "indigo" as const,
     source: r.externalRef ?? "",
@@ -56,11 +46,11 @@ export default async function CrmAccountsPage({
   return (
     <div className="p-4 pt-6 sm:p-10 sm:pt-8">
       <div className="mb-5 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">Accounts</h1>
+        <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">Customers</h1>
         <NewAccountButton />
       </div>
 
-      <div className="mb-3.5 flex gap-2 overflow-x-auto pb-1">
+      <div className="mb-3.5 flex gap-6 overflow-x-auto">
         {FILTERS.map((f) => {
           const active = f === activeFilter;
           return (
@@ -69,10 +59,10 @@ export default async function CrmAccountsPage({
               href={f === "All" ? "/crm/accounts" : `/crm/accounts?type=${encodeURIComponent(f)}`}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "h-8 shrink-0 rounded-pill border px-3.5 text-[13px] font-medium transition-colors",
+                "shrink-0 border-b-2 pb-2 pt-1 text-[13px] font-semibold transition-colors",
                 active
-                  ? "border-[var(--color-ink-600)] bg-[var(--color-ink-600)] text-white"
-                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-ink-400)] hover:text-[var(--color-text-primary)]"
+                  ? "border-[#FF5300] text-[#FF5300]"
+                  : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
               )}
             >
               {f}
@@ -83,7 +73,7 @@ export default async function CrmAccountsPage({
 
       <div className="overflow-x-auto rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="grid h-11 min-w-[720px] grid-cols-[2fr_1.4fr_0.9fr_1.1fr_1fr] items-center bg-[var(--color-canvas)] px-[18px] text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
-          <div>Account</div>
+          <div>Customer</div>
           <div>Mobile</div>
           <div>Type</div>
           <div>Last booking</div>
@@ -91,7 +81,7 @@ export default async function CrmAccountsPage({
         </div>
         {accounts.length === 0 ? (
           <div className="flex h-24 items-center justify-center text-sm text-[var(--color-text-muted)]">
-            No accounts match this filter.
+            No customers match this filter.
           </div>
         ) : (
           accounts.map((a) => {
@@ -102,13 +92,7 @@ export default async function CrmAccountsPage({
                 href={`/crm/accounts/${a.id}`}
                 className="grid h-14 min-w-[720px] grid-cols-[2fr_1.4fr_0.9fr_1.1fr_1fr] items-center border-b border-[var(--color-border)] px-[18px] text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
               >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div
-                    className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-control font-display text-[13px] font-semibold"
-                    style={{ background: accent.tint, color: accent.text }}
-                  >
-                    {a.ini}
-                  </div>
+                <div className="flex min-w-0 items-center">
                   <span className="truncate font-semibold text-[var(--color-text-primary)]">{a.name}</span>
                 </div>
                 <div className="text-[13px] text-[var(--color-text-secondary)]">{a.phone}</div>

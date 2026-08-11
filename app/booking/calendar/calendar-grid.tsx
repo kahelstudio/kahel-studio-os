@@ -64,12 +64,6 @@ export function CalendarGrid({ cells, view }: { cells: CalendarCell[]; view: Cal
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
   const dragRef = useRef<{ ref: string; sourceDate: string; sourceTime: string } | null>(null);
 
-  function handleDragStart(event: React.DragEvent, calEvent: CalendarEvent, sourceDate: string) {
-    dragRef.current = { ref: calEvent.ref, sourceDate, sourceTime: calEvent.time };
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", calEvent.ref);
-  }
-
   function handleDragOver(event: React.DragEvent, cellKey: string) {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";

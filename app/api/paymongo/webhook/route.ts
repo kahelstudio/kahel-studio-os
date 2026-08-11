@@ -110,7 +110,8 @@ export async function POST(request: Request) {
     .maybeSingle<BookingRow>();
 
   if (fetchError || !existing) {
-    return NextResponse.json({ error: "Booking not found." }, { status: 404 });
+    console.error("[paymongo-webhook] Booking not found:", checkout.bookingId, fetchError);
+    return NextResponse.json({ received: true, warning: "Booking not found." });
   }
   const paidAmount = existing.payment_type === "deposit" ? Math.round(existing.total_amount_php * 0.5) : existing.total_amount_php;
   const paymentStatus = paidAmount < existing.total_amount_php ? "partially_paid" : "paid";
@@ -132,7 +133,8 @@ export async function POST(request: Request) {
     updated_at: new Date().toISOString(),
   }).eq("id", checkout.bookingId);
   if (updateError) {
-    return NextResponse.json({ error: "Failed to update booking payment status." }, { status: 500 });
+    console.error("[paymongo-webhook] Failed to update booking:", checkout.bookingId, updateError);
+    return NextResponse.json({ received: true, warning: "Failed to update booking payment status." });
   }
 
   return NextResponse.json({ received: true });

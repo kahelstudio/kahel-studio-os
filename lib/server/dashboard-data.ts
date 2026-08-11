@@ -36,6 +36,11 @@ export type DashboardInquiry = {
   created_at: string;
 };
 
+export type RevenueBar = {
+  month: string;
+  value: number;
+};
+
 export type LauncherSummary = {
   eventsToday: number;
   studioSessionsToday: number;
@@ -146,6 +151,51 @@ export async function getDashboardKpis(): Promise<DashboardKpis> {
   } catch (error) {
     console.error("getDashboardKpis: table not available", (error as Error).message);
     return { revenueMtd: 0, grossProfit: 0, avgBookingValue: 0, outstanding: 0 };
+  }
+}
+
+export async function getRevenueTrend(): Promise<{ bars: RevenueBar[]; maxValue: number }> {
+  try {
+    const admin = getSupabaseAdmin();
+    const months: { label: string; start: string; end: string }[] = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const year = d.getFullYear();
+      const month = d.getMonth();
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      months.push({
+        label: d.toLocaleDateString("en-US", { month: "short", timeZone: "Asia/Manila" }).toUpperCase(),
+        start: `${year}-${pad(month + 1)}-01`,
+        end: `${year}-${pad(month + 1)}-${pad(lastDay)}`,
+      });
+    }
+
+    const { data, error } = await admin
+      .from("bookings")
+      .select("service_date, total_amount_php")
+      .gte("service_date", months[0].start)
+      .lte("service_date", months[months.length - 1].end)
+      .not("status", "in", '("cancelled","inquiry")');
+
+    if (error) throw error;
+
+    const byMonth = new Map<string, number>();
+    for (const b of data ?? []) {
+      const key = (b.service_date as string).slice(0, 7);
+      byMonth.set(key, (byMonth.get(key) ?? 0) + (b.total_amount_php as number));
+    }
+
+    const bars: RevenueBar[] = months.map((m) => {
+      const totalCentavos = byMonth.get(m.start.slice(0, 7)) ?? 0;
+      return { month: m.label, value: Math.round(totalCentavos / 100000) };
+    });
+
+    return { bars, maxValue: Math.max(1, ...bars.map((b) => b.value)) };
+  } catch (error) {
+    console.error("getRevenueTrend: data unavailable", (error as Error).message);
+    return { bars: [], maxValue: 1 };
   }
 }
 

@@ -41,8 +41,9 @@ export async function POST(request: Request) {
   response.cookies.set(STAFF_SESSION_COOKIE, session.access_token, cookieOptions);
   if (mfaRequired) {
     response.cookies.set(MFA_REMEMBER_COOKIE, rememberMe === true ? "1" : "0", { ...cookieOptions, maxAge: 10 * 60 });
-  } else if (rememberMe === true && session.refresh_token) {
-    response.cookies.set(STAFF_REFRESH_COOKIE, session.refresh_token, cookieOptions);
+  }
+  if (session.refresh_token) {
+    response.cookies.set(STAFF_REFRESH_COOKIE, session.refresh_token, { ...cookieOptions, maxAge: REMEMBER_ME_MAX_AGE });
   }
   return response;
 }

@@ -117,13 +117,67 @@ function FilterChips({ active, setActive }: { active: string; setActive: (value:
 
 function Gallery({ filter, home = false }: { filter: string; home?: boolean }) {
   const frames = (filter === "All" ? gallery : gallery.filter((frame) => frame.category === filter)).slice(0, home ? 9 : undefined);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const swipeStartRef = useRef<number | null>(null);
+
+  function closeViewer() {
+    setActiveIndex(null);
+    requestAnimationFrame(() => restoreFocusRef.current?.focus());
+  }
+  function showPrevious() { setActiveIndex((index) => index === null ? null : (index - 1 + frames.length) % frames.length); }
+  function showNext() { setActiveIndex((index) => index === null ? null : (index + 1) % frames.length); }
+
+  useEffect(() => {
+    if (activeIndex === null) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    dialogRef.current?.querySelector<HTMLElement>("button")?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeViewer();
+      if (event.key === "ArrowLeft") showPrevious();
+      if (event.key === "ArrowRight") showNext();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeIndex]);
+
+  function openViewer(index: number) {
+    restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setActiveIndex(index);
+  }
+
+  const activeFrame = activeIndex === null ? null : frames[activeIndex];
+
   if (!frames.length) return <div className={styles.emptyState}><div className={styles.filmIcon} /><h3>No frames in this roll yet.</h3><p>New work from this category is still developing. View the full sheet.</p></div>;
-  return <div className={`${styles.gallery} ${home ? styles.homeGallery : ""}`}>{frames.map((frame, index) => <figure key={frame.ref} className={home && (index === 0 || index === 5 || index === 8) ? styles.wideFrame : ""}>
-    <Photo alt={`${frame.label}, ${frame.category} photography in ${frame.place}`} src={frame.src} position={frame.position} />
-    <span className={styles.corner} />
-    <span className={styles.frameRef}>{frame.ref}</span>
-    <figcaption><span>{frame.label}</span><span>{home ? frame.category : frame.place}</span></figcaption>
-  </figure>)}</div>;
+  return <>
+    <div className={`${styles.gallery} ${home ? styles.homeGallery : ""}`}>{frames.map((frame, index) => <figure key={frame.ref} className={home && (index === 0 || index === 5 || index === 8) ? styles.wideFrame : ""}>
+      <button type="button" onClick={() => openViewer(index)} className={styles.figureButton} aria-label={`View ${frame.label}, ${frame.category}`}>
+        <Photo alt={`${frame.label}, ${frame.category} photography in ${frame.place}`} src={frame.src} position={frame.position} />
+        <span className={styles.corner} />
+        <span className={styles.frameRef}>{frame.ref}</span>
+        <figcaption><span>{frame.label}</span><span>{home ? frame.category : frame.place}</span></figcaption>
+      </button>
+    </figure>)}</div>
+
+    {activeFrame && activeIndex !== null ? <div ref={dialogRef} className={styles.viewer} role="dialog" aria-modal="true" aria-label="Image viewer" onPointerDown={(event) => { swipeStartRef.current = event.pointerType === "touch" ? event.clientX : null; }} onPointerUp={(event) => { if (swipeStartRef.current === null) return; const distance = event.clientX - swipeStartRef.current; swipeStartRef.current = null; if (distance > 50) showPrevious(); if (distance < -50) showNext(); }}>
+      <div className={styles.viewerHeader}>
+        <span className={styles.viewerCounter}>{activeIndex + 1} / {frames.length}</span>
+        <button type="button" onClick={closeViewer} className={styles.viewerClose} aria-label="Close viewer"><X /></button>
+      </div>
+      <div className={styles.viewerBody}>
+        {frames.length > 1 ? <button type="button" onClick={showPrevious} className={styles.viewerNav} aria-label="Previous image"><ChevronLeft /></button> : null}
+        <Image key={activeFrame.src} src={activeFrame.src} alt={activeFrame.label} fill sizes="100vw" style={{ objectFit: "contain", backgroundColor: "#2b2927" }} />
+        {frames.length > 1 ? <button type="button" onClick={showNext} className={styles.viewerNav} aria-label="Next image"><ChevronRight /></button> : null}
+      </div>
+      <div className={styles.viewerFooter}><span className={styles.viewerLabel}>{activeFrame.label}</span><span className={styles.viewerPlace}>{activeFrame.place}</span></div>
+    </div> : null}
+  </>;
 }
 
 function Header({ page, customer, go, openMenu, signOut }: { page: Page; customer: CustomerHeaderState; go: (page: Page, category?: ServiceCategory) => void; openMenu: () => void; signOut: () => void }) {

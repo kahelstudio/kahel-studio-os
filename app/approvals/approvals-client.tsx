@@ -179,11 +179,11 @@ export function ApprovalsClient({ initialDashboard, initialError }: { initialDas
       <Kpi label="Total Amount Pending" value={formatMoney(pendingAmount, "PHP")} icon={<CircleDollarSign />} onClick={() => updateParams({ view: "financial", status: "pending_approval" })} compact />
     </section>
 
-    <div className="mt-6 flex gap-1 overflow-x-auto border-b border-[var(--color-border)]" role="tablist" aria-label="Approval views">
-      {(["my-approvals", "my-requests", ...(dashboard.role !== "staff" ? ["all"] : []), "completed"] as Tab[]).map((item) => <button key={item} role="tab" aria-selected={tab === item} onClick={() => updateParams({ tab: item === "my-approvals" ? null : item, status: null, view: null })} className={`shrink-0 border-b-2 px-4 py-3 text-sm font-semibold ${tab === item ? "border-[#FF5300] text-[#FF5300]" : "border-transparent text-[var(--color-text-secondary)]"}`}>{tabLabel(item)}</button>)}
+    <div className="mt-6 flex gap-6 overflow-x-auto" role="tablist" aria-label="Approval views">
+      {(["my-approvals", "my-requests", ...(dashboard.role !== "staff" ? ["all"] : []), "completed"] as Tab[]).map((item) => <button key={item} role="tab" aria-selected={tab === item} onClick={() => updateParams({ tab: item === "my-approvals" ? null : item, status: null, view: null })} className={`shrink-0 border-b-2 pb-2 pt-1 text-sm font-semibold ${tab === item ? "border-[#FF5300] text-[#FF5300]" : "border-transparent text-[var(--color-text-secondary)]"}`}>{tabLabel(item)}</button>)}
     </div>
-    <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1" aria-label="Saved views">
-      {secondaryViews.map((view) => <button key={view} onClick={() => updateParams({ view: searchParams.get("view") === view ? null : view, status: null })} className={`shrink-0 rounded-pill border px-3 py-1.5 text-xs font-semibold capitalize ${searchParams.get("view") === view ? "border-[#FF5300] bg-[var(--color-kahel-100)] text-[#FF5300]" : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)]"}`}>{view.replace("-", " ")}</button>)}
+    <div className="mt-3 flex items-center gap-6 overflow-x-auto" aria-label="Saved views">
+      {secondaryViews.map((view) => <button key={view} onClick={() => updateParams({ view: searchParams.get("view") === view ? null : view, status: null })} className={`shrink-0 border-b-2 pb-2 pt-1 text-[13px] font-semibold capitalize transition-colors ${searchParams.get("view") === view ? "border-[#FF5300] text-[#FF5300]" : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"}`}>{view.replace("-", " ")}</button>)}
       <button onClick={() => void refresh()} disabled={refreshing} className="ml-auto grid h-9 w-9 shrink-0 place-items-center rounded-control text-[var(--color-text-secondary)] disabled:opacity-50" aria-label="Refresh approvals"><RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin motion-reduce:animate-none" : ""}`} /></button>
     </div>
 

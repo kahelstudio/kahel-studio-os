@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Building2, Gauge, LogOut, Settings, User } from "lucide-react";
+import { Gauge, LogOut, Settings, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type StaffProfileSummary = { displayName: string; initials: string; avatarUrl: string | null; role: string };
@@ -12,7 +12,6 @@ const MENU_ITEMS = [
   { label: "Account", href: "/profile/me", icon: User },
   { label: "Performance", href: "/performance/me", icon: Gauge },
   { label: "Preferences", href: "/preferences/general", icon: Settings },
-  { label: "Workspace Settings", href: "/settings/general", icon: Building2 },
 ] as const;
 
 export function AvatarMenu({ size = 38 }: { size?: number }) {
