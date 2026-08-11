@@ -14,3 +14,14 @@ export async function updateBookingStatus(ref: string, status: BookingStatusId) 
   revalidatePath(`/booking/list/${ref}`);
   revalidatePath("/booking/list");
 }
+
+export async function saveDepositVerificationId(ref: string, verificationId: string) {
+  const admin = getSupabaseAdmin();
+  const { error } = await admin
+    .from("bookings")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .update({ deposit_verification_id: verificationId.trim() || null } as any)
+    .eq("reference", ref);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/booking/list/${ref}`);
+}

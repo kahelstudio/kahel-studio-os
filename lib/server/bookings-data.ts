@@ -20,6 +20,7 @@ export type RealBookingRow = {
     total: string;
     deposit: string;
     balance: string;
+    depositVerificationId: string | null;
   };
   paymongo_checkout_url: string | null;
   paymongo_checkout_session_id: string | null;
@@ -52,6 +53,7 @@ type BookingRow = {
   subtotal_amount_php: number;
   total_amount_php: number;
   paid_amount_php: number;
+  deposit_verification_id: string | null;
   paymongo_checkout_url: string | null;
   paymongo_checkout_session_id: string | null;
   client_id: string;
@@ -81,6 +83,7 @@ function mapBookingRow(row: BookingRow): RealBookingRow {
       total: formatCurrency(row.subtotal_amount_php),
       deposit: row.payment_type === "deposit" ? formatCurrency(deposit) : formatCurrency(row.subtotal_amount_php),
       balance: formatCurrency(balance),
+      depositVerificationId: row.deposit_verification_id ?? null,
     },
     paymongo_checkout_url: row.paymongo_checkout_url,
     paymongo_checkout_session_id: row.paymongo_checkout_session_id,
@@ -114,6 +117,7 @@ export async function getRealBookings(): Promise<RealBookingRow[]> {
       subtotal_amount_php,
       total_amount_php,
       paid_amount_php,
+      deposit_verification_id,
       paymongo_checkout_url,
       paymongo_checkout_session_id,
       client_id,
@@ -147,6 +151,7 @@ export async function getRealBookingByRef(ref: string): Promise<RealBookingRow |
       subtotal_amount_php,
       total_amount_php,
       paid_amount_php,
+      deposit_verification_id,
       paymongo_checkout_url,
       paymongo_checkout_session_id,
       client_id,

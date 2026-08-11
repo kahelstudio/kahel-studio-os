@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import Link from "next/link";
-import { CheckCircle2, FolderKanban } from "lucide-react";
+import { CheckCircle2, FolderKanban, Pencil, Check, X } from "lucide-react";
 import {
   BOOKING_STATUS,
   BOOKING_STEPS_ORDER,
@@ -10,7 +10,7 @@ import {
   type BookingStatusId,
 } from "@/lib/sample-data";
 import { useToast } from "@/components/toast/toast-provider";
-import { updateBookingStatus } from "./actions";
+import { updateBookingStatus, saveDepositVerificationId } from "./actions";
 
 const STEP_LABELS: Record<BookingStatusId, string> = {
   inquiry: "Inquiry",
@@ -24,6 +24,10 @@ const STEP_LABELS: Record<BookingStatusId, string> = {
 export function BookingDetailClient({ booking }: { booking: BookingRow }) {
   const [status, setStatus] = useState<BookingStatusId>(booking.status);
   const [isPending, startTransition] = useTransition();
+  const [verificationId, setVerificationId] = useState(booking.payment?.depositVerificationId ?? "");
+  const [editingVerif, setEditingVerif] = useState(false);
+  const [verifDraft, setVerifDraft] = useState("");
+  const verifInputRef = useRef<HTMLInputElement>(null);
   const { fireToast } = useToast();
   const statusMeta = BOOKING_STATUS[status];
   const curIndex = BOOKING_STEPS_ORDER.indexOf(status);
@@ -36,6 +40,30 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
         fireToast(`${booking.ref} confirmed · deposit invoice sent`, "success");
       } catch {
         fireToast("Failed to confirm booking. Please try again.", "danger");
+      }
+    });
+  }
+
+  function startEditVerif() {
+    setVerifDraft(verificationId);
+    setEditingVerif(true);
+    setTimeout(() => verifInputRef.current?.focus(), 0);
+  }
+
+  function cancelEditVerif() {
+    setEditingVerif(false);
+  }
+
+  function submitVerif() {
+    const next = verifDraft.trim();
+    startTransition(async () => {
+      try {
+        await saveDepositVerificationId(booking.ref, next);
+        setVerificationId(next);
+        setEditingVerif(false);
+        fireToast("Verification ID saved", "success");
+      } catch {
+        fireToast("Failed to save verification ID.", "danger");
       }
     });
   }
@@ -138,6 +166,46 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
                 <span className="font-display font-semibold text-[var(--color-kahel-700)]">
                   {booking.payment.balance}
                 </span>
+              </div>
+              <div className="mt-3 border-t border-[var(--color-border)] pt-3">
+                <div className="mb-1 text-xs text-[var(--color-text-muted)]">Downpayment verification ID</div>
+                {editingVerif ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={verifInputRef}
+                      value={verifDraft}
+                      onChange={(e) => setVerifDraft(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter") submitVerif(); if (e.key === "Escape") cancelEditVerif(); }}
+                      placeholder="e.g. GCash ref, bank ref…"
+                      className="h-8 flex-1 rounded-control border border-[var(--color-border)] bg-[var(--color-canvas)] px-2.5 text-sm focus:border-[var(--color-kahel-500)] focus:outline-none"
+                    />
+                    <button
+                      onClick={submitVerif}
+                      disabled={isPending}
+                      aria-label="Save"
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded-control bg-[var(--color-kahel-500)] text-white hover:bg-[var(--color-kahel-600)] disabled:opacity-60"
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={cancelEditVerif}
+                      aria-label="Cancel"
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded-control border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)]"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={startEditVerif}
+                    className="group flex w-full items-center justify-between rounded-control px-0 py-0.5 text-left hover:text-[var(--color-text-primary)]"
+                  >
+                    <span className={verificationId ? "text-sm font-medium text-[var(--color-text-primary)]" : "text-sm text-[var(--color-text-muted)]"}>
+                      {verificationId || "Not set — tap to add"}
+                    </span>
+                    <Pencil className="h-3.5 w-3.5 shrink-0 text-[var(--color-text-muted)] opacity-0 transition-opacity group-hover:opacity-100" />
+                  </button>
+                )}
               </div>
             </div>
           )}

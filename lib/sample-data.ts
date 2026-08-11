@@ -259,7 +259,7 @@ export interface BookingRow {
     sessionType: string;
     balanceDueOn: string;
   };
-  payment?: { total: string; deposit: string; balance: string };
+  payment?: { total: string; deposit: string; balance: string; depositVerificationId?: string | null };
   auditLog?: { text: string; when: string; dot: string }[];
   linkedProjectRef?: string;
 }
