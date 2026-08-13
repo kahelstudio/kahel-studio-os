@@ -12,12 +12,13 @@ type Props = {
   summary: BookingWorkspaceSummary;
   initialFilters: BookingWorkspaceFilters;
   selectedRef: string | null;
+  headerAction?: ReactNode;
 };
 
 const PAYMENT_OPTIONS = ["Deposit required", "Deposit pending", "Paid", "Partially paid", "Refunded", "Payment issue"] as const;
 const PAGE_SIZE = 10;
 
-export function BookingsWorkspace({ rows, summary, initialFilters, selectedRef }: Props) {
+export function BookingsWorkspace({ rows, summary, initialFilters, selectedRef, headerAction }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const query = initialFilters.q;
   const [filters, setFilters] = useState(initialFilters);
@@ -97,13 +98,14 @@ export function BookingsWorkspace({ rows, summary, initialFilters, selectedRef }
     <div className="flex-1">
       <div className="grid min-h-0 gap-0">
         <section className="min-h-0 border-b border-[var(--color-border)] bg-[var(--color-canvas)] xl:border-b-0 xl:border-r">
-          <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-5 sm:px-6">
+          <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 pb-3 pt-[34px] sm:px-6">
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold tracking-[-0.025em]">Bookings</h1>
+                  <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em]">Bookings</h1>
                   <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">Manage studio shoots, events and equipment rentals.</p>
                 </div>
+                {headerAction}
               </div>
 
               <div className="grid gap-3 sm:grid-cols-3">
@@ -148,7 +150,7 @@ export function BookingsWorkspace({ rows, summary, initialFilters, selectedRef }
                   <Th>Client</Th>
                   <Th>Status</Th>
                   <Th>Payment</Th>
-                  <Th className="text-right">Actions</Th>
+                  <Th>Actions</Th>
                 </tr>
               </thead>
               <tbody>
@@ -190,8 +192,8 @@ export function BookingsWorkspace({ rows, summary, initialFilters, selectedRef }
                         <div className="font-medium text-[var(--color-text-primary)]">{paymentLabel(row)}</div>
                         <div className="text-[11px] tabular-nums text-[var(--color-text-muted)]">{paymentBalance(row) ? `${formatPeso(paymentBalance(row))} remaining` : "Settled"}</div>
                       </Td>
-                      <Td selected={selectedRow} className="text-right">
-                        <span className="inline-flex min-h-11 items-center gap-2 rounded-control px-3 text-sm font-semibold text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)]">
+                      <Td selected={selectedRow}>
+                        <span className="inline-flex min-h-11 items-center justify-start gap-2 rounded-control text-left text-sm font-semibold text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)]">
                           {getBookingActionLabel(row)} <MoreHorizontal className="h-4 w-4" />
                         </span>
                       </Td>

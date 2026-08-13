@@ -44,7 +44,7 @@ export function AppShell({ appId, children, emptySidebar = false, navCounts = {}
       />
         <div className="flex flex-1 overflow-hidden">
           <div className="hidden xl:block">
-            <Suspense fallback={<div className="h-full w-60 border-r border-[var(--color-border)] bg-[var(--color-surface)]" />}><Sidebar app={app} empty={emptySidebar} counts={navCounts} /></Suspense>
+            <Suspense fallback={<div className="h-full w-60 bg-[var(--color-surface)]" />}><Sidebar app={app} empty={emptySidebar} counts={navCounts} /></Suspense>
         </div>
         <main className="app-shell-main flex min-w-0 flex-1 flex-col overflow-y-auto bg-[var(--color-canvas)]">
           {children}

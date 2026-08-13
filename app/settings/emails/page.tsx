@@ -8,5 +8,5 @@ export default async function SettingsEmailsPage() {
   const principal = await getCurrentStaffPrincipal();
   if (!principal) redirect("/login");
   if (!canAccessMessages(principal)) redirect("/settings/general");
-  return <EmailTemplatesWorkspace result={await getEmailTemplates()} />;
+  return <EmailTemplatesWorkspace result={await getEmailTemplates()} canManage={["admin", "super_admin"].includes(principal.role)} />;
 }

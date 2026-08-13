@@ -23,8 +23,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ ses
   }
   const galleryId = typeof body.galleryId === "string" ? body.galleryId : "";
   const approvalId = typeof body.approvalId === "string" ? body.approvalId : "";
+  const expenseId = typeof body.expenseId === "string" ? body.expenseId : "";
+  const documentType = typeof body.documentType === "string" ? body.documentType : "receipt";
   const completionToken = typeof body.completionToken === "string" ? body.completionToken : "";
-  if ((!UUID.test(galleryId) && !UUID.test(approvalId)) || (galleryId && approvalId) || completionToken.length !== 64) return NextResponse.json({ error: "Invalid upload completion." }, { status: 400 });
+  const targetCount = [galleryId, approvalId, expenseId].filter(Boolean).length;
+  if (targetCount !== 1 || (!UUID.test(galleryId) && !UUID.test(approvalId) && !UUID.test(expenseId)) || completionToken.length !== 64) return NextResponse.json({ error: "Invalid upload completion." }, { status: 400 });
 
   const admin = getSupabaseAdmin();
   const sessionResult = await admin.from("media_upload_sessions").select("*").eq("id", sessionId).maybeSingle();
@@ -36,6 +39,32 @@ export async function POST(request: Request, { params }: { params: Promise<{ ses
   if (new Date(session.expires_at).getTime() <= Date.now() && session.status !== "completed") {
     await admin.from("media_upload_sessions").update({ status: "expired" }).eq("id", sessionId);
     return NextResponse.json({ error: "The upload session has expired." }, { status: 410 });
+  }
+  if (expenseId) {
+    if (!["receipt", "supplier_invoice", "proof_of_payment", "warranty", "purchase_order", "supporting_document"].includes(documentType)) return NextResponse.json({ error: "Document type is invalid." }, { status: 400 });
+    const expense = await admin.from("expenses").select("id,created_by,status").eq("id", expenseId).maybeSingle();
+    if (expense.error) return NextResponse.json({ error: "Unable to load expense." }, { status: 500 });
+    if (!expense.data || ["voided", "paid"].includes(expense.data.status) || principal.role === "staff" && expense.data.created_by !== principal.userId) return NextResponse.json({ error: "The upload does not belong to an accessible expense." }, { status: 409 });
+    const mediaAssetId = session.completed_asset_id;
+    if (!mediaAssetId) return NextResponse.json({ error: "The upload session is incomplete." }, { status: 409 });
+    let bindings: Awaited<ReturnType<typeof getMediaBindings>>;
+    try { bindings = await getMediaBindings(); } catch (error) { return NextResponse.json({ error: error instanceof MediaInfrastructureError ? error.message : "Media infrastructure is unavailable." }, { status: 503 }); }
+    if (session.status !== "completed") {
+      const object = await bindings.clientMedia.head(session.private_r2_key);
+      const allowed = isApprovedImageType(session.expected_mime_type ?? "") || session.expected_mime_type === "application/pdf";
+      if (!object || object.size !== session.expected_byte_size || object.size > 10 * 1024 * 1024 || object.httpMetadata?.contentType !== session.expected_mime_type || !allowed) return NextResponse.json({ error: "The uploaded file did not match its authorization." }, { status: 422 });
+      const firstBytesObject = await bindings.clientMedia.get(session.private_r2_key, { range: { offset: 0, length: 16 } });
+      const firstBytes = firstBytesObject ? new Uint8Array(await firstBytesObject.arrayBuffer()) : new Uint8Array();
+      const validSignature = session.expected_mime_type === "application/pdf" ? new TextDecoder().decode(firstBytes.slice(0, 5)) === "%PDF-" : isApprovedImageType(session.expected_mime_type) && hasApprovedImageSignature(firstBytes, session.expected_mime_type);
+      if (!validSignature) { await bindings.clientMedia.delete(session.private_r2_key); return NextResponse.json({ error: "The uploaded file signature is invalid." }, { status: 422 }); }
+      const now = new Date().toISOString();
+      const attachment = await admin.from("expense_attachments").upsert({ expense_id: expenseId, media_asset_id: mediaAssetId, document_type: documentType, uploaded_by: principal.userId }, { onConflict: "expense_id,media_asset_id" });
+      const mediaUpdate = await admin.from("media_assets").update({ status: "uploaded", uploaded_at: now, updated_by: principal.userId }).eq("id", mediaAssetId);
+      const sessionUpdate = await admin.from("media_upload_sessions").update({ status: "completed", updated_at: now }).eq("id", sessionId);
+      const expenseUpdate = await admin.from("expenses").update({ receipt_status: "attached" }).eq("id", expenseId);
+      if (attachment.error || mediaUpdate.error || sessionUpdate.error || expenseUpdate.error) return NextResponse.json({ error: "Unable to finalize expense attachment." }, { status: 500 });
+    }
+    return NextResponse.json({ mediaAssetId, status: "uploaded" }, { status: 201, headers: { "Cache-Control": "no-store" } });
   }
   if (approvalId) {
     const approval = await admin.from("approval_requests").select("id,requester_id,client_id,project_id,status").eq("id", approvalId).is("archived_at", null).maybeSingle();

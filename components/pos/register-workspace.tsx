@@ -59,7 +59,7 @@ export function RegisterWorkspace({ initialWorkspace, principal }: { initialWork
   }
 
   return (
-    <main className="min-h-full bg-[var(--color-surface-muted)] p-4 text-[var(--color-text-primary)] sm:p-6 lg:p-8">
+    <main className="app-page min-h-full bg-[var(--color-surface-muted)] p-4 text-[var(--color-text-primary)] sm:p-6 lg:p-8">
       <header className="mx-auto flex max-w-[1400px] flex-wrap items-end justify-between gap-4 border-b border-[var(--color-border)] pb-5">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-kahel-600)]">Point of sale</p>

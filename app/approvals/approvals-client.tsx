@@ -155,7 +155,7 @@ export function ApprovalsClient({ initialDashboard, initialError }: { initialDas
   if (!dashboard && error) return <PageError message={error} onRetry={() => void refresh()} pending={refreshing} />;
   if (!dashboard) return <PageLoading />;
 
-  return <div className="min-w-0 p-4 pb-16 sm:p-7 lg:p-9">
+  return <div className="app-page min-w-0 p-4 pb-16 sm:p-7 lg:p-9">
     {!online && <div role="status" className="mb-4 flex items-center gap-2 rounded-control border border-[var(--color-warning-border)] bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)]"><AlertCircle className="h-4 w-4" /> You are offline. Decisions and submissions will be available when the connection returns.</div>}
     {error && <div role="alert" className="mb-4 flex items-center justify-between gap-3 rounded-control border border-[var(--color-danger-border)] bg-[var(--color-danger-bg)] px-4 py-3 text-sm text-[var(--color-danger-text)]"><span>{error}</span><button onClick={() => void refresh()} className="font-semibold underline">Retry</button></div>}
 

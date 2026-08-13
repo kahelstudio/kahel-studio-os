@@ -268,7 +268,7 @@ function ProjectsPipelineContent({
   }
 
   return (
-    <div className="min-w-0 p-5 pb-14 sm:p-8 lg:p-10">
+    <div className="app-page min-w-0 p-5 pb-14 sm:p-8 lg:p-10">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">

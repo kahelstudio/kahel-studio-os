@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { Session, User } from "@supabase/supabase-js";
 import { getSupabaseAdmin, getSupabaseAuthClient } from "./supabase-admin";
 import type { Json } from "./supabase-database";
+import { recordSupabaseAuthEmailRequest } from "./transactional-email-service";
 
 export const CUSTOMER_ACCESS_COOKIE = "kahel_customer_access_token";
 export const CUSTOMER_REFRESH_COOKIE = "kahel_customer_refresh_token";
@@ -241,6 +242,10 @@ export async function ensureCustomerAccount(profile: CustomerProfile, source: "s
     user = data.user;
     invited = true;
     createdUser = true;
+    await recordSupabaseAuthEmailRequest({
+      templateKey: "supabase-auth-invitation", operationId: user.id, to: email,
+      recipientUserId: user.id, recipientProfileId: profile.id, clientId: profile.client_id, sourceReference: source,
+    });
   }
 
   const { error: linkError } = await admin.from("client_profiles").update({ user_id: user.id, status: profile.status === "active" ? "active" : "invited" }).eq("id", profile.id);
@@ -252,6 +257,10 @@ export async function ensureCustomerAccount(profile: CustomerProfile, source: "s
   if (!invited) {
     const { error } = await getSupabaseAuthClient().auth.resetPasswordForEmail(email, { redirectTo: customerCallbackUrl() });
     if (error) throw error;
+    await recordSupabaseAuthEmailRequest({
+      templateKey: "supabase-auth-password-setup", operationId: crypto.randomUUID(), to: email,
+      recipientUserId: user.id, recipientProfileId: profile.id, clientId: profile.client_id, sourceReference: source,
+    });
   }
 
   await auditCustomerEvent({

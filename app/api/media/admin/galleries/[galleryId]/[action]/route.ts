@@ -25,8 +25,8 @@ export async function POST(request: Request, { params }: Context) {
       const now = new Date().toISOString();
       const result = await mediaTable("galleries").update({ status: "published", published: true, published_at: now, updated_at: now }).eq("id", galleryId);
       if (result.error) throw result.error;
-      const outboxId = await enqueueGalleryEmail(gallery, "gallery_published", now);
-      const message: MediaProcessingMessage = { kind: "gallery-email", outboxId };
+       const queued = await enqueueGalleryEmail(gallery, "gallery_published", now);
+       const message: MediaProcessingMessage = { kind: "gallery-email", ...queued };
       await (await getMediaBindings()).processing.send(message, { contentType: "json" });
     } else if (action === "unpublish") {
       if (gallery.status !== "published" && gallery.published !== true) throw new GalleryApiError("Gallery is not published.", 409);
@@ -39,8 +39,8 @@ export async function POST(request: Request, { params }: Context) {
       if (result.error) throw result.error;
     } else {
       if (gallery.status !== "published" && gallery.published !== true) throw new GalleryApiError("Publish the gallery before sending its email.", 409);
-      const outboxId = await enqueueGalleryEmail(gallery, "gallery_published", `resend:${crypto.randomUUID()}`);
-      const message: MediaProcessingMessage = { kind: "gallery-email", outboxId };
+       const queued = await enqueueGalleryEmail(gallery, "gallery_published", `resend:${crypto.randomUUID()}`);
+       const message: MediaProcessingMessage = { kind: "gallery-email", ...queued };
       await (await getMediaBindings()).processing.send(message, { contentType: "json" });
     }
     await writeAudit(request, auth.principal, gallery, `gallery.${action.replace("-", "_")}`);

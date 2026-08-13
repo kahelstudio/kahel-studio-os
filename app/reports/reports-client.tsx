@@ -48,7 +48,7 @@ export function ReportsClient() {
   }
 
   return (
-    <div className="min-w-0 p-5 pb-14 sm:p-8 lg:p-10">
+    <div className="app-page min-w-0 p-5 pb-14 sm:p-8 lg:p-10">
       <header className="flex flex-col gap-4 border-b border-[var(--color-border)] pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="font-display text-[30px] font-semibold tracking-[-0.025em] sm:text-[34px]">Reports</h1>

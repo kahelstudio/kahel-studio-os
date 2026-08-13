@@ -26,7 +26,7 @@ export default async function CrmQueuePage() {
   const { noNextAction, dueToday, overdue } = await getCrmQueue();
 
   return (
-    <div className="p-10 pt-8">
+    <div className="app-page p-10 pt-8">
       <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
         Follow-up queue
       </h1>

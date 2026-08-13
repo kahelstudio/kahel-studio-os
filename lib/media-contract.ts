@@ -25,7 +25,7 @@ export type PublicImageVariant = typeof PUBLIC_IMAGE_VARIANTS[number];
 
 export type MediaProcessingMessage =
   | { kind: "process-image"; jobId: string; mediaAssetId: string; galleryId: string; watermark: boolean }
-  | { kind: "gallery-email"; outboxId: string };
+  | { kind: "gallery-email"; outboxId: string; transactionalMessageId: string };
 
 export function isApprovedImageType(value: string): value is ApprovedImageType {
   return APPROVED_IMAGE_TYPES.includes(value as ApprovedImageType);

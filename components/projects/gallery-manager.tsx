@@ -77,7 +77,7 @@ export function GalleryManager() {
   if (loading) return <div className="p-6 text-sm text-[var(--color-text-secondary)] sm:p-10">Loading galleries...</div>;
   if (error && !data) return <div className="grid min-h-[60dvh] place-items-center p-5"><div className="max-w-md rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center"><CircleAlert className="mx-auto h-6 w-6 text-[var(--color-danger-text)]" /><h1 className="mt-3 font-display text-xl font-semibold">Gallery access unavailable</h1><p className="mt-2 text-sm text-[var(--color-text-secondary)]">{error}</p><Link href="/login" className="mt-5 inline-flex min-h-11 items-center rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white">Staff sign in</Link></div></div>;
 
-  return <div className="min-w-0 p-4 pb-14 sm:p-8 lg:p-10">
+  return <div className="app-page min-w-0 p-4 pb-14 sm:p-8 lg:p-10">
     <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]"><ImageIcon className="h-3.5 w-3.5 text-[var(--color-kahel-500)]" /> Client delivery</div><h1 className="mt-2 font-display text-[32px] font-semibold tracking-[-0.025em] sm:text-[36px]">Galleries</h1><p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">Prepare, approve and publish canonical project galleries.</p></div>
       {canManage ? <button type="button" onClick={() => setCreating(true)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white"><Plus className="h-4 w-4" /> New gallery</button> : null}

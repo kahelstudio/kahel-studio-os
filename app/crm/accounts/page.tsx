@@ -44,7 +44,7 @@ export default async function CrmAccountsPage({
   });
 
   return (
-    <div className="p-4 pt-6 sm:p-10 sm:pt-8">
+    <div className="app-page p-4 pt-6 sm:p-10 sm:pt-8">
       <div className="mb-5 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
         <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">Customers</h1>
         <NewAccountButton />

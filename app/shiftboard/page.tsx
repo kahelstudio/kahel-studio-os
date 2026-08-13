@@ -95,7 +95,7 @@ export default function ShiftboardPage() {
   }
 
   return (
-    <div className="min-w-0 p-7 lg:p-10">
+    <div className="app-page min-w-0 p-7 lg:p-10">
       <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">

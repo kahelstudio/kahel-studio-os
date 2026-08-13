@@ -19,7 +19,7 @@ async function checkAuth(request: NextRequest) {
 
 function isPublicPath(pathname: string) {
   if (PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) return true;
-  return pathname === "/api/loyalty/redeem" || /^\/api\/client-portals\/[^/]+\/(access|activity|loyalty)$/.test(pathname);
+  return pathname === "/api/loyalty/redeem" || pathname === "/api/resend/webhook" || pathname === "/api/email/queue/process" || /^\/api\/client-portals\/[^/]+\/(access|activity|loyalty)$/.test(pathname);
 }
 
 // OpenNext Cloudflare 1.20.2 does not support the Node.js runtime used by Next.js Proxy.

@@ -31,11 +31,11 @@ export function Sidebar({ app, onNavigate, empty = false, counts = {} }: { app: 
   }
 
   if (empty) {
-    return <aside className="h-full w-60 shrink-0 border-r border-[var(--color-border)] bg-[var(--color-surface)]" />;
+    return <aside className="h-full w-60 shrink-0 bg-[var(--color-surface)]" />;
   }
 
   return (
-    <aside className="flex h-full w-60 shrink-0 flex-col gap-0.5 border-r border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+    <aside className="flex h-full w-60 shrink-0 flex-col gap-0.5 bg-[var(--color-surface)] px-3 pb-3 pt-[34px]">
       {app.nav.map((item) => {
         const active = matchesHref(item.href) || item.items?.some((sub) => matchesHref(sub.href));
         const open = expanded[item.id] ?? active;
@@ -47,7 +47,7 @@ export function Sidebar({ app, onNavigate, empty = false, counts = {} }: { app: 
               <button
                 onClick={() => toggleExpanded(item.id, open)}
                 className={cn(
-                  "flex h-10 w-full items-center gap-3 rounded-control px-3 text-sm transition-colors",
+                  "flex h-11 w-full items-center gap-3 rounded-control px-3 text-sm transition-colors",
                   active
                     ? "bg-[var(--color-kahel-100)] font-semibold text-[#FF5300]"
                     : "font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
@@ -90,7 +90,7 @@ export function Sidebar({ app, onNavigate, empty = false, counts = {} }: { app: 
             href={item.href}
             onClick={onNavigate}
             className={cn(
-              "flex h-10 items-center gap-3 rounded-control px-3 text-sm transition-colors",
+              "flex h-11 items-center gap-3 rounded-control px-3 text-sm transition-colors",
               active
                 ? "bg-[var(--color-kahel-100)] font-semibold text-[#FF5300]"
                 : "font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"

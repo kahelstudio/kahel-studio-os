@@ -18,12 +18,11 @@ export default async function BookingListPage({ searchParams }: { searchParams: 
 
   return (
     <div className="flex min-h-0 flex-col">
-      <div className="flex justify-end bg-[var(--color-surface)] px-4 py-4 sm:px-6">
-        <OperationCreateButton kind="booking" className="inline-flex min-h-11 items-center gap-2 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+      <BookingsWorkspace rows={rows} summary={summary} initialFilters={initialFilters} selectedRef={selectedRef} headerAction={
+        <OperationCreateButton key="new-booking" kind="booking" className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           + New Booking
         </OperationCreateButton>
-      </div>
-      <BookingsWorkspace rows={rows} summary={summary} initialFilters={initialFilters} selectedRef={selectedRef} />
+      } />
     </div>
   );
 }

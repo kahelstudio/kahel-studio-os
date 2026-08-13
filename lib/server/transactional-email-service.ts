@@ -35,6 +35,10 @@ const EXTRA_TEMPLATES: Record<string, { name: string; subject: string; secure?: 
   "gallery-ready": { name: "Gallery ready", subject: "Your Kahel Studio gallery is ready" },
   "security-recovery-code": { name: "Recovery email verification", subject: "Verify your Kahel Studio recovery email", secure: true },
   "security-password-reset": { name: "Password reset", subject: "Reset your Kahel Studio password", secure: true },
+  "supabase-auth-invitation": { name: "Customer account invitation", subject: "Customer account invitation", secure: true },
+  "supabase-auth-password-setup": { name: "Customer password setup", subject: "Customer password setup", secure: true },
+  "supabase-auth-password-reset": { name: "Password reset request", subject: "Password reset request", secure: true },
+  "delivery-test": { name: "Transactional email delivery test", subject: "Kahel Studio transactional email test" },
 };
 
 function environment(): Environment {
@@ -84,7 +88,7 @@ async function ensureTemplateVersion(templateKey: string) {
   return inserted.data.id;
 }
 
-export async function enqueueTransactionalEmail(input: EnqueueEmailInput) {
+async function enqueueTransactionalEmailWithProvider(input: EnqueueEmailInput, provider: "resend" | "supabase_auth", externallyAccepted = false) {
   const templateVersionId = await ensureTemplateVersion(input.templateKey);
   const sender = address(input.message.from);
   const recipient = address(Array.isArray(input.message.to) ? input.message.to[0] : input.message.to);
@@ -92,7 +96,7 @@ export async function enqueueTransactionalEmail(input: EnqueueEmailInput) {
   const redacted = "[secure content unavailable]";
   const rpc = getSupabaseAdmin().rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: MessageRow | null; error: { message?: string } | null }>;
   const { data, error } = await rpc("transactional_email_enqueue", { requested: {
-    template_version_id: templateVersionId, environment: environment(), provider: "resend",
+    template_version_id: templateVersionId, environment: environment(), provider,
     logical_idempotency_key: input.logicalIdempotencyKey, client_id: input.clientId,
     recipient_profile_id: input.recipientProfileId, recipient_user_id: input.recipientUserId,
     recipient_email: recipient.email, recipient_name: input.recipientName ?? recipient.name,
@@ -106,9 +110,45 @@ export async function enqueueTransactionalEmail(input: EnqueueEmailInput) {
     contains_secure_content: secure, content_redacted: secure, render_context_redacted: secure,
     redacted_fields: secure ? ["render_context", "rendered_html", "rendered_text"] : [], max_attempts: secure ? 1 : (input.maxAttempts ?? 5),
     next_attempt_at: secure ? "1970-01-01T00:00:00.000Z" : undefined,
+    initial_status: externallyAccepted ? "provider_accepted" : undefined,
   } });
   if (error || !data) throw new Error(error?.message ?? "Unable to enqueue transactional email.");
   return data;
+}
+
+export async function enqueueTransactionalEmail(input: EnqueueEmailInput) {
+  return enqueueTransactionalEmailWithProvider(input, "resend");
+}
+
+export async function recordSupabaseAuthEmailRequest(input: {
+  templateKey: "supabase-auth-invitation" | "supabase-auth-password-setup" | "supabase-auth-password-reset";
+  operationId: string;
+  to: string;
+  recipientUserId?: string;
+  recipientProfileId?: string;
+  clientId?: string;
+  sourceReference?: string;
+}) {
+  const definition = EXTRA_TEMPLATES[input.templateKey];
+  const from = process.env.SUPABASE_AUTH_EMAIL_FROM ?? process.env.BOOKING_EMAIL_FROM ?? "auth@kahelstudio.com";
+  try {
+    await enqueueTransactionalEmailWithProvider({
+      templateKey: input.templateKey,
+      logicalIdempotencyKey: `${input.templateKey}:${input.operationId}`,
+      triggerKey: input.templateKey,
+      sourceReference: input.sourceReference,
+      recipientUserId: input.recipientUserId,
+      recipientProfileId: input.recipientProfileId,
+      clientId: input.clientId,
+      secure: true,
+      maxAttempts: 1,
+      message: { to: input.to, from, subject: definition.subject, html: "[secure content unavailable]", text: "[secure content unavailable]" },
+    }, "supabase_auth", true);
+    return true;
+  } catch (error) {
+    console.error("[transactional-email] Unable to record Supabase Auth email request", input.templateKey, classifyEmailError(error).code);
+    return false;
+  }
 }
 
 export function classifyEmailError(error: unknown) {
@@ -119,7 +159,7 @@ export function classifyEmailError(error: unknown) {
   return { code: "provider_unavailable", message: "Email provider request failed.", retryable: true };
 }
 
-export async function processTransactionalEmailQueue(options: { limit?: number; workerId?: string; secureOverride?: { messageId: string; message: RenderedEmail } } = {}) {
+export async function processTransactionalEmailQueue(options: { limit?: number; workerId?: string; messageId?: string; secureOverride?: { messageId: string; message: RenderedEmail } } = {}) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) throw new Error("Resend email is not configured.");
   const limit = Math.min(Math.max(options.limit ?? 10, 1), 50);
@@ -128,7 +168,7 @@ export async function processTransactionalEmailQueue(options: { limit?: number; 
   let processed = 0;
   let accepted = 0;
   for (; processed < limit; processed += 1) {
-    const claim = await rpc("transactional_email_claim", { requested_worker_id: workerId, requested_environment: environment(), requested_provider: "resend", requested_lease: "5 minutes" });
+    const claim = await rpc("transactional_email_claim", { requested_worker_id: workerId, requested_environment: environment(), requested_provider: "resend", requested_lease: "5 minutes", requested_message_id: options.messageId ?? null });
     if (claim.error) throw new Error(claim.error.message ?? "Unable to claim transactional email.");
     if (!claim.data) break;
     const row = claim.data;
@@ -142,7 +182,7 @@ export async function processTransactionalEmailQueue(options: { limit?: number; 
         html: row.rendered_html ?? "", text: row.rendered_text ?? "",
       };
       const providerId = await sendResendEmail(apiKey, { ...message, idempotencyKey: `${environment()}:${row.id}` });
-      const finish = await rpc("transactional_email_finish", { requested_message_id: row.id, requested_claim_token: row.claim_token, requested_outcome: "accepted", requested_provider_message_id: providerId, requested_response_metadata: { provider: "resend" }, requested_response_metadata_redacted: true });
+      const finish = await rpc("transactional_email_finish", { requested_message_id: row.id, requested_claim_token: row.claim_token, requested_outcome: "provider_accepted", requested_provider_message_id: providerId, requested_response_metadata: { provider: "resend" }, requested_response_metadata_redacted: true });
       if (finish.error) throw new Error(finish.error.message ?? "Unable to finish transactional email.");
       accepted += 1;
     } catch (error) {
@@ -157,10 +197,10 @@ export async function processTransactionalEmailQueue(options: { limit?: number; 
 export async function sendTransactionalEmail(input: EnqueueEmailInput) {
   try {
     const queued = await enqueueTransactionalEmail(input);
-    if (queued.status === "accepted" || queued.status === "delivered") return true;
-    await processTransactionalEmailQueue({ limit: 50, secureOverride: input.secure ? { messageId: queued.id, message: input.message } : undefined });
+    if (["provider_accepted", "sent", "delivered"].includes(queued.status)) return true;
+    await processTransactionalEmailQueue({ limit: 1, messageId: queued.id, secureOverride: input.secure ? { messageId: queued.id, message: input.message } : undefined });
     const current = await getSupabaseAdmin().from("transactional_messages" as never).select("status").eq("id", queued.id).single<{ status: string }>();
-    return !current.error && (current.data.status === "accepted" || current.data.status === "delivered");
+    return !current.error && ["provider_accepted", "sent", "delivered"].includes(current.data.status);
   } catch (error) {
     console.error("[transactional-email] Delivery deferred", input.templateKey, classifyEmailError(error).code);
     return false;
@@ -168,7 +208,7 @@ export async function sendTransactionalEmail(input: EnqueueEmailInput) {
 }
 
 export async function recordResendProviderEvent(input: { eventId: string; type: string; providerMessageId: string; occurredAt: string }) {
-  const mapped: Record<string, string> = { "email.sent": "accepted", "email.delivery_delayed": "deferred", "email.delivered": "delivered", "email.failed": "failed", "email.bounced": "bounced", "email.complained": "complained" };
+  const mapped: Record<string, string> = { "email.sent": "sent", "email.delivery_delayed": "deferred", "email.delivered": "delivered", "email.failed": "failed", "email.bounced": "bounced", "email.complained": "complained", "email.suppressed": "suppressed" };
   const status = mapped[input.type];
   if (!status) return null;
   const rpc = getSupabaseAdmin().rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: MessageRow | null; error: { code?: string; message?: string } | null }>;

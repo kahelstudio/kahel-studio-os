@@ -78,7 +78,7 @@ export default function TasksBoardPage() {
   }
 
   return <div className="flex min-h-full min-w-0 flex-col bg-[var(--color-canvas)]">
-    <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5 py-5 sm:px-8 lg:px-10">
+    <header className="app-page border-b border-[var(--color-border)] bg-[var(--color-surface)] px-5 pb-5 pt-5 sm:px-8 lg:px-10">
       <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between"><div className="min-w-0"><div className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--color-text-muted)]">Projects / Operations</div><h1 className="mt-2 truncate font-display text-[27px] font-semibold tracking-[-0.025em]">Tasks</h1></div><button onClick={() => setEditor({ draft: emptyDraft() })} className="flex h-11 items-center gap-2 self-start rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)] xl:self-auto"><Plus className="h-4 w-4" /> Add task</button></div>
       <div className="mt-5 border-t border-[var(--color-border)] pt-4"><nav className="flex w-full gap-1 overflow-x-auto rounded-control bg-[var(--color-surface-muted)] p-1 sm:w-fit" aria-label="Task views">{views.map(([name, Icon]) => <button key={name} onClick={() => setView(name)} className={`flex h-9 shrink-0 items-center gap-1.5 rounded-[5px] px-3 text-sm font-semibold ${view === name ? "bg-[var(--color-surface)] text-[var(--color-text-primary)] shadow-sm" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"}`}><Icon className="h-4 w-4" />{name}</button>)}</nav></div>
     </header>

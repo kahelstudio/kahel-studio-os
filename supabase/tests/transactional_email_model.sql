@@ -1,6 +1,9 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(28);
+select plan(29);
+-- The local seed includes DEMO messages. Truncate transactionally so scalar and
+-- count assertions below remain isolated; rollback restores the seed afterward.
+truncate table public.transactional_message_attempts, public.transactional_message_events, public.transactional_messages;
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -73,13 +76,13 @@ select ok((select status = 'processing' and attempt_count = 1 and claim_token is
 select is((select (public.transactional_email_claim('email-worker-2', 'staging', 'resend')).id), null,
   'skip-locked claim does not double claim processing work');
 select throws_ok($$select public.transactional_email_finish(
-  (select id from public.transactional_messages), gen_random_uuid(), 'accepted', 'provider-message-1'
+  (select id from public.transactional_messages), gen_random_uuid(), 'provider_accepted', 'provider-message-1'
 )$$, '55000', 'claim is missing, stale, or expired', 'stale claim token cannot finish');
 select public.transactional_email_finish(
   (select id from public.transactional_messages),
-  (select claim_token from public.transactional_messages), 'accepted', 'provider-message-1'
+  (select claim_token from public.transactional_messages), 'provider_accepted', 'provider-message-1'
 );
-select ok((select status = 'accepted' and accepted_at is not null and delivered_at is null
+select ok((select status = 'provider_accepted' and accepted_at is not null and delivered_at is null
   from public.transactional_messages), 'provider acceptance is not delivery');
 select is((select count(*)::integer from public.transactional_message_attempts), 1, 'finish appends one immutable attempt');
 
@@ -89,7 +92,7 @@ select public.transactional_email_record_provider_event(
 );
 select is((select status from public.transactional_messages), 'delivered', 'delivered event promotes accepted message');
 select public.transactional_email_record_provider_event(
-  'staging', 'resend', 'event-accepted-late', 'email.sent', 'accepted', now() - interval '1 minute',
+  'staging', 'resend', 'event-accepted-late', 'email.sent', 'sent', now() - interval '1 minute',
   null, 'provider-message-1', '{}', false
 );
 select is((select status from public.transactional_messages), 'delivered', 'late lower-rank event cannot regress delivery');
@@ -99,8 +102,16 @@ select public.transactional_email_record_provider_event(
 );
 select is((select count(*)::integer from public.transactional_message_events), 2, 'duplicate provider event is idempotent');
 
-select public.transactional_email_prepare_manual_resend(
+select throws_ok($$select public.transactional_email_prepare_manual_resend(
   (select id from public.transactional_messages where resend_sequence = 0), 'Customer requested another copy'
+)$$, '55000', 'message is not eligible for manual resend', 'delivered secure messages cannot be manually resent');
+update public.transactional_messages set
+  status = 'failed', retry_eligible = true, contains_secure_content = false,
+  content_redacted = false, render_context_redacted = false, redacted_fields = '{}',
+  delivered_at = null, failed_at = now()
+where resend_sequence = 0;
+select public.transactional_email_prepare_manual_resend(
+  (select id from public.transactional_messages where resend_sequence = 0), 'Retry transient provider failure'
 );
 select ok((select count(*) = 2 and max(resend_sequence) = 1
   and bool_or(parent_message_id is not null and status = 'queued')

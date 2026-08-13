@@ -266,6 +266,15 @@ textarea {
   min-width: 0;
 }
 
+@media (min-width: 1280px) {
+  .app-shell-main > :where(.pt-8, .pt-9),
+  .app-shell-main > .app-page,
+  .app-shell-main > * > .app-page,
+  .app-shell-main > .max-w-\[1400px\] {
+    padding-top: 34px !important;
+  }
+}
+
 @media (max-width: 639px) {
   .app-shell-main > :where(.p-10, .p-12) {
     padding: var(--page-padding-block) var(--page-padding-inline) !important;

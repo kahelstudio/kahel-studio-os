@@ -9,5 +9,5 @@ export default async function TransactionalPage({ searchParams }: { searchParams
   if (!principal) redirect("/login");
   const filters = parseMessageFilters(await searchParams);
   const result = await getMessages(principal, filters);
-  return <MessagesWorkspace result={result} filters={filters} failedView={false} />;
+  return <MessagesWorkspace result={result} filters={filters} failedView={false} canRetry={["admin", "super_admin"].includes(principal.role)} />;
 }

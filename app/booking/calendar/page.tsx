@@ -19,7 +19,7 @@ export default async function BookingCalendarPage({ searchParams }: { searchPara
   const previous = addPeriod(selected, view === "month" ? -1 : -7, view);
   const next = addPeriod(selected, view === "month" ? 1 : 7, view);
 
-  return <div className="p-5 pt-6 sm:p-10 sm:pt-8">
+  return <div className="app-page p-5 pt-6 sm:p-10 sm:pt-8">
     <div className="mb-5 flex flex-wrap items-center gap-3 sm:gap-4">
       <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)] sm:text-[32px]">{period.label}</h1>
       <div className="flex gap-1">

@@ -7,6 +7,7 @@ import { getStaffPrincipal } from "@/lib/server/staff-auth";
 import { hasTrustedOrigin } from "@/lib/server/customer-auth";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
 import type { Json } from "@/lib/server/supabase-database";
+import { enqueueTransactionalEmail } from "@/lib/server/transactional-email-service";
 
 export type GalleryPermission = "galleries.read" | "galleries.manage" | "galleries.publish";
 
@@ -126,6 +127,42 @@ export async function enqueueGalleryEmail(gallery: GalleryRecord, templateKey: s
     recipientProfileId = profile.data?.id ?? null;
   }
   if (!recipientProfileId) throw new GalleryApiError("The client needs an active contact before gallery email can be queued.", 409);
+  const [profile, project] = await Promise.all([
+    getSupabaseAdmin().from("client_profiles").select("email,first_name").eq("id", recipientProfileId).eq("client_id", gallery.client_id).single<{ email: string; first_name: string }>(),
+    assertCanonicalProject(gallery.project_id, gallery.client_id),
+  ]);
+  if (profile.error) throw profile.error;
+  const siteUrl = process.env.PUBLIC_SITE_URL;
+  const from = process.env.GALLERY_EMAIL_FROM ?? process.env.BOOKING_EMAIL_FROM;
+  const replyTo = process.env.GALLERY_EMAIL_REPLY_TO ?? process.env.BOOKING_EMAIL_REPLY_TO;
+  if (!siteUrl || !from || !replyTo) throw new GalleryApiError("Gallery email is not configured.", 503);
+  const galleryUrl = new URL(`/portal/galleries/${gallery.id}`, siteUrl).toString();
+  const downloadText = gallery.downloads_enabled ? "Approved downloads are available in the gallery." : "Downloads are not currently enabled.";
+  const expiry = typeof gallery.expires_at === "string" ? gallery.expires_at : null;
+  const expiryText = expiry ? ` This gallery is available until ${new Intl.DateTimeFormat("en-PH", { dateStyle: "long", timeZone: "Asia/Manila" }).format(new Date(expiry))}.` : "";
+  const safe = (value: string) => value.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character] ?? character);
+  const message = await enqueueTransactionalEmail({
+    templateKey: "gallery-ready",
+    logicalIdempotencyKey: `${templateKey}:${gallery.id}:${idempotencySuffix}`,
+    triggerKey: "gallery.published",
+    source: idempotencySuffix.startsWith("resend:") ? "staff" : "system",
+    sourceReference: idempotencySuffix,
+    clientId: gallery.client_id,
+    recipientProfileId,
+    projectId: gallery.project_id,
+    galleryId: gallery.id,
+    recipientName: profile.data.first_name,
+    recipientSnapshot: { name: profile.data.first_name, email: profile.data.email },
+    renderContext: { galleryTitle: gallery.title, projectReference: project.reference, downloadsEnabled: gallery.downloads_enabled, expiresAt: expiry },
+    message: {
+      to: profile.data.email,
+      from,
+      replyTo,
+      subject: "Your Kahel Studio gallery is ready",
+      text: `Hi ${profile.data.first_name},\n\n${gallery.title} (${project.reference}) is ready. Sign in to your Client Portal to view it: ${galleryUrl}\n\n${downloadText}${expiryText}\n\nNeed help? Reply to ${replyTo}.`,
+      html: `<div style="margin:0;background:#FBF7F2;padding:24px;font-family:Arial,sans-serif;color:#1C1917"><div style="max-width:620px;margin:0 auto;background:#FFFFFF;padding:32px"><h1 style="margin:0;font-family:Arial,sans-serif;font-size:30px">Your gallery is ready</h1><p style="font-size:16px;line-height:1.6">Hi ${safe(profile.data.first_name)},</p><p style="font-size:16px;line-height:1.6"><strong>${safe(gallery.title)}</strong> (${safe(project.reference)}) is ready in your secure Client Portal.</p><p style="font-size:16px;line-height:1.6">${safe(downloadText + expiryText)}</p><a href="${safe(galleryUrl)}" style="display:inline-block;background:#FF5300;color:#FFFFFF;padding:14px 22px;text-decoration:none;font-size:16px;font-weight:700">View your gallery</a><p style="margin-top:28px;font-size:16px;line-height:1.6;color:#57534E">Sign-in is required. Need help? Reply to ${safe(replyTo)}.</p></div></div>`,
+    },
+  });
   const payload = {
     gallery_id: gallery.id,
     client_id: gallery.client_id,
@@ -137,7 +174,7 @@ export async function enqueueGalleryEmail(gallery: GalleryRecord, templateKey: s
   };
   const result = await mediaTable("gallery_email_outbox").insert(payload).select("id").single<{ id: string }>();
   if (result.error) throw result.error;
-  return result.data.id;
+  return { outboxId: result.data.id, transactionalMessageId: message.id };
 }
 
 export async function assertPublishable(gallery: GalleryRecord) {

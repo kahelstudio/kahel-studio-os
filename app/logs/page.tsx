@@ -22,7 +22,7 @@ export default async function LogsPage() {
   const entries = await getAuditLog();
 
   return (
-    <div className="p-5 pb-14 sm:p-8 lg:p-10">
+    <div className="app-page p-5 pb-14 sm:p-8 lg:p-10">
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">

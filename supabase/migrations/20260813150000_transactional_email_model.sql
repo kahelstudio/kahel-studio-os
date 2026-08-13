@@ -40,8 +40,8 @@ create table public.transactional_messages (
   resend_sequence integer not null default 0 check (resend_sequence >= 0),
   parent_message_id uuid references public.transactional_messages(id) on delete restrict,
   status text not null default 'queued' check (status in (
-    'queued', 'processing', 'accepted', 'deferred', 'delivered', 'failed',
-    'bounced', 'complained', 'cancelled'
+    'queued', 'processing', 'provider_accepted', 'sent', 'deferred', 'delivered', 'failed',
+    'bounced', 'complained', 'cancelled', 'suppressed'
   )),
   client_id uuid references public.clients(id) on delete restrict,
   recipient_profile_id uuid,
@@ -95,6 +95,7 @@ create table public.transactional_messages (
   last_error_message text,
   queued_at timestamptz not null default now(),
   accepted_at timestamptz,
+  sent_at timestamptz,
   delivered_at timestamptz,
   failed_at timestamptz,
   cancelled_at timestamptz,
@@ -133,11 +134,12 @@ create table public.transactional_messages (
       and claimed_at is null and claim_expires_at is null)
   ),
   constraint transactional_messages_status_dates_check check (
-    (status = 'queued' and accepted_at is null and delivered_at is null and failed_at is null and cancelled_at is null)
+    (status = 'queued' and accepted_at is null and sent_at is null and delivered_at is null and failed_at is null and cancelled_at is null)
     or (status = 'processing' and delivered_at is null and cancelled_at is null)
-    or (status in ('accepted', 'deferred') and accepted_at is not null and delivered_at is null and cancelled_at is null)
+    or (status in ('provider_accepted', 'deferred') and accepted_at is not null and delivered_at is null and cancelled_at is null)
+    or (status = 'sent' and accepted_at is not null and sent_at is not null and delivered_at is null and cancelled_at is null)
     or (status = 'delivered' and accepted_at is not null and delivered_at is not null and cancelled_at is null)
-    or (status in ('failed', 'bounced', 'complained') and failed_at is not null and cancelled_at is null)
+    or (status in ('failed', 'bounced', 'complained', 'suppressed') and failed_at is not null and cancelled_at is null)
     or (status = 'cancelled' and cancelled_at is not null)
   ),
   check (resend_sequence = 0 or parent_message_id is not null),
@@ -151,7 +153,7 @@ create table public.transactional_message_attempts (
   attempt_number integer not null check (attempt_number > 0),
   provider text not null check (length(btrim(provider)) between 1 and 50),
   worker_id text not null check (length(btrim(worker_id)) between 1 and 200),
-  outcome text not null check (outcome in ('accepted', 'failed')),
+  outcome text not null check (outcome in ('provider_accepted', 'failed')),
   provider_message_id text,
   error_code text,
   error_message text,
@@ -163,7 +165,7 @@ create table public.transactional_message_attempts (
   response_metadata_redacted boolean not null default false,
   unique (message_id, attempt_number),
   check (finished_at >= started_at),
-  check ((outcome = 'accepted' and provider_message_id is not null and error_message is null)
+  check ((outcome = 'provider_accepted' and provider_message_id is not null and error_message is null)
     or (outcome = 'failed' and error_message is not null))
 );
 
@@ -176,7 +178,7 @@ create table public.transactional_message_events (
   provider_message_id text,
   event_type text not null check (length(btrim(event_type)) between 1 and 120),
   mapped_status text check (mapped_status is null or mapped_status in (
-    'accepted', 'deferred', 'delivered', 'failed', 'bounced', 'complained'
+    'provider_accepted', 'sent', 'deferred', 'delivered', 'failed', 'bounced', 'complained', 'suppressed'
   )),
   occurred_at timestamptz not null,
   received_at timestamptz not null default now(),
@@ -221,8 +223,9 @@ for each row execute function public.prevent_transactional_email_history_mutatio
 create or replace function public.transactional_email_status_rank(candidate text)
 returns integer language sql immutable set search_path = '' as $$
   select case candidate
-    when 'accepted' then 10 when 'deferred' then 20 when 'failed' then 30
-    when 'delivered' then 40 when 'bounced' then 50 when 'complained' then 60
+    when 'provider_accepted' then 10 when 'sent' then 20 when 'deferred' then 30
+    when 'failed' then 40 when 'delivered' then 50 when 'bounced' then 60
+    when 'suppressed' then 70 when 'complained' then 80
     else 0 end;
 $$;
 
@@ -236,6 +239,9 @@ declare
 begin
   if jsonb_typeof(requested) <> 'object' then
     raise exception 'request must be an object' using errcode = '22023';
+  end if;
+  if coalesce(nullif(requested->>'initial_status', ''), 'queued') not in ('queued', 'provider_accepted') then
+    raise exception 'invalid initial status' using errcode = '22023';
   end if;
   select * into requested_version from public.email_template_versions
   where id = (requested->>'template_version_id')::uuid and published_at is not null;
@@ -253,7 +259,8 @@ begin
     source_reference, booking_id, invoice_id, payment_id, project_id, gallery_id,
     loyalty_reward_id, related_type, related_id, render_context, rendered_subject,
     rendered_html, rendered_text, contains_secure_content, content_redacted,
-    render_context_redacted, redacted_fields, max_attempts, next_attempt_at
+    render_context_redacted, redacted_fields, max_attempts, next_attempt_at,
+    status, retry_eligible, accepted_at
   ) values (
     requested_version.id, requested->>'environment', requested->>'provider',
     requested->>'logical_idempotency_key', fingerprint, nullif(requested->>'client_id', '')::uuid,
@@ -275,7 +282,10 @@ begin
     coalesce((requested->>'render_context_redacted')::boolean, false),
     coalesce(array(select jsonb_array_elements_text(requested->'redacted_fields')), '{}'),
     coalesce((requested->>'max_attempts')::integer, 5),
-    coalesce((requested->>'next_attempt_at')::timestamptz, now())
+    coalesce((requested->>'next_attempt_at')::timestamptz, now()),
+    coalesce(nullif(requested->>'initial_status', ''), 'queued'),
+    coalesce(nullif(requested->>'initial_status', ''), 'queued') = 'queued',
+    case when requested->>'initial_status' = 'provider_accepted' then now() end
   )
   on conflict (environment, logical_idempotency_key, resend_sequence) do nothing
   returning * into result;
@@ -297,7 +307,8 @@ create or replace function public.transactional_email_claim(
   requested_worker_id text,
   requested_environment text default null,
   requested_provider text default null,
-  requested_lease interval default interval '5 minutes'
+  requested_lease interval default interval '5 minutes',
+  requested_message_id uuid default null
 )
 returns public.transactional_messages
 language plpgsql security definer set search_path = '' as $$
@@ -309,10 +320,14 @@ begin
   end if;
 
   select * into result from public.transactional_messages
-  where status in ('queued', 'failed') and retry_eligible
+  where (
+      (status in ('queued', 'failed') and retry_eligible and next_attempt_at <= now())
+      or (status = 'processing' and claim_expires_at <= now())
+    )
     and attempt_count < max_attempts and next_attempt_at <= now()
     and (requested_environment is null or environment = requested_environment)
     and (requested_provider is null or provider = requested_provider)
+    and (requested_message_id is null or id = requested_message_id)
   order by next_attempt_at, queued_at, id for update skip locked limit 1;
   if not found then return null; end if;
 
@@ -349,11 +364,11 @@ begin
     or current_message.claim_expires_at < now() then
     raise exception 'claim is missing, stale, or expired' using errcode = '55000';
   end if;
-  if requested_outcome not in ('accepted', 'failed') then
+  if requested_outcome not in ('provider_accepted', 'failed') then
     raise exception 'invalid attempt outcome' using errcode = '22023';
   end if;
-  if requested_outcome = 'accepted' and length(btrim(coalesce(requested_provider_message_id, ''))) = 0 then
-    raise exception 'accepted attempts require provider message id' using errcode = '22023';
+  if requested_outcome = 'provider_accepted' and length(btrim(coalesce(requested_provider_message_id, ''))) = 0 then
+    raise exception 'provider accepted attempts require provider message id' using errcode = '22023';
   end if;
   if requested_outcome = 'failed' and length(btrim(coalesce(requested_error_message, ''))) = 0 then
     raise exception 'failed attempts require an error message' using errcode = '22023';
@@ -377,12 +392,12 @@ begin
 
   update public.transactional_messages set
     status = requested_outcome,
-    provider_message_id = case when requested_outcome = 'accepted' then btrim(requested_provider_message_id) else provider_message_id end,
+    provider_message_id = case when requested_outcome = 'provider_accepted' then btrim(requested_provider_message_id) else provider_message_id end,
     retry_eligible = requested_outcome = 'failed' and requested_retryable and attempt_count < max_attempts,
     next_attempt_at = case when requested_outcome = 'failed' and requested_retryable and attempt_count < max_attempts
       then coalesce(requested_next_attempt_at, now() + least(interval '1 hour', interval '1 minute' * power(2, least(attempt_count, 6))))
       else next_attempt_at end,
-    accepted_at = case when requested_outcome = 'accepted' then now() else accepted_at end,
+    accepted_at = case when requested_outcome = 'provider_accepted' then now() else accepted_at end,
     failed_at = case when requested_outcome = 'failed' then now() else null end,
     last_error_code = case when requested_outcome = 'failed' then left(nullif(btrim(requested_error_code), ''), 120) end,
     last_error_message = case when requested_outcome = 'failed' then left(btrim(requested_error_message), 4000) end,
@@ -409,7 +424,7 @@ returns public.transactional_messages
 language plpgsql security definer set search_path = '' as $$
 declare current_message public.transactional_messages%rowtype; inserted_event_id bigint;
 begin
-  if requested_mapped_status not in ('accepted', 'deferred', 'delivered', 'failed', 'bounced', 'complained')
+  if requested_mapped_status not in ('provider_accepted', 'sent', 'deferred', 'delivered', 'failed', 'bounced', 'complained', 'suppressed')
     or length(btrim(coalesce(requested_provider_event_id, ''))) = 0 then
     raise exception 'invalid provider event' using errcode = '22023';
   end if;
@@ -444,10 +459,11 @@ begin
     update public.transactional_messages set
       status = requested_mapped_status,
       provider_message_id = coalesce(provider_message_id, nullif(btrim(requested_provider_message_id), '')),
-      accepted_at = case when requested_mapped_status in ('accepted', 'deferred', 'delivered')
+      accepted_at = case when requested_mapped_status in ('provider_accepted', 'sent', 'deferred', 'delivered')
         then coalesce(accepted_at, requested_occurred_at) else accepted_at end,
+      sent_at = case when requested_mapped_status in ('sent', 'delivered') then coalesce(sent_at, requested_occurred_at) else sent_at end,
       delivered_at = case when requested_mapped_status = 'delivered' then requested_occurred_at else delivered_at end,
-      failed_at = case when requested_mapped_status in ('failed', 'bounced', 'complained')
+      failed_at = case when requested_mapped_status in ('failed', 'bounced', 'complained', 'suppressed')
         then requested_occurred_at else failed_at end,
       retry_eligible = false,
       claim_token = null, claimed_by = null, claimed_at = null, claim_expires_at = null,
@@ -472,10 +488,12 @@ begin
   end if;
   select * into original from public.transactional_messages where id = requested_message_id for update;
   if not found then raise exception 'message not found' using errcode = 'P0002'; end if;
-  if original.status not in ('delivered', 'failed', 'bounced', 'complained', 'cancelled') then
+  if original.status <> 'failed' or not original.retry_eligible or original.contains_secure_content then
     raise exception 'message is not eligible for manual resend' using errcode = '55000';
   end if;
   perform pg_advisory_xact_lock(hashtextextended(original.environment || ':' || original.logical_idempotency_key, 0));
+  update public.transactional_messages set retry_eligible = false, updated_at = now()
+  where id = original.id;
   select coalesce(max(resend_sequence), 0) + 1 into next_sequence
   from public.transactional_messages where environment = original.environment
     and logical_idempotency_key = original.logical_idempotency_key;
@@ -514,11 +532,21 @@ for select to authenticated using (public.loyalty_is_staff());
 create policy email_template_versions_staff_read on public.email_template_versions
 for select to authenticated using (public.loyalty_is_staff());
 create policy transactional_messages_staff_read on public.transactional_messages
-for select to authenticated using (public.loyalty_is_staff());
+for select to authenticated using (
+  exists (
+    select 1 from public.staff_profiles staff
+    where staff.user_id = auth.uid() and staff.active and (
+      staff.role in ('admin', 'super_admin')
+      or (staff.can_manage_bookings and (client_id is not null or booking_id is not null or invoice_id is not null or payment_id is not null))
+      or (staff.can_manage_galleries and (project_id is not null or gallery_id is not null))
+      or (staff.can_manage_loyalty and loyalty_reward_id is not null)
+    )
+  )
+);
 create policy transactional_message_attempts_staff_read on public.transactional_message_attempts
-for select to authenticated using (public.loyalty_is_staff());
+for select to authenticated using (exists (select 1 from public.transactional_messages message where message.id = message_id));
 create policy transactional_message_events_staff_read on public.transactional_message_events
-for select to authenticated using (public.loyalty_is_staff());
+for select to authenticated using (exists (select 1 from public.transactional_messages message where message.id = message_id));
 
 revoke all on table public.email_templates, public.email_template_versions,
   public.transactional_messages, public.transactional_message_attempts,
@@ -534,13 +562,13 @@ grant usage, select on sequence public.transactional_message_attempts_id_seq,
 
 revoke all on function public.prevent_transactional_email_history_mutation(),
   public.transactional_email_status_rank(text), public.transactional_email_enqueue(jsonb),
-  public.transactional_email_claim(text, text, text, interval),
+  public.transactional_email_claim(text, text, text, interval, uuid),
   public.transactional_email_finish(uuid, uuid, text, text, text, text, boolean, timestamptz, jsonb, boolean),
   public.transactional_email_record_provider_event(text, text, text, text, text, timestamptz, uuid, text, jsonb, boolean),
   public.transactional_email_prepare_manual_resend(uuid, text, timestamptz)
   from public, anon, authenticated, service_role;
 grant execute on function public.transactional_email_enqueue(jsonb),
-  public.transactional_email_claim(text, text, text, interval),
+  public.transactional_email_claim(text, text, text, interval, uuid),
   public.transactional_email_finish(uuid, uuid, text, text, text, text, boolean, timestamptz, jsonb, boolean),
   public.transactional_email_record_provider_event(text, text, text, text, text, timestamptz, uuid, text, jsonb, boolean),
   public.transactional_email_prepare_manual_resend(uuid, text, timestamptz)
@@ -548,7 +576,7 @@ grant execute on function public.transactional_email_enqueue(jsonb),
 
 comment on table public.transactional_messages is 'Canonical mutable projection and immutable rendered/recipient snapshot for one logical transactional email send.';
 comment on column public.transactional_messages.logical_idempotency_key is 'Stable business-operation key; resend_sequence distinguishes explicit operator resends.';
-comment on column public.transactional_messages.status is 'queued -> processing -> accepted (provider receipt, not delivery) -> delivered; deferred/failed may occur, while bounced/complained are terminal promotions.';
+comment on column public.transactional_messages.status is 'queued -> processing -> provider_accepted (API receipt, not delivery) -> sent -> delivered; deferred/failed may occur, while bounced/complained/suppressed are terminal promotions.';
 comment on column public.transactional_messages.content_redacted is 'True only when secure rendered content was replaced before persistence.';
 comment on table public.transactional_message_attempts is 'Append-only completed provider API attempts. Claims are represented on transactional_messages until completion.';
 comment on table public.transactional_message_events is 'Append-only provider webhook facts; mapped status promotion is rank-monotonic and duplicate-safe.';

@@ -208,7 +208,7 @@ export function PaymentsWorkspace({
   }
 
   return (
-    <main className="min-w-0 p-5 pb-16 sm:p-8 lg:p-10">
+    <main className="app-page min-w-0 p-5 pb-16 sm:p-8 lg:p-10">
       <header className="flex flex-col gap-5 border-b border-[var(--color-border)] pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="font-display text-[32px] font-semibold tracking-[-0.025em] sm:text-[36px]">

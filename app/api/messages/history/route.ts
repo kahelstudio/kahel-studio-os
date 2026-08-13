@@ -2,7 +2,7 @@ import { getStaffPrincipal } from "@/lib/server/staff-auth";
 import { canAccessMessages } from "@/lib/messages";
 import { getEmailHistory } from "@/lib/server/messages-data";
 
-const keys = ["clientId", "bookingId", "bookingReference", "projectId", "projectReference", "paymentId", "galleryId"] as const;
+const keys = ["clientId", "bookingId", "bookingReference", "invoiceId", "invoiceReference", "projectId", "projectReference", "paymentId", "galleryId"] as const;
 
 export async function GET(request: Request) {
   const principal = await getStaffPrincipal(request);

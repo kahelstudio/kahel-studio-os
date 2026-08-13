@@ -37,7 +37,7 @@ export default function PosBookingsPage() {
   });
 
   return (
-    <div className="min-h-full p-5 sm:p-7 lg:p-10">
+    <div className="app-page min-h-full p-5 sm:p-7 lg:p-10">
       <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--color-border)] pb-6">
         <div>
           <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">Bookings</h1>

@@ -17,7 +17,7 @@ export default async function UsagePage() {
     { icon: BarChart3, label: "Queued automations", value: number.format(usage.queuedAutomations), detail: "Email outbox jobs awaiting completion" },
   ] : [];
   return (
-    <div className="min-w-0 p-5 pb-14 sm:p-8 lg:p-10">
+    <div className="app-page min-w-0 p-5 pb-14 sm:p-8 lg:p-10">
       <header>
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
           <Gauge className="h-3.5 w-3.5 text-[var(--color-kahel-500)]" />
