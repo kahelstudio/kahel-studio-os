@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from "./supabase-admin";
 import type { BookingStatusId } from "@/lib/sample-data";
 
 export type RealBookingRow = {
+  id: string;
   ref: string;
   accountId: string;
   account: string;
@@ -65,6 +66,7 @@ function mapBookingRow(row: BookingRow): RealBookingRow {
   const balance = row.subtotal_amount_php - row.paid_amount_php;
   const status = (row.status as BookingStatusId) || "inquiry";
   return {
+    id: row.id,
     ref: row.reference,
     accountId: row.client_id,
     account: row.clients?.name || "Unknown",

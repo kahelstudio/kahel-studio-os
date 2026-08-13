@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     updated_at: new Date().toISOString(),
   });
   if (pending.error) return NextResponse.json({ error: pending.error.code === "23505" ? "That recovery email is already in use." : "Unable to start recovery email verification." }, { status: pending.error.code === "23505" ? 409 : 500 });
-  if (!await sendRecoveryEmailCode(email, code)) {
+  if (!await sendRecoveryEmailCode(email, code, crypto.randomUUID(), current.principal.userId ?? undefined)) {
     await current.admin.from("staff_recovery_emails").update({ pending_email: null, verification_code_hash: null, verification_expires_at: null, updated_at: new Date().toISOString() }).eq("staff_id", current.principal.userId!);
     return NextResponse.json({ error: "Unable to send the verification email." }, { status: 503 });
   }

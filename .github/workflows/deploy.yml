@@ -106,6 +106,7 @@ jobs:
       - run: npx supabase db reset --local
       - run: npx supabase migration list --local
       - run: npx supabase db lint --local --fail-on error
+      - run: npx supabase test db --local
 
   # ── Staging ──────────────────────────────────────────────
 
@@ -249,7 +250,26 @@ jobs:
           name: build-output
           path: .open-next/
       - run: npm ci
+      - run: |
+          while IFS= read -r line || [[ -n "$line" ]]; do
+            case "$line" in
+              SUPABASE_URL=*|SUPABASE_PUBLISHABLE_KEY=*) continue ;;
+              *) printf '%s\n' "$line" ;;
+            esac
+          done <<< "$WANGLER_SECRETS" > /tmp/wrangler-secrets.env
+          printf 'SUPABASE_URL=%s\nSUPABASE_PUBLISHABLE_KEY=%s\n' \
+            "$SUPABASE_URL" \
+            "$SUPABASE_PUBLISHABLE_KEY" \
+            >> /tmp/wrangler-secrets.env
+        env:
+          SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+          WANGLER_SECRETS: ${{ secrets.PRODUCTION_CLOUDFLARE_WORKER_SECRETS }}
       - run: npx wrangler deploy --env production --keep-vars
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      - run: npx wrangler secret bulk /tmp/wrangler-secrets.env --env production
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -277,3 +297,26 @@ jobs:
             sleep 5
           done
           exit 1
+      - run: |
+          webhook_secret="$(node -e '
+            const line = process.env.WANGLER_SECRETS.split(/\r?\n/).find((entry) => entry.startsWith("PAYMONGO_WEBHOOK_SECRET="));
+            if (line) process.stdout.write(line.slice(line.indexOf("=") + 1));
+          ')"
+          if [[ -z "$webhook_secret" ]]; then
+            echo "PAYMONGO_WEBHOOK_SECRET is missing from the production Worker secrets."
+            exit 1
+          fi
+          body='{"data":{"id":"deployment_check","type":"event","attributes":{"type":"deployment.check","data":{"id":"deployment_check","attributes":{}}}}}'
+          signature="$(BODY="$body" WEBHOOK_SECRET="$webhook_secret" node -e '
+            const { createHmac } = require("node:crypto");
+            process.stdout.write(createHmac("sha256", process.env.WEBHOOK_SECRET).update(process.env.BODY).digest("hex"));
+          ')"
+          response="$(curl --fail-with-body --silent --show-error --max-time 20 \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --header "Paymongo-Signature: $signature" \
+            --data "$body" \
+            "https://kahelstudio.com/api/paymongo/webhook")"
+          jq -e '.received == true' <<< "$response" > /dev/null
+        env:
+          WANGLER_SECRETS: ${{ secrets.PRODUCTION_CLOUDFLARE_WORKER_SECRETS }}

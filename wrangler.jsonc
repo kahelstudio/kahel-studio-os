@@ -6,7 +6,6 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "observability": { "enabled": true },
-  "send_email": [{ "name": "EMAIL" }],
   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "kahelstudio-os" }],
   "env": {
     "dev": {
@@ -17,7 +16,6 @@
     "staging": {
       "name": "kahelstudio-os-staging",
       "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "kahelstudio-os-staging" }],
-      "send_email": [{ "name": "EMAIL" }],
       "images": { "binding": "IMAGES" },
       "r2_buckets": [
         { "binding": "PUBLIC_MEDIA", "bucket_name": "kahel-public-media-staging" },
@@ -32,7 +30,6 @@
     "production": {
       "name": "kahelstudio-os-production",
       "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "kahelstudio-os-production" }],
-      "send_email": [{ "name": "EMAIL" }],
       "images": { "binding": "IMAGES" },
       "r2_buckets": [
         { "binding": "PUBLIC_MEDIA", "bucket_name": "kahel-public-media-production" },

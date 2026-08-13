@@ -15,6 +15,9 @@ interface __BaseEnv_CloudflareEnv {
 	PUBLIC_SITE_URL: "https://kahel.studio";
 	BOOKING_EMAIL_FROM: string;
 	BOOKING_EMAIL_REPLY_TO: string;
+	RESEND_API_KEY: string;
+	RESEND_WEBHOOK_SECRET: string;
+	EMAIL_QUEUE_SECRET: string;
 	KAHEL_STAFF_EMAIL: string;
 	KAHEL_STAFF_EMAILS: string;
 	KAHEL_AUTH_DISABLED: string;
@@ -36,7 +39,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "APP_ENV" | "MEDIA_INFRASTRUCTURE_ENABLED" | "R2_ACCOUNT_ID" | "CLIENT_MEDIA_BUCKET_NAME" | "CUSTOMER_AUTH_CALLBACK_URL" | "PUBLIC_SITE_URL" | "BOOKING_EMAIL_FROM" | "BOOKING_EMAIL_REPLY_TO" | "KAHEL_STAFF_EMAIL" | "KAHEL_STAFF_EMAILS" | "KAHEL_AUTH_DISABLED" | "SUPABASE_URL" | "SUPABASE_PUBLISHABLE_KEY" | "SUPABASE_SECRET_KEY" | "AUTH_REDIRECT_URL" | "SUPABASE_ACCESS_TOKEN">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "APP_ENV" | "MEDIA_INFRASTRUCTURE_ENABLED" | "R2_ACCOUNT_ID" | "CLIENT_MEDIA_BUCKET_NAME" | "CUSTOMER_AUTH_CALLBACK_URL" | "PUBLIC_SITE_URL" | "BOOKING_EMAIL_FROM" | "BOOKING_EMAIL_REPLY_TO" | "RESEND_API_KEY" | "RESEND_WEBHOOK_SECRET" | "EMAIL_QUEUE_SECRET" | "KAHEL_STAFF_EMAIL" | "KAHEL_STAFF_EMAILS" | "KAHEL_AUTH_DISABLED" | "SUPABASE_URL" | "SUPABASE_PUBLISHABLE_KEY" | "SUPABASE_SECRET_KEY" | "AUTH_REDIRECT_URL" | "SUPABASE_ACCESS_TOKEN">> {}
 }
 
 // Begin runtime types

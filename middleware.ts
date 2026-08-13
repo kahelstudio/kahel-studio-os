@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { hasStaffSession, tryRefreshStaffSession, STAFF_SESSION_COOKIE, STAFF_REFRESH_COOKIE, REMEMBER_ME_MAX_AGE, IS_PRODUCTION } from "@/lib/server/staff-auth";
 
-const PUBLIC_PATHS = ["/", "/terms", "/privacy", "/health-safety", "/login", "/reset-password", "/sign-in", "/sign-up", "/forgot-password", "/set-password", "/auth", "/portal", "/media", "/images", "/api/customer", "/api/paymongo", "/api/staff/session", "/api/staff/password-reset", "/api/staff/oauth", "/client-portal"];
+const PUBLIC_PATHS = ["/", "/book", "/terms", "/privacy", "/health-safety", "/offline", "/login", "/reset-password", "/sign-in", "/sign-up", "/forgot-password", "/set-password", "/auth", "/portal", "/media", "/images", "/api/customer", "/api/paymongo", "/api/staff/session", "/api/staff/password-reset", "/api/staff/oauth", "/client-portal"];
 const CUSTOMER_ACCESS_COOKIE = "kahel_customer_access_token";
 const CUSTOMER_REFRESH_COOKIE = "kahel_customer_refresh_token";
 
@@ -69,5 +69,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest|robots.txt|sitemap.xml|sw.js|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2)$).*)"],
 };

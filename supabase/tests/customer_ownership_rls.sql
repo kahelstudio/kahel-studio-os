@@ -7,15 +7,15 @@ values
   ('00000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'a@example.com', '', now(), '{}', '{}', now(), now()),
   ('00000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'b@example.com', '', now(), '{}', '{}', now(), now());
 
-insert into public.clients (id, name) values
-  ('10000000-0000-0000-0000-000000000001', 'Customer A'),
-  ('10000000-0000-0000-0000-000000000002', 'Customer B');
+insert into public.clients (id, external_ref, name) values
+  ('10000000-0000-0000-0000-000000000001', 'CUSTOMER-A', 'Customer A'),
+  ('10000000-0000-0000-0000-000000000002', 'CUSTOMER-B', 'Customer B');
 insert into public.client_profiles (id, client_id, user_id, email, first_name, last_name, status, email_verified_at) values
   ('20000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'a@example.com', 'Customer', 'A', 'active', now()),
   ('20000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000002', 'b@example.com', 'Customer', 'B', 'active', now());
-insert into public.bookings (client_id, client_profile_id, idempotency_key, reference, service_type, service_date, service_time, location, payment_type, subtotal_amount_php, total_amount_php) values
-  ('10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'booking-a-unique', 'KS-A', 'Solo', '2026-12-01', '09:00', 'Studio', 'deposit', 150000, 150000),
-  ('10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'booking-b-unique', 'KS-B', 'Solo', '2026-12-02', '09:00', 'Studio', 'deposit', 150000, 150000);
+insert into public.bookings (client_id, client_profile_id, idempotency_key, request_fingerprint, reference, service_type, service_id, service_date, service_time, location, payment_type, subtotal_amount_php, total_amount_php) values
+  ('10000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'booking-a-unique', repeat('a', 64), 'KS-A', 'Solo', '10000000-0000-4000-8000-000000000001', '2026-12-01', '09:00', 'Studio', 'deposit', 150000, 150000),
+  ('10000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', 'booking-b-unique', repeat('b', 64), 'KS-B', 'Solo', '10000000-0000-4000-8000-000000000001', '2026-12-02', '09:00', 'Studio', 'deposit', 150000, 150000);
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000001","role":"authenticated"}', true);
@@ -27,7 +27,7 @@ select throws_ok($$update public.bookings set total_amount_php = 1 where referen
 select throws_ok($$update public.bookings set payment_status = 'paid' where reference = 'KS-A'$$, '42501', null, 'customer cannot mark payment paid');
 select throws_ok($$update public.bookings set client_id = '10000000-0000-0000-0000-000000000002' where reference = 'KS-A'$$, '42501', null, 'customer cannot change booking ownership');
 select throws_ok($$update public.client_profiles set email = 'other@example.com' where id = '20000000-0000-0000-0000-000000000001'$$, '42501', null, 'customer cannot change verified email');
-select lives_ok($$update public.client_profiles set first_name = 'Ana' where id = '20000000-0000-0000-0000-000000000001'$$, 'customer can update allowlisted profile fields');
-select is((select count(*)::integer from public.customer_audit_log), 0, 'customer cannot read audit logs');
+select throws_ok($$update public.client_profiles set first_name = 'Ana' where id = '20000000-0000-0000-0000-000000000001'$$, '42501', null, 'customer profile changes require the validated server API');
+select ok(not has_table_privilege('authenticated', 'public.customer_audit_log', 'SELECT'), 'customer cannot read audit logs');
 select * from finish();
 rollback;

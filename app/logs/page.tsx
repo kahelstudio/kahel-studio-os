@@ -22,8 +22,8 @@ export default async function LogsPage() {
   const entries = await getAuditLog();
 
   return (
-    <div className="p-12 pt-9">
-      <div className="flex items-end justify-between gap-4">
+    <div className="p-5 pb-14 sm:p-8 lg:p-10">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
             Logs
@@ -32,13 +32,13 @@ export default async function LogsPage() {
             System activity across the workspace — read-only
           </p>
         </div>
-        <button className="flex h-10 shrink-0 items-center gap-1.5 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-text-primary)]">
+        <a href="/api/logs/export" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm font-semibold text-[var(--color-text-primary)]">
           <Download className="h-4 w-4" /> Export
-        </button>
+        </a>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="grid h-11 grid-cols-[2fr_1.3fr_1fr_1.2fr] items-center bg-[var(--color-canvas)] px-5 text-[11px] font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
+      <div className="mt-6 overflow-x-auto rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="grid h-11 min-w-[760px] grid-cols-[2fr_1.3fr_1fr_1.2fr] items-center bg-[var(--color-canvas)] px-5 text-[11px] font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
           <div>Event</div>
           <div>Actor</div>
           <div>Type</div>
@@ -49,7 +49,7 @@ export default async function LogsPage() {
           return (
             <div
               key={e.id}
-              className="grid h-[54px] grid-cols-[2fr_1.3fr_1fr_1.2fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0"
+              className="grid h-[54px] min-w-[760px] grid-cols-[2fr_1.3fr_1fr_1.2fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0"
             >
               <div className="font-medium">{e.event}</div>
               <div className="text-[var(--color-text-secondary)]">{e.actorName}</div>
@@ -65,6 +65,7 @@ export default async function LogsPage() {
             </div>
           );
         })}
+        {entries.length === 0 && <div className="px-5 py-12 text-center text-sm text-[var(--color-text-muted)]">No workspace activity has been recorded yet.</div>}
       </div>
     </div>
   );

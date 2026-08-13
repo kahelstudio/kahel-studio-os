@@ -19,11 +19,11 @@ insert into public.client_profiles (id, client_id, user_id, email, first_name, l
   ('93000000-0000-4000-8000-000000000002', '92000000-0000-4000-8000-000000000002', '91000000-0000-4000-8000-000000000002', 'gallery-b@test.local', 'Gallery', 'B');
 
 insert into public.bookings (
-  id, client_id, client_profile_id, idempotency_key, reference, service_type, service_id,
+  id, client_id, client_profile_id, idempotency_key, request_fingerprint, reference, service_type, service_id,
   service_date, service_time, location, payment_type, subtotal_amount_php, total_amount_php
 ) values
-  ('94000000-0000-4000-8000-000000000001', '92000000-0000-4000-8000-000000000001', '93000000-0000-4000-8000-000000000001', 'gallery-booking-a', 'GALLERY-BOOKING-A', 'Solo', '10000000-0000-4000-8000-000000000001', '2026-10-01', '09:00', 'Studio', 'cash', 100000, 100000),
-  ('94000000-0000-4000-8000-000000000002', '92000000-0000-4000-8000-000000000002', '93000000-0000-4000-8000-000000000002', 'gallery-booking-b', 'GALLERY-BOOKING-B', 'Solo', '10000000-0000-4000-8000-000000000001', '2026-10-02', '09:00', 'Studio', 'cash', 100000, 100000);
+  ('94000000-0000-4000-8000-000000000001', '92000000-0000-4000-8000-000000000001', '93000000-0000-4000-8000-000000000001', 'gallery-booking-a', repeat('a', 64), 'GALLERY-BOOKING-A', 'Solo', '10000000-0000-4000-8000-000000000001', '2026-10-01', '09:00', 'Studio', 'cash', 100000, 100000),
+  ('94000000-0000-4000-8000-000000000002', '92000000-0000-4000-8000-000000000002', '93000000-0000-4000-8000-000000000002', 'gallery-booking-b', repeat('b', 64), 'GALLERY-BOOKING-B', 'Solo', '10000000-0000-4000-8000-000000000001', '2026-10-02', '09:00', 'Studio', 'cash', 100000, 100000);
 insert into public.projects (id, client_id, booking_id, reference, title) values
   ('95000000-0000-4000-8000-000000000001', '92000000-0000-4000-8000-000000000001', '94000000-0000-4000-8000-000000000001', 'GALLERY-PROJECT-A', 'Project A'),
   ('95000000-0000-4000-8000-000000000002', '92000000-0000-4000-8000-000000000002', '94000000-0000-4000-8000-000000000002', 'GALLERY-PROJECT-B', 'Project B');
@@ -82,7 +82,7 @@ select is((select count(*)::integer from public.gallery_selections), 0, 'Custome
 select throws_ok($$insert into public.gallery_favorites (gallery_id, gallery_asset_id, client_id, client_profile_id) values ('97000000-0000-4000-8000-000000000001', '98000000-0000-4000-8000-000000000001', '92000000-0000-4000-8000-000000000001', '93000000-0000-4000-8000-000000000001')$$, '42501', null, 'Customer B cannot mutate Customer A favorites');
 
 select set_config('request.jwt.claims', '{"sub":"91000000-0000-4000-8000-000000000003","role":"authenticated"}', true);
-select is((select count(*)::integer from public.galleries), 3, 'staff can read published and unpublished galleries');
+select is((select count(*)::integer from public.galleries where id in ('97000000-0000-4000-8000-000000000001', '97000000-0000-4000-8000-000000000002', '97000000-0000-4000-8000-000000000003')), 3, 'staff can read published and unpublished galleries');
 select throws_ok($$insert into public.galleries (client_id, project_id, slug, title) values ('92000000-0000-4000-8000-000000000001', '95000000-0000-4000-8000-000000000001', 'staff-direct-write', 'Not Allowed')$$, '42501', null, 'staff browser role cannot directly write galleries');
 
 reset role;

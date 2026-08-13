@@ -30,6 +30,12 @@ describe("staff email authorization", () => {
     expect(authenticationDisabled()).toBe(false);
   });
 
+  it("allows explicit auth bypass for local production-build tests", () => {
+    (process.env.APP_ENV as string) = "test";
+    process.env.KAHEL_AUTH_DISABLED = "true";
+    expect(authenticationDisabled()).toBe(true);
+  });
+
   afterEach(() => vi.unstubAllGlobals());
 
   it("requires an authenticated session to change a password", async () => {

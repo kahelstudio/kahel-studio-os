@@ -246,6 +246,7 @@ export const CRM_DUE_TODAY = [
 
 // ── Bookings ─────────────────────────────────────────────────────────
 export interface BookingRow {
+  id?: string;
   ref: string;
   accountId: string;
   account: string;

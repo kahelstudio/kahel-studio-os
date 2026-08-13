@@ -1,5 +1,12 @@
 import type { MediaProcessingMessage, PrivateImageVariant } from "../lib/media-contract";
 import { PRIVATE_IMAGE_VARIANTS } from "../lib/media-contract";
+import { sendResendEmail } from "../lib/resend-email";
+
+declare global {
+  interface MediaProcessorEnv {
+    RESEND_API_KEY: string;
+  }
+}
 
 type MediaRow = {
   id: string;
@@ -148,15 +155,16 @@ async function sendGalleryEmail(env: MediaProcessorEnv, message: Extract<MediaPr
     const subject = "Your Kahel Studio gallery is ready";
     const text = `Hi ${profile.first_name},\n\n${gallery.title} (${reference}) is ready. Sign in to your Client Portal to view it: ${url}\n\n${downloadText}${expiryText}\n\nNeed help? Reply to ${env.GALLERY_EMAIL_REPLY_TO}.`;
     const html = `<div style="margin:0;background:#FBF7F2;padding:24px;font-family:Inter,Arial,sans-serif;color:#1C1917"><div style="max-width:620px;margin:0 auto;background:#FFFFFF;padding:32px"><h1 style="margin:0;font-family:Archivo,Arial,sans-serif;font-size:30px">Your gallery is ready</h1><p style="font-size:16px;line-height:1.6">Hi ${escapeHtml(profile.first_name)},</p><p style="font-size:16px;line-height:1.6"><strong>${escapeHtml(gallery.title)}</strong> (${escapeHtml(reference)}) is ready in your secure Client Portal.</p><p style="font-size:16px;line-height:1.6">${escapeHtml(downloadText + expiryText)}</p><a href="${escapeHtml(url)}" style="display:inline-block;background:#FF5300;color:#FFFFFF;padding:14px 22px;text-decoration:none;font-size:16px;font-weight:700">View your gallery</a><p style="margin-top:28px;font-size:16px;line-height:1.6;color:#57534E">Sign-in is required. Need help? Reply to ${escapeHtml(env.GALLERY_EMAIL_REPLY_TO)}.</p></div></div>`;
-    const response = await env.EMAIL.send({
+    const providerId = await sendResendEmail(env.RESEND_API_KEY, {
       to: profile.email,
-      from: { email: env.GALLERY_EMAIL_FROM, name: "Kahel Studio" },
-      replyTo: { email: env.GALLERY_EMAIL_REPLY_TO, name: "Kahel Studio" },
+      from: env.GALLERY_EMAIL_FROM,
+      replyTo: env.GALLERY_EMAIL_REPLY_TO,
       subject,
       text,
       html,
+      idempotencyKey: `gallery-email-${outbox.id}`,
     });
-    await supabasePatch(env, "gallery_email_outbox", `id=eq.${outbox.id}`, { status: "sent", sent_at: new Date().toISOString(), provider_message_id: response.messageId, last_error: null });
+    await supabasePatch(env, "gallery_email_outbox", `id=eq.${outbox.id}`, { status: "sent", sent_at: new Date().toISOString(), provider_message_id: providerId, last_error: null });
   } catch (error) {
     const failure = error instanceof Error ? error.message.slice(0, 1000) : "Gallery email failed.";
     await supabasePatch(env, "gallery_email_outbox", `id=eq.${outbox.id}`, { status: "failed", last_error: failure, processing_at: null });

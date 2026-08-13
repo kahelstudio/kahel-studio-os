@@ -59,6 +59,7 @@ export type ApprovalTypeDefinition = {
 };
 
 const reason: ApprovalField = { key: "reason", label: "Reason", type: "textarea", required: true };
+const paymentId: ApprovalField = { key: "paymentId", label: "Payment ID", type: "text", required: true };
 const affectedDate: ApprovalField = { key: "affectedDate", label: "Affected date", type: "date", required: true };
 const projectChangeFields: ApprovalField[] = [
   { key: "requestedChange", label: "Requested change", type: "textarea", required: true },
@@ -142,7 +143,7 @@ export const APPROVAL_TYPES: ApprovalTypeDefinition[] = [
     { key: "priorApprovalReason", label: "Why prior approval was not used", type: "textarea" },
   ], { financial: true, sensitive: true }),
   type("supplier_payment", "Supplier payment", "Finance", "expenses", [reason], { financial: true, sensitive: true }),
-  type("client_refund", "Client refund", "Finance", "finance", [reason], { financial: true, sensitive: true }),
+  type("client_refund", "Client refund", "Finance", "finance", [paymentId, reason], { financial: true, sensitive: true }),
   type("discount", "Discount approval", "Finance", "quotation", [reason], { financial: true, sensitive: true }),
   type("payroll_adjustment", "Payroll adjustment", "People", "payroll", [reason], { financial: true, sensitive: true }),
   type("equipment_repair", "Equipment repair", "Other", "maintenance", [reason], { financial: true }),

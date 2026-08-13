@@ -21,7 +21,7 @@ type AuthConfig = {
 
 export function authenticationDisabled() {
   const environment = process.env.APP_ENV as string | undefined;
-  return environment !== "production" && process.env.NODE_ENV !== "production" && process.env.KAHEL_AUTH_DISABLED === "true";
+  return environment !== "production" && process.env.KAHEL_AUTH_DISABLED === "true";
 }
 
 function config(): AuthConfig | null {

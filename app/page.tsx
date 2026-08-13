@@ -5,18 +5,20 @@ import { MarketingSite } from "@/components/marketing/marketing-site";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Kahel Studio | Creating Visual Experiences",
-  description: "Timeless portraits, studio sessions, and event photography by Kahel Studio in Tabaco City, Albay.",
+  title: "Kahel Studio | Photography Studio in Tabaco City, Albay",
+  description:
+    "Book studio portrait sessions, debut, christening, birthday, and event photography with Kahel Studio in Tabaco City, Albay. Serving Bicol and all of Luzon.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Kahel Studio | Creating Visual Experiences",
-    description: "Creating timeless photographs in Tabaco City, Albay.",
+    title: "Kahel Studio | Photography Studio in Tabaco City, Albay",
+    description:
+      "Professional photography studio in Tabaco City, Albay — portraits, debut, christening, and event coverage across Bicol and Luzon.",
     url: "/",
     siteName: "Kahel Studio",
     images: [
       {
-        url: "/Solo_Liza Burzon Bino_9A.jpg",
-        alt: "Portrait by Kahel Studio",
+        url: "/Solo_Liza%20Burzon%20Bino_9A.jpg",
+        alt: "Portrait photography by Kahel Studio, Tabaco City, Albay",
         width: 1200,
         height: 630,
       },
@@ -26,9 +28,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kahel Studio | Creating Visual Experiences",
-    description: "Creating timeless photographs in Tabaco City, Albay.",
-    images: ["/Solo_Liza Burzon Bino_9A.jpg"],
+    title: "Kahel Studio | Photography Studio in Tabaco City, Albay",
+    description:
+      "Professional photography studio in Tabaco City, Albay — portraits, debut, christening, and event coverage across Bicol and Luzon.",
+    images: ["/Solo_Liza%20Burzon%20Bino_9A.jpg"],
   },
 };
 

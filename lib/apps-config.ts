@@ -26,6 +26,7 @@ import {
   Gauge,
   ReceiptText,
   BadgeCheck,
+  Mail,
   type LucideIcon,
 } from "lucide-react";
 
@@ -116,6 +117,7 @@ export const APPS: AppDef[] = [
     href: "/pos/sale",
     launcherGroup: "live",
     nav: [
+      { id: "register", label: "Register", href: "/pos/register" },
       { id: "sale", label: "New sale", href: "/pos/sale" },
       { id: "bookings", label: "Bookings", href: "/pos/bookings" },
       { id: "cat-sessions", label: "Studio Sessions", href: "/pos/cat-sessions" },
@@ -123,6 +125,21 @@ export const APPS: AppDef[] = [
       { id: "cat-rentals", label: "Rentals", href: "/pos/cat-rentals" },
       { id: "cat-retail", label: "Retail", href: "/pos/cat-retail" },
       { id: "cat-addons", label: "Add-ons", href: "/pos/cat-addons" },
+    ],
+  },
+  {
+    id: "messages",
+    name: "Messages",
+    description: "Transactional delivery and email history",
+    accent: "orange",
+    icon: Mail,
+    href: "/messages/transactional",
+    launcherGroup: "live",
+    nav: [
+      { id: "inbox", label: "Inbox", href: "/messages/inbox" },
+      { id: "sent", label: "Sent", href: "/messages/sent" },
+      { id: "transactional", label: "Transactional", href: "/messages/transactional" },
+      { id: "failed", label: "Failed", href: "/messages/failed" },
     ],
   },
   {

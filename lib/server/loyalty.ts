@@ -1,5 +1,7 @@
 import "server-only";
 
+import { sendTransactionalEmail } from "./transactional-email-service";
+
 import { getSupabaseAdmin, getSupabaseAuthClient } from "./supabase-admin";
 import type { StaffPrincipal } from "./staff-auth";
 
@@ -175,7 +177,7 @@ export async function processLoyaltyRewardEmail(outboxId?: string) {
   if (!claimed) return { processed: false };
   try {
     const [profileResult, rewardResult] = await Promise.all([
-      admin.from("client_profiles").select("email,first_name").eq("client_id", claimed.client_id).eq("status", "active").order("created_at").limit(1).single<{ email: string; first_name: string }>(),
+      admin.from("client_profiles").select("id,email,first_name").eq("client_id", claimed.client_id).eq("status", "active").order("created_at").limit(1).single<{ id: string; email: string; first_name: string }>(),
       admin.from("loyalty_rewards").select("status,sequence").eq("id", claimed.reward_id).single<{ status: string; sequence: number }>(),
     ]);
     if (profileResult.error || rewardResult.error) throw profileResult.error ?? rewardResult.error;
@@ -189,21 +191,17 @@ export async function processLoyaltyRewardEmail(outboxId?: string) {
     const safeName = escapeHtml(firstName);
     const safePortal = escapeHtml(portalUrl);
     const safeTerms = escapeHtml(termsUrl);
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "Idempotency-Key": `loyalty-reward-${claimed.reward_id}` },
-      body: JSON.stringify({
-        from,
-        to: [profileResult.data.email],
-        reply_to: process.env.BOOKING_EMAIL_REPLY_TO ?? undefined,
-        subject: "You earned a complimentary Solo Session",
+    const sent = await sendTransactionalEmail({
+      templateKey: "loyalty-reward-earned", logicalIdempotencyKey: `loyalty-reward-${claimed.reward_id}`,
+      triggerKey: "loyalty.reward.earned", clientId: claimed.client_id, recipientProfileId: profileResult.data.id,
+      loyaltyRewardId: claimed.reward_id, sourceReference: claimed.id, recipientName: firstName,
+      recipientSnapshot: { name: firstName, email: profileResult.data.email }, renderContext: { status: rewardResult.data.status, portalUrl, termsUrl },
+      message: { from, to: profileResult.data.email, replyTo: process.env.BOOKING_EMAIL_REPLY_TO, subject: "You earned a complimentary Solo Session",
         html: `<div style="margin:0;background:#f5f3ef;padding:24px 12px;font:16px/1.6 Arial,sans-serif;color:#1d1d1f"><div style="max-width:600px;margin:auto;background:#fff;border:1px solid #dedbd5"><div style="padding:24px 28px;background:#171717;color:#fff;font-size:20px;font-weight:700">KAHEL STUDIO</div><div style="padding:28px"><h1 style="margin:0 0 16px;font-size:28px;line-height:1.15">Your free Solo Session is ready</h1><p>Hi ${safeName},</p><p>You completed eight eligible bookings and earned a complimentary Solo Session.</p><p><strong>Status:</strong> ${escapeHtml(rewardResult.data.status)}</p><p><a href="${safePortal}" style="display:inline-block;margin:12px 0;padding:13px 22px;background:#FF5300;color:#fff;text-decoration:none;font-weight:700">Book your free session</a></p><p>The reward covers the approved standard Solo Session only. Upgrades, add-ons, prints, extra edits, and unrelated fees remain chargeable. Rewards are account-linked, non-transferable, and subject to availability.</p><p><a href="${safeTerms}" style="color:#b33800">View complete terms and conditions</a></p><p>Questions? Reply to this email.</p></div></div></div>`,
-        text: `Your free Solo Session is ready\n\nHi ${firstName},\n\nYou completed eight eligible bookings and earned a complimentary Solo Session.\nStatus: ${rewardResult.data.status}\n\nBook your free session: ${portalUrl}\n\nThe reward covers the approved standard Solo Session only. Upgrades, add-ons, prints, extra edits, and unrelated fees remain chargeable. Rewards are account-linked, non-transferable, and subject to availability.\n\nTerms: ${termsUrl}\nQuestions? Reply to this email.`,
-      }),
+        text: `Your free Solo Session is ready\n\nHi ${firstName},\n\nYou completed eight eligible bookings and earned a complimentary Solo Session.\nStatus: ${rewardResult.data.status}\n\nBook your free session: ${portalUrl}\n\nThe reward covers the approved standard Solo Session only. Upgrades, add-ons, prints, extra edits, and unrelated fees remain chargeable. Rewards are account-linked, non-transferable, and subject to availability.\n\nTerms: ${termsUrl}\nQuestions? Reply to this email.` },
     });
-    const result = await response.json() as { id?: string; message?: string };
-    if (!response.ok || !result.id) throw new Error(result.message ?? `Resend returned ${response.status}.`);
-    await admin.rpc("loyalty_finish_email", { requested_outbox_id: claimed.id, succeeded: true, provider_id: result.id, failure: null });
+    if (!sent) throw new Error("Loyalty email was deferred.");
+    await admin.rpc("loyalty_finish_email", { requested_outbox_id: claimed.id, succeeded: true, provider_id: null, failure: null });
     return { processed: true, sent: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown loyalty email failure.";

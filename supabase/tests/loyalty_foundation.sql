@@ -1,11 +1,10 @@
 begin;
 
+create extension if not exists pgtap with schema extensions;
+select plan(24);
+
 create or replace function pg_temp.assert_true(condition boolean, message text)
-returns void language plpgsql as $$
-begin
-  if condition is not true then raise exception 'assertion failed: %', message; end if;
-end;
-$$;
+returns text language sql as $$ select ok(condition, message); $$;
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -43,13 +42,13 @@ select pg_temp.assert_true((
 
 -- Eight qualifying completions issue exactly one reward and one email.
 insert into public.bookings (
-  id, client_id, client_profile_id, idempotency_key, reference, service_type, service_id,
+  id, client_id, client_profile_id, idempotency_key, request_fingerprint, reference, service_type, service_id,
   service_date, service_time, location, payment_type, subtotal_amount_php,
   total_amount_php, paid_amount_php, status, completed_at
 )
 select ('d0000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid,
   'b0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000001',
-  'loyalty-test-key-' || n, 'LOYALTY-TEST-' || n, 'Solo Session',
+  'loyalty-test-key-' || n, md5('loyalty-test-key-' || n) || md5('fingerprint-' || n), 'LOYALTY-TEST-' || n, 'Solo Session',
   '10000000-0000-4000-8000-000000000001', date '2026-09-01' + n,
   time '09:00', 'Studio', 'cash', 100000, 100000, 100000, 'completed',
   timestamptz '2026-09-01 12:00:00+08' + n * interval '1 day'
@@ -67,13 +66,13 @@ select pg_temp.assert_true((select count(*) = 1 from public.loyalty_email_outbox
 
 -- Sixteen net completions issue sequence two, once.
 insert into public.bookings (
-  id, client_id, client_profile_id, idempotency_key, reference, service_type, service_id,
+  id, client_id, client_profile_id, idempotency_key, request_fingerprint, reference, service_type, service_id,
   service_date, service_time, location, payment_type, subtotal_amount_php,
   total_amount_php, paid_amount_php, status, completed_at
 )
 select ('d0000000-0000-4000-8001-' || lpad(n::text, 12, '0'))::uuid,
   'b0000000-0000-4000-8000-000000000001', 'c0000000-0000-4000-8000-000000000001',
-  'loyalty-test-key-next-' || n, 'LOYALTY-TEST-NEXT-' || n, 'Solo Session',
+  'loyalty-test-key-next-' || n, md5('loyalty-test-key-next-' || n) || md5('next-fingerprint-' || n), 'LOYALTY-TEST-NEXT-' || n, 'Solo Session',
   '10000000-0000-4000-8000-000000000001', date '2026-10-01' + n,
   time '09:00', 'Studio', 'cash', 100000, 100000, 100000, 'completed',
   timestamptz '2026-10-01 12:00:00+08' + n * interval '1 day'
@@ -90,12 +89,12 @@ select pg_temp.assert_true((select count(*) = 1 from public.loyalty_audit_log wh
 
 -- Reward bookings never count. The RPC reserves only an approved matching solo booking.
 insert into public.bookings (
-  id, client_id, client_profile_id, idempotency_key, reference, service_type, service_id,
+  id, client_id, client_profile_id, idempotency_key, request_fingerprint, reference, service_type, service_id,
   service_date, service_time, location, payment_type, subtotal_amount_php,
   total_amount_php, paid_amount_php, status
 ) values (
   'e0000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001',
-  'c0000000-0000-4000-8000-000000000001', 'reward-booking-key-0001', 'REWARD-BOOKING-1',
+  'c0000000-0000-4000-8000-000000000001', 'reward-booking-key-0001', repeat('e', 64), 'REWARD-BOOKING-1',
   'Complimentary Solo Session', '10000000-0000-4000-8000-000000000002', date '2026-12-01', time '09:00',
   'Studio', 'reward', 0, 0, 0, 'confirmed'
 );
@@ -104,7 +103,7 @@ select public.loyalty_reserve_reward(
   (select id from public.loyalty_rewards where client_id = 'b0000000-0000-4000-8000-000000000001' and sequence = 1),
   'e0000000-0000-4000-8000-000000000001', 'Customer selected reward booking'
 );
-select pg_temp.assert_true((select contribution = 0 and reason_code = 'non_standard_booking' from public.loyalty_booking_eligibility where booking_id = 'e0000000-0000-4000-8000-000000000001'), 'reward booking excluded');
+select pg_temp.assert_true((select e.contribution = 0 and b.kind = 'reward' from public.loyalty_booking_eligibility e join public.bookings b on b.id = e.booking_id where e.booking_id = 'e0000000-0000-4000-8000-000000000001'), 'reward booking excluded');
 update public.bookings set attendance = 'no_show' where id = 'e0000000-0000-4000-8000-000000000001';
 select pg_temp.assert_true((select review_required from public.loyalty_rewards where sequence = 1 and client_id = 'b0000000-0000-4000-8000-000000000001'), 'reward no-show requires review');
 update public.bookings set attendance = 'attended', status = 'completed'
@@ -130,4 +129,5 @@ select pg_temp.assert_true(not has_table_privilege('authenticated', 'public.loya
 select pg_temp.assert_true(not has_table_privilege('authenticated', 'public.bookings', 'UPDATE'), 'customer cannot mutate bookings');
 select pg_temp.assert_true(not has_column_privilege('authenticated', 'public.client_profiles', 'first_name', 'UPDATE'), 'customer cannot mutate profile data');
 
+select * from finish();
 rollback;

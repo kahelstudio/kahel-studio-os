@@ -30,12 +30,12 @@ Create variables in GitLab at **Settings > CI/CD > Variables**. Scope staging va
 | `STAGING_SUPABASE_DB_PASSWORD` | Staging migration | Variable | Yes / Yes | No | `staging` |
 | `STAGING_SUPABASE_URL` | Staging Worker runtime binding | Variable | No / No | No | `staging` |
 | `STAGING_SUPABASE_PUBLISHABLE_KEY` | Staging Supabase Auth runtime binding | Variable | No / No | No | `staging` |
-| `STAGING_CLOUDFLARE_WORKER_SECRETS_FILE` | Staging Worker runtime secrets | File | Yes / Yes | No | `staging` |
+| `STAGING_CLOUDFLARE_WORKER_SECRETS` | Staging Worker runtime secrets | Variable | Yes / Yes | No | `staging` |
 | `PRODUCTION_SUPABASE_PROJECT_REF` | Production migration and functions | Variable | No / No | Yes | `production` |
 | `PRODUCTION_SUPABASE_DB_PASSWORD` | Production migration | Variable | Yes / Yes | Yes | `production` |
 | `PRODUCTION_SUPABASE_URL` | Production Worker runtime binding | Variable | No / No | Yes | `production` |
 | `PRODUCTION_SUPABASE_PUBLISHABLE_KEY` | Production Supabase Auth runtime binding | Variable | No / No | Yes | `production` |
-| `PRODUCTION_CLOUDFLARE_WORKER_SECRETS_FILE` | Production Worker runtime secrets | File | Yes / Yes | Yes | `production` |
+| `PRODUCTION_CLOUDFLARE_WORKER_SECRETS` | Production Worker runtime secrets | Variable | Yes / Yes | Yes | `production` |
 
 `STAGING_VITE_SUPABASE_URL`, `STAGING_VITE_SUPABASE_ANON_KEY`, `PRODUCTION_VITE_SUPABASE_URL`, `PRODUCTION_VITE_SUPABASE_ANON_KEY`, `STAGING_CLOUDFLARE_PAGES_PROJECT`, and `PRODUCTION_CLOUDFLARE_PAGES_PROJECT` are not required. They were renamed or omitted because this is a server-rendered Next.js/OpenNext application deployed to Workers, not Vite deployed to Pages. Do not create unused variables.
 
@@ -47,6 +47,8 @@ KAHEL_STAFF_EMAIL=owner@example.com
 KAHEL_STAFF_EMAILS=owner@example.com,staff@example.com
 TURNSTILE_SECRET=replace-with-the-secret-key
 GOOGLE_AUTH_ENABLED=false
+PAYMONGO_SECRET_KEY=sk_live_replace_me
+PAYMONGO_WEBHOOK_SECRET=whsk_replace_me
 ```
 
 Do not include `SUPABASE_URL` or `SUPABASE_PUBLISHABLE_KEY` in this file; CI passes them as environment-specific Worker variables. Do not include `KAHEL_AUTH_DISABLED` or `AUTH_REDIRECT_URL`; `wrangler.jsonc` fixes them for both remote environments. If a secret is removed from the file later, delete the obsolete Worker secret separately with `wrangler secret delete --env <environment> <NAME>`; Wrangler's additive secrets upload intentionally does not delete omitted secrets.
@@ -63,6 +65,22 @@ Create a least-privilege Cloudflare API token with the required Workers deployme
 4. The checked-in `custom_domain` routes attach `kahel.studio` to staging and `kahelstudio.com` to production. Review the generated route changes in the first deployment job before proceeding.
 5. The Worker handles all routes, including dynamic Next routes and API routes; no Pages `_redirects` SPA fallback is appropriate or required.
 6. The pipeline checks `GET /api/staff/session` after deployment. This endpoint is public by design and returns configuration state only; it does not return credentials.
+
+## PayMongo webhook
+
+Use the canonical production endpoint `https://kahelstudio.com/api/paymongo/webhook` and subscribe it to `checkout_session.payment.paid`. Store the signing secret returned for that exact live webhook as `PAYMONGO_WEBHOOK_SECRET`; test, live, and recreated webhooks have different signing secrets.
+
+The endpoint preserves the raw request body for signature verification and immediately returns `200` for every validly signed delivery. Idempotent database processing runs after the response through Next.js `after()`. Malformed, mismatched, and persistence-failed signed events are logged without returning a non-2xx response, preventing PayMongo from disabling the endpoint after repeated delivery failures. Missing configuration and invalid signatures remain non-2xx because those requests cannot be authenticated as PayMongo deliveries.
+
+If PayMongo disables the endpoint, retrieve its `hook_...` ID from the PayMongo dashboard and enable it with the live secret API key:
+
+```bash
+curl --request POST \
+  --url "https://api.paymongo.com/v1/webhooks/${PAYMONGO_WEBHOOK_ID}/enable" \
+  --user "${PAYMONGO_SECRET_KEY}:"
+```
+
+Confirm that Cloudflare Access, interactive challenges, bot rules, and restrictive rate limits exclude `/api/paymongo/webhook`. Ordinary WAF and DDoS protections may remain enabled as long as they do not mutate the request body or challenge PayMongo.
 
 ## Media infrastructure (R2 + Images + Queues)
 

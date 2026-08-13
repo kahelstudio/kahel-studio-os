@@ -8,9 +8,13 @@ export async function GET(request: Request) {
   const principal = await getStaffPrincipal(request);
   if (!principal) return Response.json({ error: "Authentication required." }, { status: 401 });
   if (!principal.userId) return Response.json({ notifications: [], unread: 0 });
-  const result = await getSupabaseAdmin().from("staff_notifications").select("id,title,body,href,read_at,created_at").eq("recipient_id", principal.userId).order("created_at", { ascending: false }).limit(30);
-  if (result.error) return Response.json({ error: "Unable to load notifications." }, { status: 500 });
-  return Response.json({ notifications: result.data ?? [], unread: (result.data ?? []).filter((item) => !item.read_at).length }, { headers: { "Cache-Control": "private, no-store" } });
+  const admin = getSupabaseAdmin();
+  const [result, unreadResult] = await Promise.all([
+    admin.from("staff_notifications").select("id,title,body,href,read_at,created_at").eq("recipient_id", principal.userId).order("created_at", { ascending: false }).limit(50),
+    admin.from("staff_notifications").select("id", { count: "exact", head: true }).eq("recipient_id", principal.userId).is("read_at", null),
+  ]);
+  if (result.error || unreadResult.error) return Response.json({ error: "Unable to load notifications." }, { status: 500 });
+  return Response.json({ notifications: result.data ?? [], unread: unreadResult.count ?? 0 }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 export async function PATCH(request: Request) {

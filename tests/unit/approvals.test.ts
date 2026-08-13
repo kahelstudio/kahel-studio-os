@@ -33,6 +33,8 @@ describe("approval definitions", () => {
       estimateBreakdown: "Fare",
       liquidationAcknowledged: true,
     })).toEqual([]);
+    expect(validateApprovalDetails("client_refund", {})).toEqual(expect.arrayContaining(["Payment ID is required.", "Reason is required."]));
+    expect(validateApprovalDetails("client_refund", { paymentId: "10000000-0000-4000-8000-000000000001", reason: "Duplicate cash collection" })).toEqual([]);
   });
 
   it("calculates liquidation balances without negative return values", () => {
