@@ -10,12 +10,15 @@ async function hasPortalSession(request: Request, projectRef: string) {
   return Boolean(token && await verifyPortalTokenAccess(projectRef, token));
 }
 
+const EMPTY_ACTIVITY: ClientPortalActivity = { favorites: {}, rating: 0, tags: {}, feedbackSent: false, selectsSubmitted: false, selectsSubmittedAt: null, feedbackSubmittedAt: null, lastAccessedAt: null, downloadCount: 0, lastDownloadedAt: null };
+
 export async function GET(request: Request, { params }: { params: Promise<{ projectRef: string }> }) {
   try {
     const { projectRef } = await params;
     if (!await hasPortalSession(request, projectRef)) return NextResponse.json({ error: "Portal authorization required." }, { status: 401 });
     return NextResponse.json({ activity: await getPortalActivity(projectRef) });
   } catch {
+    if (authenticationDisabled()) return NextResponse.json({ activity: EMPTY_ACTIVITY });
     return NextResponse.json({ error: "Client portal not found." }, { status: 404 });
   }
 }

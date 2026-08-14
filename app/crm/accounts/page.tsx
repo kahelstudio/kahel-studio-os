@@ -45,31 +45,33 @@ export default async function CrmAccountsPage({
 
   return (
     <div className="app-page p-4 pt-6 sm:p-10 sm:pt-8">
-      <div className="mb-5 flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">Customers</h1>
-        <NewAccountButton />
-      </div>
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">Customers</h1>
+          <NewAccountButton />
+        </div>
 
-      <div className="mb-3.5 flex gap-6 overflow-x-auto">
-        {FILTERS.map((f) => {
-          const active = f === activeFilter;
-          return (
-            <Link
-              key={f}
-              href={f === "All" ? "/crm/accounts" : `/crm/accounts?type=${encodeURIComponent(f)}`}
-              aria-current={active ? "page" : undefined}
-              className={cn(
-                "shrink-0 border-b-2 pb-2 pt-1 text-[13px] font-semibold transition-colors",
-                active
-                  ? "border-[#FF5300] text-[#FF5300]"
-                  : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
-              )}
-            >
-              {f}
-            </Link>
-          );
-        })}
-      </div>
+        <div className="mt-6 flex items-end gap-6 overflow-x-auto">
+          {FILTERS.map((f) => {
+            const active = f === activeFilter;
+            return (
+              <Link
+                key={f}
+                href={f === "All" ? "/crm/accounts" : `/crm/accounts?type=${encodeURIComponent(f)}`}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "shrink-0 pb-3 text-sm font-semibold capitalize transition-colors",
+                  active
+                    ? "text-[#FF5300] underline decoration-[#FF5300] decoration-4 underline-offset-[6px]"
+                    : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+                )}
+              >
+                {f}
+              </Link>
+            );
+          })}
+        </div>
+      </header>
 
       <div className="overflow-x-auto rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="grid h-11 min-w-[720px] grid-cols-[2fr_1.4fr_0.9fr_1.1fr_1fr] items-center bg-[var(--color-canvas)] px-[18px] text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">

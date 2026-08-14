@@ -24,7 +24,7 @@ for (const viewport of viewports) {
 
     const board = page.locator("main.min-w-0");
     await expect(page.locator("html")).toHaveJSProperty("scrollWidth", viewport.width);
-    await expect(board.locator(":scope > div")).toHaveCSS("min-width", "1040px");
+    await expect(board.locator(".grid-cols-4")).toHaveCSS("min-width", "1040px");
     if (!IS_CI) await expect(page).toHaveScreenshot(`tasks-${viewport.name}.png`, { fullPage: true, maxDiffPixelRatio: 0.05 });
   });
 }

@@ -96,9 +96,9 @@ export default function ShiftboardPage() {
 
   return (
     <div className="app-page min-w-0 p-7 lg:p-10">
-      <div className="flex items-end justify-between gap-4">
+      <div className="flex items-end justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
             Shift Board
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">

@@ -23,9 +23,9 @@ export default async function LogsPage() {
 
   return (
     <div className="app-page p-5 pb-14 sm:p-8 lg:p-10">
-      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+      <div className="flex flex-col items-start justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 sm:flex-row sm:items-end">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
             Logs
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">

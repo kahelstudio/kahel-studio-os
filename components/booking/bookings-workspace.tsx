@@ -98,8 +98,8 @@ export function BookingsWorkspace({ rows, summary, initialFilters, selectedRef, 
     <div className="flex-1">
       <div className="grid min-h-0 gap-0">
         <section className="min-h-0 border-b border-[var(--color-border)] bg-[var(--color-canvas)] xl:border-b-0 xl:border-r">
-          <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 pb-3 pt-[34px] sm:px-6">
-            <div className="flex flex-col gap-4">
+          <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 pb-9 pt-[34px] sm:px-6">
+            <div className="flex flex-col gap-12">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em]">Bookings</h1>
@@ -108,17 +108,11 @@ export function BookingsWorkspace({ rows, summary, initialFilters, selectedRef, 
                 {headerAction}
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Metric title="Needs response" value={visibleSummary.needsResponse.count.toString()} detail={visibleSummary.needsResponse.context} tone="info" />
-                <Metric title="Today" value={visibleSummary.today.count.toString()} detail={`${visibleSummary.today.nextSession} · ${visibleSummary.today.nextClient}`} tone="success" sub={visibleSummary.today.issue ?? undefined} />
-                <Metric title="Awaiting payment" value={visibleSummary.awaitingPayment.amount} detail={`${visibleSummary.awaitingPayment.count} bookings`} tone={visibleSummary.awaitingPayment.upcoming ? "warning" : "neutral"} sub={visibleSummary.awaitingPayment.upcoming ? "Payment required before an upcoming session" : undefined} />
-              </div>
-
-              <div className="flex flex-wrap gap-2">
+              <div className="flex items-end gap-6 overflow-x-auto">
                 {PRIMARY_STATUSES.map((status) => (
-                  <StatusPill key={status} active={filters.status === status} count={counts[status]} onClick={() => updateUrl({ status })} label={status === "all" ? "All" : status.replaceAll("_", " ")} />
+                  <StatusTab key={status} active={filters.status === status} onClick={() => updateUrl({ status })} label={status === "all" ? "All Bookings" : status.replaceAll("_", " ")} />
                 ))}
-                <button type="button" onClick={() => setFiltersOpen((value) => !value)} className="inline-flex min-h-11 items-center gap-2 rounded-control border border-[var(--color-border)] px-3.5 text-sm font-semibold hover:bg-[var(--color-surface-muted)]">
+                <button type="button" onClick={() => setFiltersOpen((value) => !value)} className="ml-auto inline-flex shrink-0 items-center gap-2 pb-3 text-sm font-semibold text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]">
                   <Filter className="h-4 w-4" /> Filters
                 </button>
               </div>
@@ -144,7 +138,7 @@ export function BookingsWorkspace({ rows, summary, initialFilters, selectedRef, 
           <div className="overflow-x-auto">
             <table className="w-full table-fixed border-separate border-spacing-0">
               <thead className="sticky top-0 z-10 bg-[var(--color-canvas)]">
-                <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--color-text-secondary)]">
+                <tr className="border-t border-[var(--color-border)] text-left text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--color-text-secondary)]">
                   <Th>Schedule</Th>
                   <Th>Booking</Th>
                   <Th>Client</Th>
@@ -320,8 +314,21 @@ function Metric({ title, value, detail, tone, sub }: { title: string; value: str
   return <div className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-4"><div className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--color-text-secondary)]">{title}</div><div className={cn("mt-2 font-display text-[26px] font-semibold tabular-nums", toneClass)}>{value}</div><div className="mt-1 text-xs text-[var(--color-text-secondary)]">{detail}</div>{sub ? <div className="mt-1 text-[11px] text-[var(--color-text-muted)]">{sub}</div> : null}</div>;
 }
 
-function StatusPill({ active, count, label, onClick }: { active: boolean; count: number; label: string; onClick: () => void }) {
-  return <button type="button" onClick={onClick} className={cn("inline-flex min-h-11 items-center gap-2 rounded-control border px-3.5 text-sm font-semibold", active ? "border-[var(--color-kahel-500)] bg-[var(--color-kahel-50)] text-[var(--color-kahel-700)]" : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]")}>{label}<span className="tabular-nums text-xs">{count}</span></button>;
+function StatusTab({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "shrink-0 pb-3 text-sm font-semibold capitalize transition-colors",
+        active
+          ? "text-[#FF5300] underline decoration-[#FF5300] decoration-4 underline-offset-[6px]"
+          : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+      )}
+    >
+      {label}
+    </button>
+  );
 }
 
 function Badge({ children, tone }: { children: ReactNode; tone: "neutral" | "info" | "success" | "warning" | "danger" | "violet" }) {

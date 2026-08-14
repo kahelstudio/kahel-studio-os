@@ -108,6 +108,8 @@ type LegalDocumentVersionRow = { id: string; legal_document_id: string; version_
 type AgreementAcceptanceRow = { id: string; booking_id: string; client_id: string; client_profile_id: string; accepted_by_user_id: string | null; legal_document_version_id: string; legal_document_id: string; version_number: number; document_hash: string; accepted_at: string; method: string; source: string; environment: string; locale: string | null; idempotency_key: string; booking_snapshot: Json; client_snapshot: Json; profile_snapshot: Json; user_snapshot: Json; booking_summary: Json; booking_summary_hash: string; evidence_metadata: Json; created_at: string };
 type BookingAgreementRequirementRow = { booking_id: string; client_id: string; legal_document_version_id: string | null; status: string; acceptance_id: string | null; required_at: string | null; accepted_at: string | null; created_at: string; updated_at: string };
 type ConsentRecordRow = { id: string; booking_id: string; client_id: string; client_profile_id: string; user_id: string | null; purpose: string; selected: boolean; recorded_at: string; source: string; locale: string | null; idempotency_key: string; selection_metadata: Json; withdrawal_of: string | null; withdrawal_metadata: Json; created_at: string };
+type PromoCodeRow = { id: string; code: string; label: string; description: string | null; type: string; value: number; currency: string; status: string; usage_limit: number | null; usage_count: number; max_uses_per_customer: number | null; valid_from: string; valid_until: string | null; applicable_services: string[]; excluded_services: string[]; minimum_booking_amount: number | null; maximum_discount_amount: number | null; created_by: string; created_at: string; updated_at: string };
+type PromoCodeUsageRow = { id: string; promo_code_id: string; booking_id: string; client_id: string; discount_amount: number; used_at: string };
 
 export type Database = {
   public: {
@@ -218,6 +220,8 @@ export type Database = {
       agreement_acceptances: Table<AgreementAcceptanceRow>;
       booking_agreement_requirements: Table<BookingAgreementRequirementRow>;
       consent_records: Table<ConsentRecordRow>;
+      promo_codes: Table<PromoCodeRow>;
+      promo_code_usages: Table<PromoCodeUsageRow>;
     };
     Views: Record<string, never>;
     Functions: {
@@ -278,6 +282,10 @@ export type Database = {
       recurring_expense_create: { Args: { requested_actor_id: string; requested_vendor: string; requested_category_id: string; requested_expected_amount_centavos: number; requested_frequency: string; requested_next_due_date: string; requested_payment_source_id: string | null; requested_default_allocation: Json; requested_receipt_required: boolean; requested_start_date: string; requested_end_date?: string | null; requested_reminder_days?: number }; Returns: RecurringExpenseTemplateRow };
       recurring_expense_generate: { Args: { requested_template_id: string; requested_actor_id: string }; Returns: ExpenseRow };
       expense_update_draft: { Args: { requested_expense_id: string; requested_actor_id: string; requested_expected_version: number; requested_vendor: string; requested_category_id: string; requested_description: string; requested_date: string; requested_subtotal_centavos: number; requested_tax_centavos: number; requested_receipt_status: string; requested_receipt_exception: string; requested_internal_note: string; requested_allocations: Json; requested_submit: boolean }; Returns: ExpenseRow };
+      promo_code_create: { Args: { requested_code: string; requested_label: string; requested_description: string | null; requested_type: string; requested_value: number; requested_currency: string; requested_usage_limit: number | null; requested_max_uses_per_customer: number | null; requested_valid_until: string | null; requested_applicable_services: string[]; requested_excluded_services: string[]; requested_minimum_booking_amount: number | null; requested_maximum_discount_amount: number | null; requested_actor_user_id: string }; Returns: PromoCodeRow };
+      promo_code_update: { Args: { requested_id: string; requested_label: string | null; requested_description: string | null; requested_type: string | null; requested_value: number | null; requested_currency: string | null; requested_usage_limit: number | null; requested_max_uses_per_customer: number | null; requested_valid_until: string | null; requested_applicable_services: string[]; requested_excluded_services: string[]; requested_minimum_booking_amount: number | null; requested_maximum_discount_amount: number | null; requested_status: string | null; requested_actor_user_id: string }; Returns: PromoCodeRow };
+      promo_code_retire: { Args: { requested_id: string; requested_actor_user_id: string }; Returns: PromoCodeRow };
+      validate_promo_code: { Args: { requested_code: string; requested_client_id: string; requested_booking_amount: number; requested_service_id: string | null }; Returns: { valid: boolean; discount_amount?: number; promo_code_id?: string; error?: string } };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

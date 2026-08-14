@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { auditCustomerEvent, consumeCustomerRateLimit, createCustomerProfile, ensureCustomerAccount, getProfileByEmail, hasTrustedOrigin, isValidEmail, normalizeEmail, normalizeMobile } from "@/lib/server/customer-auth";
 import { sendBookingConfirmation } from "@/lib/server/customer-email";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
-import { applyPromoDiscount, promoDiscountPercentage } from "@/lib/promo-code";
 import { getCurrentBookingTerms } from "@/lib/server/legal-documents";
 
 export const runtime = "nodejs";
@@ -93,12 +92,15 @@ export async function POST(request: Request) {
     return typeof name === "string" && Number.isInteger(quantity) && Number(quantity) >= 1 && Number(quantity) <= 10 && addonPrices[name] ? [{ name, quantity: Number(quantity), price: addonPrices[name] }] : [];
   }).slice(0, 10) : [];
   if (Array.isArray(input.addons) && addons.length !== input.addons.length) return NextResponse.json({ error: "One or more selected add-ons are unavailable." }, { status: 400 });
-  const discountPercentage = promoDiscountPercentage(input.promoCode);
+
+  const admin = getSupabaseAdmin();
   const packageSubtotal = packagePrice * 100;
   const addonTotal = addons.reduce((sum, addon) => sum + addon.price * addon.quantity * 100, 0);
   const subtotalAmount = packageSubtotal + addonTotal;
-  const discountedPackageAmount = applyPromoDiscount(packageSubtotal, input.promoCode);
-  const totalAmount = discountedPackageAmount + addonTotal;
+
+  let discountedPackageAmount = packageSubtotal;
+  let discountPercentage = 0;
+  let promoCodeId: string | null = null;
   const addonDescription = addons.map((addon) => `${addon.name} × ${addon.quantity}`);
   const studioDuration = studioSessionDurations[input.session];
   const [startHour, startMinute] = time.split(":").map(Number);
@@ -127,11 +129,40 @@ export async function POST(request: Request) {
       const profile = await getProfileByEmail(email) ?? await createCustomerProfile({ ...names, email, mobile });
       const reference = `KS-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
       const serviceId = await resolveServiceId(admin, input.session);
+
+      let discountedPackageAmountCash = packageSubtotal;
+      let discountPercentageCash = 0;
+      let promoCodeIdCash: string | null = null;
+      if (typeof input.promoCode === "string" && input.promoCode.trim().length > 0) {
+        const promoValidation = await admin.rpc("validate_promo_code", {
+          requested_code: input.promoCode,
+          requested_client_id: profile.client_id,
+          requested_booking_amount: packageSubtotal,
+          requested_service_id: null,
+        });
+        if (promoValidation.error) return NextResponse.json({ error: promoValidation.error.message }, { status: 400 });
+        const validation = promoValidation.data as { valid: boolean; discount_amount?: number; promo_code_id?: string; error?: string };
+        if (!validation.valid) return NextResponse.json({ error: validation.error || "Invalid promo code" }, { status: 400 });
+        discountedPackageAmountCash = packageSubtotal - (validation.discount_amount ?? 0);
+        discountPercentageCash = validation.discount_amount ? Math.round((validation.discount_amount / packageSubtotal) * 100) : 0;
+        promoCodeIdCash = validation.promo_code_id ?? null;
+      }
+      const totalAmountCash = discountedPackageAmountCash + addonTotal;
+
       const fingerprintHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(idempotencyKey));
       const requestFingerprint = [...new Uint8Array(fingerprintHash)].map((b) => b.toString(16).padStart(2, "0")).join("");
-      const inserted = await admin.from("bookings").insert(buildBookingInsert({ clientId: profile.client_id, profileId: profile.id, idempotencyKey, requestFingerprint, reference, session: input.session, serviceId, date, time, location: bookingLocation, paymentType: "cash", subtotalAmount, totalAmount })).select("id,client_id,client_profile_id,reference").single<CashBookingRow>();
+      const inserted = await admin.from("bookings").insert(buildBookingInsert({ clientId: profile.client_id, profileId: profile.id, idempotencyKey, requestFingerprint, reference, session: input.session, serviceId, date, time, location: bookingLocation, paymentType: "cash", subtotalAmount, totalAmount: totalAmountCash })).select("id,client_id,client_profile_id,reference").single<CashBookingRow>();
       if (inserted.error) throw inserted.error;
       const cashBooking = inserted.data;
+
+      if (promoCodeIdCash) {
+        await admin.from("promo_code_usages").insert({
+          promo_code_id: promoCodeIdCash,
+          booking_id: cashBooking.id,
+          client_id: profile.client_id,
+          discount_amount: packageSubtotal - discountedPackageAmountCash,
+        });
+      }
       const cashAcceptance = await acceptTerms(admin, cashBooking.id, acceptedTerms, idempotencyKey, request);
       await auditCustomerEvent({ action: "booking_created", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: cashBooking.id });
       if (!profile.user_id) {
@@ -140,14 +171,16 @@ export async function POST(request: Request) {
       }
       const origin = process.env.PUBLIC_SITE_URL ?? new URL(request.url).origin;
       const agreementPath = `/portal/agreements/${cashAcceptance.id}`;
-      await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, location: bookingLocation, paymentSummary: "Cash at studio after authorized staff records and receipts it", portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms`, agreementUrl: `${origin}/sign-in?next=${encodeURIComponent(agreementPath)}`, clientId: profile.client_id, profileId: profile.id, bookingId: cashBooking.id });
+      const paymentSummaryCash = promoCodeIdCash
+        ? `Cash at studio after authorized staff records and receipts it (Promo: ${discountPercentageCash}% off)`
+        : "Cash at studio after authorized staff records and receipts it";
+      await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, location: bookingLocation, paymentSummary: paymentSummaryCash, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms`, agreementUrl: `${origin}/sign-in?next=${encodeURIComponent(agreementPath)}`, clientId: profile.client_id, profileId: profile.id, bookingId: cashBooking.id });
       return NextResponse.json({ reference, requestSaved: true });
     }
 
     if (!secretKey || !/^sk_(test|live)_/.test(secretKey) || (String(process.env.APP_ENV) !== "production" && secretKey.startsWith("sk_live_"))) return NextResponse.json({ error: "Checkout is not configured." }, { status: 503 });
     const prior = await admin.from("bookings").select("id,client_id,client_profile_id,reference,paymongo_checkout_url").eq("idempotency_key", idempotencyKey).maybeSingle<BookingRow>();
     if (prior.error) throw prior.error;
-    if (prior.data?.paymongo_checkout_url) { await acceptTerms(admin, prior.data.id, acceptedTerms, idempotencyKey, request); return NextResponse.json({ checkoutUrl: prior.data.paymongo_checkout_url, reference: prior.data.reference, reused: true }); }
 
     if (!prior.data) {
       const { data: conflict } = await admin.from("bookings").select("id").eq("service_date", date).eq("service_time", time).not("status", "in", '("cancelled","inquiry")').maybeSingle();
@@ -158,18 +191,65 @@ export async function POST(request: Request) {
     const profile = await getProfileByEmail(email) ?? await createCustomerProfile({ ...names, email, mobile });
     const reference = prior.data?.reference ?? `KS-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
     const serviceId = await resolveServiceId(admin, input.session);
-    const packageAmountDue = Math.round(discountedPackageAmount * (input.pay === "deposit" ? 0.5 : 1));
+
+    let discountedPackageAmountOnline = packageSubtotal;
+    let discountPercentageOnline = 0;
+    let promoCodeIdOnline: string | null = null;
+    if (typeof input.promoCode === "string" && input.promoCode.trim().length > 0) {
+      const promoValidation = await admin.rpc("validate_promo_code", {
+        requested_code: input.promoCode,
+        requested_client_id: profile.client_id,
+        requested_booking_amount: packageSubtotal,
+        requested_service_id: null,
+      });
+      if (promoValidation.error) return NextResponse.json({ error: promoValidation.error.message }, { status: 400 });
+      const validation = promoValidation.data as { valid: boolean; discount_amount?: number; promo_code_id?: string; error?: string };
+      if (!validation.valid) return NextResponse.json({ error: validation.error || "Invalid promo code" }, { status: 400 });
+      discountedPackageAmountOnline = packageSubtotal - (validation.discount_amount ?? 0);
+      discountPercentageOnline = validation.discount_amount ? Math.round((validation.discount_amount / packageSubtotal) * 100) : 0;
+      promoCodeIdOnline = validation.promo_code_id ?? null;
+    }
+    const totalAmountOnline = discountedPackageAmountOnline + addonTotal;
+
+    if (prior.data?.paymongo_checkout_url) {
+      if (promoCodeIdOnline) {
+        await admin.from("promo_code_usages").insert({
+          promo_code_id: promoCodeIdOnline,
+          booking_id: prior.data.id,
+          client_id: profile.client_id,
+          discount_amount: packageSubtotal - discountedPackageAmountOnline,
+        });
+      }
+      await acceptTerms(admin, prior.data.id, acceptedTerms, idempotencyKey, request);
+      return NextResponse.json({ checkoutUrl: prior.data.paymongo_checkout_url, reference: prior.data.reference, reused: true });
+    }
+
+    if (!prior.data) {
+      const { data: conflict } = await admin.from("bookings").select("id").eq("service_date", date).eq("service_time", time).not("status", "in", '("cancelled","inquiry")').maybeSingle();
+      if (conflict) return NextResponse.json({ error: "This date and time is no longer available. Please select a different slot." }, { status: 409 });
+    }
+
+    const packageAmountDue = Math.round(discountedPackageAmountOnline * (input.pay === "deposit" ? 0.5 : 1));
     let booking = prior.data;
     if (!booking) {
       const fingerprintHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(idempotencyKey));
       const requestFingerprint = [...new Uint8Array(fingerprintHash)].map((b) => b.toString(16).padStart(2, "0")).join("");
-      const inserted = await admin.from("bookings").insert(buildBookingInsert({ clientId: profile.client_id, profileId: profile.id, idempotencyKey, requestFingerprint, reference, session: input.session, serviceId, date, time, location: bookingLocation, paymentType: input.pay, subtotalAmount, totalAmount })).select("id,client_id,client_profile_id,reference,paymongo_checkout_url").single<BookingRow>();
+      const inserted = await admin.from("bookings").insert(buildBookingInsert({ clientId: profile.client_id, profileId: profile.id, idempotencyKey, requestFingerprint, reference, session: input.session, serviceId, date, time, location: bookingLocation, paymentType: input.pay, subtotalAmount, totalAmount: totalAmountOnline })).select("id,client_id,client_profile_id,reference,paymongo_checkout_url").single<BookingRow>();
       if (inserted.error) {
         const concurrent = await admin.from("bookings").select("id,client_id,client_profile_id,reference,paymongo_checkout_url").eq("idempotency_key", idempotencyKey).maybeSingle<BookingRow>();
         if (!concurrent.data) throw inserted.error;
         booking = concurrent.data;
       } else booking = inserted.data;
       await auditCustomerEvent({ action: "booking_created", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: booking.id });
+
+      if (promoCodeIdOnline) {
+        await admin.from("promo_code_usages").insert({
+          promo_code_id: promoCodeIdOnline,
+          booking_id: booking.id,
+          client_id: profile.client_id,
+          discount_amount: packageSubtotal - discountedPackageAmountOnline,
+        });
+      }
     }
 
     const acceptance = await acceptTerms(admin, booking.id, acceptedTerms, idempotencyKey, request);
@@ -199,8 +279,8 @@ export async function POST(request: Request) {
       body: JSON.stringify({ data: { attributes: {
         billing: { name: input.name.trim(), email, phone: mobile },
         cancel_url: `${origin}/?checkout=cancelled`, description: input.session,
-        line_items: [{ amount: packageAmountDue, currency: "PHP", name: `${input.session} ${input.pay === "deposit" ? "50% deposit" : "full payment"}${discountPercentage ? ` (${discountPercentage}% promo)` : ""}`, quantity: 1 }, ...addonLineItems],
-        metadata: { booking_id: booking.id, booking_date: date, booking_time: time, payment_type: input.pay, discount_percentage: discountPercentage },
+        line_items: [{ amount: packageAmountDue, currency: "PHP", name: `${input.session} ${input.pay === "deposit" ? "50% deposit" : "full payment"}${discountPercentageOnline ? ` (${discountPercentageOnline}% promo)` : ""}`, quantity: 1 }, ...addonLineItems],
+        metadata: { booking_id: booking.id, booking_date: date, booking_time: time, payment_type: input.pay, discount_percentage: discountPercentageOnline },
         payment_method_types: ["card", "gcash", "paymaya", "grab_pay", "qrph"], reference_number: booking.reference, send_email_receipt: false, show_description: true, show_line_items: true,
         success_url: `${origin}/?checkout=success&reference=${encodeURIComponent(booking.reference)}`,
       } } }), cache: "no-store",
@@ -215,7 +295,8 @@ export async function POST(request: Request) {
     if (updated.error) throw updated.error;
     const agreementPath = `/portal/agreements/${acceptance.id}`;
     const paymentDue = packageAmountDue + addonTotal;
-    const emailSent = await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference: booking.reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, location: bookingLocation, paymentSummary: `${input.pay === "deposit" ? "Deposit and add-ons" : "Full payment"}: PHP ${(paymentDue / 100).toLocaleString("en-PH")}`, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms`, agreementUrl: `${origin}/sign-in?next=${encodeURIComponent(agreementPath)}`, clientId: booking.client_id, profileId: booking.client_profile_id, bookingId: booking.id });
+    const promoText = discountPercentageOnline > 0 ? ` (Promo: ${discountPercentageOnline}% off)` : "";
+    const emailSent = await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference: booking.reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, location: bookingLocation, paymentSummary: `${input.pay === "deposit" ? "Deposit and add-ons" : "Full payment"}: PHP ${(paymentDue / 100).toLocaleString("en-PH")}${promoText}`, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms`, agreementUrl: `${origin}/sign-in?next=${encodeURIComponent(agreementPath)}`, clientId: booking.client_id, profileId: booking.client_profile_id, bookingId: booking.id });
     if (!emailSent) await auditCustomerEvent({ action: "booking_confirmation_delayed", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: booking.id, metadata: { retry_required: true } });
     return NextResponse.json({ checkoutUrl, reference: booking.reference, invitationDelayed, confirmationDelayed: !emailSent });
   } catch (error) {

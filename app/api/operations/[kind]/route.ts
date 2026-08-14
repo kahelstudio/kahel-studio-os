@@ -93,13 +93,28 @@ async function createBooking(body: Body, principal: StaffPrincipal) {
   const service = await admin.from("services").select("id,name").eq("active", true).ilike("name", serviceType).maybeSingle();
   const selectedService = service.data;
   if (!selectedService) { await cleanupCreatedClient(); return NextResponse.json({ error: "Choose a configured active booking service." }, { status: 400 }); }
-  const cents = Math.round(total * 100);
+  const promoCode = text(body, "promoCode", 64).toUpperCase().trim();
+  const subtotalCents = Math.round(total * 100);
+  let discountCents = 0;
+  let promoCodeId: string | null = null;
+  if (promoCode) {
+    const validation = await admin.rpc("validate_promo_code", { requested_code: promoCode, requested_client_id: profile.client_id, requested_booking_amount: subtotalCents, requested_service_id: selectedService.id });
+    if (validation.error || !validation.data) { await cleanupCreatedClient(); return NextResponse.json({ error: "Unable to validate the promo code." }, { status: 500 }); }
+    const result = validation.data as { valid: boolean; discount_amount?: number; promo_code_id?: string; error?: string };
+    if (!result.valid) { await cleanupCreatedClient(); return NextResponse.json({ error: result.error ?? "Invalid promo code." }, { status: 400 }); }
+    discountCents = result.discount_amount ?? 0;
+    promoCodeId = result.promo_code_id ?? null;
+  }
+  const totalCents = Math.max(0, subtotalCents - discountCents);
   const reference = random("KS");
   const idempotency = crypto.randomUUID();
   const fingerprintBytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${phone}:${serviceDate}:${serviceTime}:${selectedService.id}:${idempotency}`));
   const fingerprint = [...new Uint8Array(fingerprintBytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-  const booking = await admin.from("bookings").insert({ client_id: profile.client_id, client_profile_id: profile.id, idempotency_key: idempotency, request_fingerprint: fingerprint, reference, service_type: selectedService.name, service_id: selectedService.id, service_date: serviceDate, service_time: serviceTime, location, payment_type: paymentType, currency: "PHP", subtotal_amount_php: cents, total_amount_php: cents, paid_amount_php: 0, refunded_amount_php: 0, status: "inquiry", payment_status: "unpaid", attendance: "expected", kind: "standard" }).select("id,reference").single();
+  const booking = await admin.from("bookings").insert({ client_id: profile.client_id, client_profile_id: profile.id, idempotency_key: idempotency, request_fingerprint: fingerprint, reference, service_type: selectedService.name, service_id: selectedService.id, service_date: serviceDate, service_time: serviceTime, location, payment_type: paymentType, currency: "PHP", subtotal_amount_php: subtotalCents, total_amount_php: totalCents, paid_amount_php: 0, refunded_amount_php: 0, status: "inquiry", payment_status: "unpaid", attendance: "expected", kind: "standard" }).select("id,reference").single();
   if (booking.error || !booking.data) { await cleanupCreatedClient(); return NextResponse.json({ error: "Unable to create the booking." }, { status: 500 }); }
+  if (promoCodeId && discountCents > 0) {
+    await admin.from("promo_code_usages").insert({ promo_code_id: promoCodeId, booking_id: booking.data.id, client_id: profile.client_id, discount_amount: discountCents });
+  }
   await audit(principal, "booking", booking.data.id);
   let termsEmailDelayed = false;
   const terms = await getCurrentBookingTerms();

@@ -762,7 +762,7 @@ select
 from (
   select jsonb_build_object(
     'version_label', 'Draft 1.0',
-    'effective_date', null,
+    'effective_date', '2026-08-01',
     'title', 'Booking Terms and Conditions - Working Draft',
     'summary', jsonb_build_array(
       'A booking is secured only when the configured confirmation conditions are met.',

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getStaffPrincipal } from "@/lib/server/staff-auth";
+import { authenticationDisabled, getStaffPrincipal } from "@/lib/server/staff-auth";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
 import { sendRecoveryEmailCode } from "@/lib/server/security-email";
 
@@ -15,6 +15,7 @@ async function currentStaff(request: Request) {
 }
 
 export async function GET(request: Request) {
+  if (authenticationDisabled()) return NextResponse.json({ recoveryEmail: null });
   const current = await currentStaff(request);
   if (!current) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   const result = await current.admin.from("staff_recovery_emails").select("recovery_email").eq("staff_id", current.principal.userId!).maybeSingle<{ recovery_email: string | null }>();

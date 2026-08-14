@@ -11,9 +11,12 @@ function sessionCookieName(projectRef: string) {
 export async function GET(request: Request, { params }: { params: Promise<{ projectRef: string }> }) {
   try {
     const { projectRef } = await params;
+    if (authenticationDisabled()) {
+      return NextResponse.json({ published: true, authorized: true });
+    }
     const token = request.headers.get("cookie")?.match(new RegExp(`(?:^|; )${sessionCookieName(projectRef)}=([^;]+)`))?.[1];
     const config = await getPortalConfig(projectRef);
-    return NextResponse.json({ published: config.published, authorized: authenticationDisabled() || Boolean(token && await verifyPortalTokenAccess(projectRef, token)) });
+    return NextResponse.json({ published: config.published, authorized: Boolean(token && await verifyPortalTokenAccess(projectRef, token)) });
   } catch (error) {
     const detail = error instanceof Error
       ? error.message

@@ -27,12 +27,14 @@ export default async function CrmQueuePage() {
 
   return (
     <div className="app-page p-10 pt-8">
-      <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
-        Follow-up queue
-      </h1>
-      <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
-        Inquiries die from no follow-up. This is where you start the day.
-      </p>
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9">
+        <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
+          Follow-up queue
+        </h1>
+        <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
+          Inquiries die from no follow-up. This is where you start the day.
+        </p>
+      </header>
 
       <div className="mt-7 overflow-hidden rounded-card border border-[#FADBB0] bg-[var(--color-surface)]">
         <div className="flex items-center gap-2.5 border-b border-[#FCE6D3] bg-[var(--color-kahel-50)] px-[18px] py-3.5">

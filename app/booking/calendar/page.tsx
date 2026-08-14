@@ -20,8 +20,8 @@ export default async function BookingCalendarPage({ searchParams }: { searchPara
   const next = addPeriod(selected, view === "month" ? 1 : 7, view);
 
   return <div className="app-page p-5 pt-6 sm:p-10 sm:pt-8">
-    <div className="mb-5 flex flex-wrap items-center gap-3 sm:gap-4">
-      <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)] sm:text-[32px]">{period.label}</h1>
+    <div className="flex flex-wrap items-center gap-3 border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 sm:gap-4">
+      <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">{period.label}</h1>
       <div className="flex gap-1">
         <Link href={calendarHref(previous, view)} aria-label={`Previous ${view}`} className="flex h-[34px] w-[34px] items-center justify-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"><ChevronLeft className="h-4 w-4" /></Link>
         <Link href={calendarHref(next, view)} aria-label={`Next ${view}`} className="flex h-[34px] w-[34px] items-center justify-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:border-[var(--color-border-strong)] hover:text-[var(--color-text-primary)]"><ChevronRight className="h-4 w-4" /></Link>

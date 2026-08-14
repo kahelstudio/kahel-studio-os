@@ -49,9 +49,9 @@ export function ReportsClient() {
 
   return (
     <div className="app-page min-w-0 p-5 pb-14 sm:p-8 lg:p-10">
-      <header className="flex flex-col gap-4 border-b border-[var(--color-border)] pb-5 lg:flex-row lg:items-end lg:justify-between">
+      <header className="flex flex-col gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="font-display text-[30px] font-semibold tracking-[-0.025em] sm:text-[34px]">Reports</h1>
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em]">Reports</h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">Access and download your studio reports and statements.</p>
         </div>
         <OperationCreateButton kind="report" className="flex h-11 items-center justify-center gap-2 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]"><Plus className="h-4 w-4" /> Create report</OperationCreateButton>

@@ -209,9 +209,9 @@ export function PaymentsWorkspace({
 
   return (
     <main className="app-page min-w-0 p-5 pb-16 sm:p-8 lg:p-10">
-      <header className="flex flex-col gap-5 border-b border-[var(--color-border)] pb-6 lg:flex-row lg:items-end lg:justify-between">
+      <header className="flex flex-col gap-5 border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="font-display text-[32px] font-semibold tracking-[-0.025em] sm:text-[36px]">
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em]">
             Payments
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -266,7 +266,7 @@ export function PaymentsWorkspace({
           role="tablist"
           aria-label="Payment views"
           onKeyDown={tabKeyDown}
-          className="flex min-w-0 overflow-x-auto"
+          className="flex items-end gap-6 overflow-x-auto"
         >
           <TabButton
             id="balances"
@@ -410,7 +410,7 @@ function TabButton({
       aria-controls={`${id}-panel`}
       tabIndex={active ? 0 : -1}
       onClick={onClick}
-      className={`inline-flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-semibold ${active ? "border-[#FF5300] text-[var(--color-text-primary)]" : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"}`}
+      className={active ? "shrink-0 pb-3 text-sm font-semibold capitalize transition-colors text-[#FF5300] underline decoration-[#FF5300] decoration-4 underline-offset-[6px]" : "shrink-0 pb-3 text-sm font-semibold capitalize transition-colors text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"}
     >
       {children}
     </button>

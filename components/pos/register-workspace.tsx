@@ -60,11 +60,11 @@ export function RegisterWorkspace({ initialWorkspace, principal }: { initialWork
 
   return (
     <main className="app-page min-h-full bg-[var(--color-surface-muted)] p-4 text-[var(--color-text-primary)] sm:p-6 lg:p-8">
-      <header className="mx-auto flex max-w-[1400px] flex-wrap items-end justify-between gap-4 border-b border-[var(--color-border)] pb-5">
+      <header className="mx-auto flex max-w-[1400px] flex-wrap items-end justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-kahel-600)]">Point of sale</p>
-          <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">Register</h1>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Open, count, and independently review physical cash.</p>
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em]">Register</h1>
+          <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">Open, count, and independently review physical cash.</p>
         </div>
         {workspace.registers.length > 1 ? <label className="text-sm font-semibold">Register
           <select className={`${inputClass} min-w-64`} value={selected?.id ?? ""} onChange={(event) => setSelectedId(event.target.value)}>
