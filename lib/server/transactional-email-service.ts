@@ -94,7 +94,8 @@ async function enqueueTransactionalEmailWithProvider(input: EnqueueEmailInput, p
   const recipient = address(Array.isArray(input.message.to) ? input.message.to[0] : input.message.to);
   const secure = Boolean(input.secure || definition(input.templateKey).secure);
   const redacted = "[secure content unavailable]";
-  const rpc = getSupabaseAdmin().rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: MessageRow | null; error: { message?: string } | null }>;
+  const admin = getSupabaseAdmin();
+  const rpc = admin.rpc.bind(admin) as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: MessageRow | null; error: { message?: string } | null }>;
   const { data, error } = await rpc("transactional_email_enqueue", { requested: {
     template_version_id: templateVersionId, environment: environment(), provider,
     logical_idempotency_key: input.logicalIdempotencyKey, client_id: input.clientId,
@@ -164,13 +165,14 @@ export async function processTransactionalEmailQueue(options: { limit?: number; 
   if (!apiKey) throw new Error("Resend email is not configured.");
   const limit = Math.min(Math.max(options.limit ?? 10, 1), 50);
   const workerId = options.workerId ?? `app:${crypto.randomUUID()}`;
-  const rpc = getSupabaseAdmin().rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: MessageRow | null; error: { message?: string } | null }>;
+  const admin = getSupabaseAdmin();
+  const rpc = admin.rpc.bind(admin) as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: MessageRow | null; error: { message?: string } | null }>;
   let processed = 0;
   let accepted = 0;
   for (; processed < limit; processed += 1) {
-    const claim = await rpc("transactional_email_claim", { requested_worker_id: workerId, requested_environment: environment(), requested_provider: "resend", requested_lease: "5 minutes", requested_message_id: options.messageId ?? null });
+    const claim = await rpc("transactional_email_claim_api", { requested: { worker_id: workerId, environment: environment(), provider: "resend", lease: "5 minutes", message_id: options.messageId ?? null } });
     if (claim.error) throw new Error(claim.error.message ?? "Unable to claim transactional email.");
-    if (!claim.data) break;
+    if (!claim.data?.id) break;
     const row = claim.data;
     const override = options.secureOverride?.messageId === row.id ? options.secureOverride.message : null;
     try {
@@ -182,12 +184,13 @@ export async function processTransactionalEmailQueue(options: { limit?: number; 
         html: row.rendered_html ?? "", text: row.rendered_text ?? "",
       };
       const providerId = await sendResendEmail(apiKey, { ...message, idempotencyKey: `${environment()}:${row.id}` });
-      const finish = await rpc("transactional_email_finish", { requested_message_id: row.id, requested_claim_token: row.claim_token, requested_outcome: "provider_accepted", requested_provider_message_id: providerId, requested_response_metadata: { provider: "resend" }, requested_response_metadata_redacted: true });
+      const finish = await rpc("transactional_email_finish_api", { requested: { message_id: row.id, claim_token: row.claim_token, outcome: "provider_accepted", provider_message_id: providerId, response_metadata: { provider: "resend" }, response_metadata_redacted: true } });
       if (finish.error) throw new Error(finish.error.message ?? "Unable to finish transactional email.");
       accepted += 1;
     } catch (error) {
       const safe = classifyEmailError(error);
-      const finish = await rpc("transactional_email_finish", { requested_message_id: row.id, requested_claim_token: row.claim_token, requested_outcome: "failed", requested_error_code: safe.code, requested_error_message: safe.message, requested_retryable: row.contains_secure_content ? false : safe.retryable, requested_response_metadata: {}, requested_response_metadata_redacted: true });
+      console.error("[transactional-email] Provider attempt failed", row.id, safe.code, error);
+      const finish = await rpc("transactional_email_finish_api", { requested: { message_id: row.id, claim_token: row.claim_token, outcome: "failed", error_code: safe.code, error_message: safe.message, retryable: row.contains_secure_content ? false : safe.retryable, response_metadata: {}, response_metadata_redacted: true } });
       if (finish.error) console.error("[transactional-email] Unable to record provider failure", row.id, finish.error.message);
     }
   }
@@ -202,7 +205,7 @@ export async function sendTransactionalEmail(input: EnqueueEmailInput) {
     const current = await getSupabaseAdmin().from("transactional_messages" as never).select("status").eq("id", queued.id).single<{ status: string }>();
     return !current.error && ["provider_accepted", "sent", "delivered"].includes(current.data.status);
   } catch (error) {
-    console.error("[transactional-email] Delivery deferred", input.templateKey, classifyEmailError(error).code);
+    console.error("[transactional-email] Delivery deferred", input.templateKey, classifyEmailError(error).code, error);
     return false;
   }
 }
@@ -211,7 +214,8 @@ export async function recordResendProviderEvent(input: { eventId: string; type: 
   const mapped: Record<string, string> = { "email.sent": "sent", "email.delivery_delayed": "deferred", "email.delivered": "delivered", "email.failed": "failed", "email.bounced": "bounced", "email.complained": "complained", "email.suppressed": "suppressed" };
   const status = mapped[input.type];
   if (!status) return null;
-  const rpc = getSupabaseAdmin().rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: MessageRow | null; error: { code?: string; message?: string } | null }>;
+  const admin = getSupabaseAdmin();
+  const rpc = admin.rpc.bind(admin) as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: MessageRow | null; error: { code?: string; message?: string } | null }>;
   const result = await rpc("transactional_email_record_provider_event", { requested_environment: environment(), requested_provider: "resend", requested_provider_event_id: input.eventId, requested_event_type: input.type, requested_mapped_status: status, requested_occurred_at: input.occurredAt, requested_provider_message_id: input.providerMessageId, requested_payload: { type: input.type, provider_message_id: input.providerMessageId }, requested_payload_redacted: true });
   if (result.error?.code === "P0002") return null;
   if (result.error) throw new Error(result.error.message ?? "Unable to record email event.");

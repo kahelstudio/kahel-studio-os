@@ -1,6 +1,7 @@
 import { hasTrustedOrigin } from "@/lib/server/customer-auth";
 import { getStaffPrincipal } from "@/lib/server/staff-auth";
-import { sendTransactionalEmail } from "@/lib/server/transactional-email-service";
+import { processTransactionalEmailQueue, sendTransactionalEmail } from "@/lib/server/transactional-email-service";
+import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
 
 export const runtime = "nodejs";
 
@@ -30,8 +31,19 @@ export async function POST(request: Request) {
   const from = process.env.BOOKING_EMAIL_FROM;
   if (!from) return Response.json({ error: "Sender address is not configured." }, { status: 503 });
   const operationId = crypto.randomUUID();
-  const results = [];
+  const recent = await getSupabaseAdmin().from("transactional_messages").select("id,recipient_email,status,last_error_code,attempt_count,next_attempt_at,created_at").eq("trigger_key", "operator.delivery_test").in("recipient_email", normalized).gte("created_at", new Date(Date.now() - 30 * 60 * 1000).toISOString()).order("created_at", { ascending: false });
+  if (recent.error) return Response.json({ error: "Unable to check recent delivery tests." }, { status: 503 });
+  const existing = new Map((recent.data ?? []).map((message) => [message.recipient_email, message]));
+  const results: Array<{ recipient: string; accepted: boolean; skipped?: boolean; messageId?: string; status?: string; errorCode?: string; attemptCount?: number; nextAttemptAt?: string }> = [];
   for (const recipient of normalized) {
+    const previous = existing.get(recipient);
+    if (previous) {
+      if (["queued", "failed"].includes(previous.status)) await processTransactionalEmailQueue({ limit: 1, messageId: previous.id });
+      const current = await getSupabaseAdmin().from("transactional_messages").select("status,last_error_code,attempt_count,next_attempt_at").eq("id", previous.id).single();
+      const status = current.data?.status ?? previous.status;
+      results.push({ recipient, accepted: ["provider_accepted", "sent", "delivered"].includes(status), skipped: true, messageId: previous.id, status, errorCode: current.data?.last_error_code ?? previous.last_error_code ?? undefined, attemptCount: current.data?.attempt_count ?? previous.attempt_count, nextAttemptAt: current.data?.next_attempt_at ?? previous.next_attempt_at });
+      continue;
+    }
     const accepted = await sendTransactionalEmail({
       templateKey: "delivery-test",
       logicalIdempotencyKey: `delivery-test:${operationId}:${recipient}`,

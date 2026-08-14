@@ -8,6 +8,8 @@ export const runtime = "nodejs";
 
 const packagePrices: Record<string, number> = { Theme: 3000, Express: 2500, Group: 2199, Duo: 1800, Solo: 1500, "Mini Session": 999, "Baby Shower": 5000, "Engagement Party": 6000, Birthday: 7000, Christening: 8000, Debut: 10000, "Anniversary Celebration": 10000 };
 const studioSessionDurations: Record<string, number> = { Theme: 60, Express: 60, Group: 60, Duo: 60, Solo: 60, "Mini Session": 30 };
+const studioAddonPrices: Record<string, number> = { "Extra Pax": 200, "+5 Edited Photos": 300, "HMUA (Hair & Makeup)": 1300, "Additional Hour": 800, "Extra Outfit": 300, "Rush Edit": 100 };
+const eventAddonPrices: Record<string, number> = { "Additional hour of coverage": 3500, "Second photographer": 8000, "Same-day edit (reel)": 6000, "Express 7-day delivery": 5000, "Printed album, 20 spreads": 7500 };
 
 function serviceCode(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "session";
@@ -54,13 +56,23 @@ export async function POST(request: Request) {
   const mobile = typeof input.mobile === "string" ? normalizeMobile(input.mobile) : "";
   const date = typeof input.date === "string" ? input.date : "";
   const time = typeof input.time === "string" ? input.time : "";
-  const addons = Array.isArray(input.addons) ? (input.addons as unknown[]).filter((a): a is string => typeof a === "string").slice(0, 10) : [];
   if (!short(input.name, 120) || !isValidEmail(email) || !/^\+639\d{9}$/.test(mobile) || !short(input.session, 80) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time) || (input.pay !== "deposit" && input.pay !== "full" && input.pay !== "cash")) return NextResponse.json({ error: "Complete the required booking details before checkout." }, { status: 400 });
   const packagePrice = packagePrices[input.session];
   if (!packagePrice) return NextResponse.json({ error: "Selected package is unavailable." }, { status: 400 });
+  const addonPrices = studioSessionDurations[input.session] ? studioAddonPrices : eventAddonPrices;
+  const addons = Array.isArray(input.addons) ? (input.addons as unknown[]).flatMap((addon) => {
+    if (!addon || typeof addon !== "object") return [];
+    const { name, quantity } = addon as { name?: unknown; quantity?: unknown };
+    return typeof name === "string" && Number.isInteger(quantity) && Number(quantity) >= 1 && Number(quantity) <= 10 && addonPrices[name] ? [{ name, quantity: Number(quantity), price: addonPrices[name] }] : [];
+  }).slice(0, 10) : [];
+  if (Array.isArray(input.addons) && addons.length !== input.addons.length) return NextResponse.json({ error: "One or more selected add-ons are unavailable." }, { status: 400 });
   const discountPercentage = promoDiscountPercentage(input.promoCode);
-  const subtotalAmount = packagePrice * 100;
-  const totalAmount = applyPromoDiscount(subtotalAmount, input.promoCode);
+  const packageSubtotal = packagePrice * 100;
+  const addonTotal = addons.reduce((sum, addon) => sum + addon.price * addon.quantity * 100, 0);
+  const subtotalAmount = packageSubtotal + addonTotal;
+  const discountedPackageAmount = applyPromoDiscount(packageSubtotal, input.promoCode);
+  const totalAmount = discountedPackageAmount + addonTotal;
+  const addonDescription = addons.map((addon) => `${addon.name} × ${addon.quantity}`);
   const studioDuration = studioSessionDurations[input.session];
   const [startHour, startMinute] = time.split(":").map(Number);
   const startMinutes = startHour * 60 + startMinute;
@@ -94,7 +106,7 @@ export async function POST(request: Request) {
         catch { await auditCustomerEvent({ action: "invitation_failed", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: cashBooking.id, metadata: { retry_required: true } }); }
       }
       const origin = process.env.PUBLIC_SITE_URL ?? new URL(request.url).origin;
-      await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference, service: `${input.session}${addons.length ? ` + ${addons.join(", ")}` : ""}`, date, time, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, clientId: profile.client_id, profileId: profile.id, bookingId: cashBooking.id });
+      await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, clientId: profile.client_id, profileId: profile.id, bookingId: cashBooking.id });
       return NextResponse.json({ reference, confirmed: true });
     }
 
@@ -112,7 +124,7 @@ export async function POST(request: Request) {
     const profile = await getProfileByEmail(email) ?? await createCustomerProfile({ ...names, email, mobile });
     const reference = prior.data?.reference ?? `KS-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
     const serviceId = await resolveServiceId(admin, input.session);
-    const amountDue = Math.round(totalAmount * (input.pay === "deposit" ? 0.5 : 1));
+    const packageAmountDue = Math.round(discountedPackageAmount * (input.pay === "deposit" ? 0.5 : 1));
     let booking = prior.data;
     if (!booking) {
       const fingerprintHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(idempotencyKey));
@@ -145,14 +157,14 @@ export async function POST(request: Request) {
     }
 
     const origin = process.env.PUBLIC_SITE_URL ?? new URL(request.url).origin;
-    const addonLineItems = addons.map((name) => ({ amount: 0, currency: "PHP", name, quantity: 1 }));
+    const addonLineItems = addons.map((addon) => ({ amount: addon.price * 100, currency: "PHP", name: addon.name, quantity: addon.quantity }));
     const paymongoResponse = await fetch("https://api.paymongo.com/v2/checkout_sessions", {
       method: "POST",
       headers: { Authorization: `Basic ${Buffer.from(`${secretKey}:`).toString("base64")}`, "Content-Type": "application/json" },
       body: JSON.stringify({ data: { attributes: {
         billing: { name: input.name.trim(), email, phone: mobile },
         cancel_url: `${origin}/?checkout=cancelled`, description: input.session,
-        line_items: [{ amount: amountDue, currency: "PHP", name: `${input.session} ${input.pay === "deposit" ? "50% deposit" : "full payment"}${discountPercentage ? ` (${discountPercentage}% promo)` : ""}`, quantity: 1 }, ...addonLineItems],
+        line_items: [{ amount: packageAmountDue, currency: "PHP", name: `${input.session} ${input.pay === "deposit" ? "50% deposit" : "full payment"}${discountPercentage ? ` (${discountPercentage}% promo)` : ""}`, quantity: 1 }, ...addonLineItems],
         metadata: { booking_id: booking.id, booking_date: date, booking_time: time, payment_type: input.pay, discount_percentage: discountPercentage },
         payment_method_types: ["card", "gcash", "paymaya", "grab_pay", "qrph"], reference_number: booking.reference, send_email_receipt: false, show_description: true, show_line_items: true,
         success_url: `${origin}/?checkout=success&reference=${encodeURIComponent(booking.reference)}`,
@@ -166,7 +178,7 @@ export async function POST(request: Request) {
     }
     const updated = await admin.from("bookings").update({ paymongo_checkout_session_id: result.data?.id ?? null, paymongo_checkout_url: checkoutUrl, checkout_creation_started_at: null }).eq("id", booking.id).eq("client_id", booking.client_id);
     if (updated.error) throw updated.error;
-    const emailSent = await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference: booking.reference, service: `${input.session}${addons.length ? ` + ${addons.join(", ")}` : ""}`, date, time, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, clientId: booking.client_id, profileId: booking.client_profile_id, bookingId: booking.id });
+    const emailSent = await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference: booking.reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, clientId: booking.client_id, profileId: booking.client_profile_id, bookingId: booking.id });
     if (!emailSent) await auditCustomerEvent({ action: "booking_confirmation_delayed", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: booking.id, metadata: { retry_required: true } });
     return NextResponse.json({ checkoutUrl, reference: booking.reference, invitationDelayed, confirmationDelayed: !emailSent });
   } catch {
