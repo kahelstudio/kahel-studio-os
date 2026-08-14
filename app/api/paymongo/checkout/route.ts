@@ -3,6 +3,7 @@ import { auditCustomerEvent, consumeCustomerRateLimit, createCustomerProfile, en
 import { sendBookingConfirmation } from "@/lib/server/customer-email";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
 import { applyPromoDiscount, promoDiscountPercentage } from "@/lib/promo-code";
+import { getCurrentBookingTerms } from "@/lib/server/legal-documents";
 
 export const runtime = "nodejs";
 
@@ -22,10 +23,36 @@ async function resolveServiceId(admin: ReturnType<typeof getSupabaseAdmin>, name
   const { data: created } = await admin.from("services").upsert({ code, name, active: true }, { onConflict: "code" }).select("id").single<{ id: string }>();
   return created?.id ?? "00000000-0000-0000-0000-000000000000";
 }
-type CheckoutRequest = { name?: unknown; email?: unknown; mobile?: unknown; session?: unknown; date?: unknown; time?: unknown; location?: unknown; promoCode?: unknown; pay?: unknown; addons?: unknown };
+type CheckoutRequest = { name?: unknown; email?: unknown; mobile?: unknown; session?: unknown; date?: unknown; time?: unknown; location?: unknown; promoCode?: unknown; pay?: unknown; addons?: unknown; termsAcceptance?: unknown };
 type BookingRow = { id: string; client_id: string; client_profile_id: string; reference: string; paymongo_checkout_url: string | null };
 type CashBookingRow = { id: string; client_id: string; client_profile_id: string; reference: string };
 const short = (value: unknown, max: number): value is string => typeof value === "string" && value.trim().length > 0 && value.length <= max;
+
+function termsInput(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const input = value as { accepted?: unknown; versionId?: unknown; contentHash?: unknown };
+  return input.accepted === true && typeof input.versionId === "string" && /^[0-9a-f-]{36}$/i.test(input.versionId) && typeof input.contentHash === "string" && /^[0-9a-f]{64}$/.test(input.contentHash)
+    ? { versionId: input.versionId, contentHash: input.contentHash }
+    : null;
+}
+
+async function acceptTerms(admin: ReturnType<typeof getSupabaseAdmin>, bookingId: string, terms: { versionId: string; contentHash: string }, idempotencyKey: string, request: Request) {
+  const environment = ["production", "staging", "development", "test"].includes(String(process.env.APP_ENV)) ? String(process.env.APP_ENV) : "development";
+  const result = await admin.rpc("accept_booking_agreement", {
+    requested_booking_id: bookingId,
+    requested_user_id: null,
+    requested_version_id: terms.versionId,
+    requested_document_hash: terms.contentHash,
+    requested_idempotency_key: `${idempotencyKey}:terms`,
+    requested_method: "checkbox",
+    requested_source: "public_website_booking",
+    requested_environment: environment,
+    requested_locale: request.headers.get("accept-language")?.split(",")[0]?.slice(0, 35) || "en-PH",
+    requested_evidence_metadata: { request_id: request.headers.get("cf-ray")?.slice(0, 100) || crypto.randomUUID(), channel: "web" },
+  });
+  if (result.error) throw new Error(`BOOKING_TERMS_ACCEPTANCE_FAILED:${result.error.message}`);
+  return result.data;
+}
 
 function splitName(name: string) {
   const parts = name.trim().split(/\s+/);
@@ -79,6 +106,12 @@ export async function POST(request: Request) {
   if (studioDuration && (startMinutes < 8 * 60 || startMinutes + studioDuration > 17 * 60)) return NextResponse.json({ error: "Select a studio time between 8:00 AM and 5:00 PM." }, { status: 400 });
   const idempotencyKey = request.headers.get("Idempotency-Key")?.trim();
   if (!idempotencyKey || idempotencyKey.length < 8 || idempotencyKey.length > 200) return NextResponse.json({ error: "Refresh the page and submit the booking again." }, { status: 400 });
+  const acceptedTerms = termsInput(input.termsAcceptance);
+  if (!acceptedTerms) return NextResponse.json({ error: "Accept the current Booking Terms and Conditions before continuing." }, { status: 428 });
+  const currentTerms = await getCurrentBookingTerms();
+  if (!currentTerms) return NextResponse.json({ error: "Booking terms are temporarily unavailable. No payment has been initiated." }, { status: 503 });
+  if (acceptedTerms.versionId !== currentTerms.id || acceptedTerms.contentHash !== currentTerms.contentHash) return NextResponse.json({ error: "The Booking Terms and Conditions changed. Review the current version and accept it before continuing." }, { status: 409 });
+  const bookingLocation = typeof input.location === "string" && input.location.trim() ? input.location.trim().slice(0, 500) : "Kahel Studio, Cobo, Tabaco City";
 
   try {
     if (!await consumeCustomerRateLimit(request, "customer_booking", email, 6, "1 hour")) return NextResponse.json({ error: "Please wait before submitting another booking." }, { status: 429 });
@@ -87,7 +120,7 @@ export async function POST(request: Request) {
     if (input.pay === "cash") {
       const cashPrior = await admin.from("bookings").select("id,client_id,client_profile_id,reference").eq("idempotency_key", idempotencyKey).maybeSingle<CashBookingRow>();
       if (cashPrior.error) throw cashPrior.error;
-      if (cashPrior.data) return NextResponse.json({ reference: cashPrior.data.reference, confirmed: true });
+      if (cashPrior.data) { await acceptTerms(admin, cashPrior.data.id, acceptedTerms, idempotencyKey, request); return NextResponse.json({ reference: cashPrior.data.reference, requestSaved: true }); }
       const { data: conflict } = await admin.from("bookings").select("id").eq("service_date", date).eq("service_time", time).not("status", "in", '("cancelled","inquiry")').maybeSingle();
       if (conflict) return NextResponse.json({ error: "This date and time is no longer available. Please select a different slot." }, { status: 409 });
       const names = splitName(input.name);
@@ -96,24 +129,25 @@ export async function POST(request: Request) {
       const serviceId = await resolveServiceId(admin, input.session);
       const fingerprintHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(idempotencyKey));
       const requestFingerprint = [...new Uint8Array(fingerprintHash)].map((b) => b.toString(16).padStart(2, "0")).join("");
-      const location = typeof input.location === "string" && input.location.trim() ? input.location.trim().slice(0, 500) : "Kahel Studio, Cobo, Tabaco City";
-      const inserted = await admin.from("bookings").insert(buildBookingInsert({ clientId: profile.client_id, profileId: profile.id, idempotencyKey, requestFingerprint, reference, session: input.session, serviceId, date, time, location, paymentType: "cash", subtotalAmount, totalAmount })).select("id,client_id,client_profile_id,reference").single<CashBookingRow>();
+      const inserted = await admin.from("bookings").insert(buildBookingInsert({ clientId: profile.client_id, profileId: profile.id, idempotencyKey, requestFingerprint, reference, session: input.session, serviceId, date, time, location: bookingLocation, paymentType: "cash", subtotalAmount, totalAmount })).select("id,client_id,client_profile_id,reference").single<CashBookingRow>();
       if (inserted.error) throw inserted.error;
       const cashBooking = inserted.data;
+      const cashAcceptance = await acceptTerms(admin, cashBooking.id, acceptedTerms, idempotencyKey, request);
       await auditCustomerEvent({ action: "booking_created", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: cashBooking.id });
       if (!profile.user_id) {
         try { await ensureCustomerAccount(profile, "booking"); }
         catch { await auditCustomerEvent({ action: "invitation_failed", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: cashBooking.id, metadata: { retry_required: true } }); }
       }
       const origin = process.env.PUBLIC_SITE_URL ?? new URL(request.url).origin;
-      await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, clientId: profile.client_id, profileId: profile.id, bookingId: cashBooking.id });
-      return NextResponse.json({ reference, confirmed: true });
+      const agreementPath = `/portal/agreements/${cashAcceptance.id}`;
+      await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, location: bookingLocation, paymentSummary: "Cash at studio after authorized staff records and receipts it", portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms`, agreementUrl: `${origin}/sign-in?next=${encodeURIComponent(agreementPath)}`, clientId: profile.client_id, profileId: profile.id, bookingId: cashBooking.id });
+      return NextResponse.json({ reference, requestSaved: true });
     }
 
     if (!secretKey || !/^sk_(test|live)_/.test(secretKey) || (String(process.env.APP_ENV) !== "production" && secretKey.startsWith("sk_live_"))) return NextResponse.json({ error: "Checkout is not configured." }, { status: 503 });
     const prior = await admin.from("bookings").select("id,client_id,client_profile_id,reference,paymongo_checkout_url").eq("idempotency_key", idempotencyKey).maybeSingle<BookingRow>();
     if (prior.error) throw prior.error;
-    if (prior.data?.paymongo_checkout_url) return NextResponse.json({ checkoutUrl: prior.data.paymongo_checkout_url, reference: prior.data.reference, reused: true });
+    if (prior.data?.paymongo_checkout_url) { await acceptTerms(admin, prior.data.id, acceptedTerms, idempotencyKey, request); return NextResponse.json({ checkoutUrl: prior.data.paymongo_checkout_url, reference: prior.data.reference, reused: true }); }
 
     if (!prior.data) {
       const { data: conflict } = await admin.from("bookings").select("id").eq("service_date", date).eq("service_time", time).not("status", "in", '("cancelled","inquiry")').maybeSingle();
@@ -129,8 +163,7 @@ export async function POST(request: Request) {
     if (!booking) {
       const fingerprintHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(idempotencyKey));
       const requestFingerprint = [...new Uint8Array(fingerprintHash)].map((b) => b.toString(16).padStart(2, "0")).join("");
-      const location = typeof input.location === "string" && input.location.trim() ? input.location.trim().slice(0, 500) : "Kahel Studio, Cobo, Tabaco City";
-      const inserted = await admin.from("bookings").insert(buildBookingInsert({ clientId: profile.client_id, profileId: profile.id, idempotencyKey, requestFingerprint, reference, session: input.session, serviceId, date, time, location, paymentType: input.pay, subtotalAmount, totalAmount })).select("id,client_id,client_profile_id,reference,paymongo_checkout_url").single<BookingRow>();
+      const inserted = await admin.from("bookings").insert(buildBookingInsert({ clientId: profile.client_id, profileId: profile.id, idempotencyKey, requestFingerprint, reference, session: input.session, serviceId, date, time, location: bookingLocation, paymentType: input.pay, subtotalAmount, totalAmount })).select("id,client_id,client_profile_id,reference,paymongo_checkout_url").single<BookingRow>();
       if (inserted.error) {
         const concurrent = await admin.from("bookings").select("id,client_id,client_profile_id,reference,paymongo_checkout_url").eq("idempotency_key", idempotencyKey).maybeSingle<BookingRow>();
         if (!concurrent.data) throw inserted.error;
@@ -138,6 +171,8 @@ export async function POST(request: Request) {
       } else booking = inserted.data;
       await auditCustomerEvent({ action: "booking_created", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: booking.id });
     }
+
+    const acceptance = await acceptTerms(admin, booking.id, acceptedTerms, idempotencyKey, request);
 
     let invitationDelayed = false;
     if (!profile.user_id) {
@@ -178,10 +213,13 @@ export async function POST(request: Request) {
     }
     const updated = await admin.from("bookings").update({ paymongo_checkout_session_id: result.data?.id ?? null, paymongo_checkout_url: checkoutUrl, checkout_creation_started_at: null }).eq("id", booking.id).eq("client_id", booking.client_id);
     if (updated.error) throw updated.error;
-    const emailSent = await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference: booking.reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, clientId: booking.client_id, profileId: booking.client_profile_id, bookingId: booking.id });
+    const agreementPath = `/portal/agreements/${acceptance.id}`;
+    const paymentDue = packageAmountDue + addonTotal;
+    const emailSent = await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference: booking.reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, location: bookingLocation, paymentSummary: `${input.pay === "deposit" ? "Deposit and add-ons" : "Full payment"}: PHP ${(paymentDue / 100).toLocaleString("en-PH")}`, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms`, agreementUrl: `${origin}/sign-in?next=${encodeURIComponent(agreementPath)}`, clientId: booking.client_id, profileId: booking.client_profile_id, bookingId: booking.id });
     if (!emailSent) await auditCustomerEvent({ action: "booking_confirmation_delayed", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: booking.id, metadata: { retry_required: true } });
     return NextResponse.json({ checkoutUrl, reference: booking.reference, invitationDelayed, confirmationDelayed: !emailSent });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message.startsWith("BOOKING_TERMS_ACCEPTANCE_FAILED:")) return NextResponse.json({ error: "Your booking was saved, but the terms acceptance could not be recorded. No payment was initiated. Please try again." }, { status: 409 });
     return NextResponse.json({ error: "Unable to submit the booking right now." }, { status: 503 });
   }
 }

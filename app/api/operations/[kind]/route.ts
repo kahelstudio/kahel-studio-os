@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { getStaffPrincipal, type StaffPrincipal } from "@/lib/server/staff-auth";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
 import { normalizePhilippinePhone } from "@/lib/operation-rules";
+import { ensureCustomerAccount } from "@/lib/server/customer-auth";
+import { sendBookingTermsReviewRequest } from "@/lib/server/customer-email";
+import { getCurrentBookingTerms } from "@/lib/server/legal-documents";
 
 export const runtime = "nodejs";
 
@@ -98,7 +101,22 @@ async function createBooking(body: Body, principal: StaffPrincipal) {
   const booking = await admin.from("bookings").insert({ client_id: profile.client_id, client_profile_id: profile.id, idempotency_key: idempotency, request_fingerprint: fingerprint, reference, service_type: selectedService.name, service_id: selectedService.id, service_date: serviceDate, service_time: serviceTime, location, payment_type: paymentType, currency: "PHP", subtotal_amount_php: cents, total_amount_php: cents, paid_amount_php: 0, refunded_amount_php: 0, status: "inquiry", payment_status: "unpaid", attendance: "expected", kind: "standard" }).select("id,reference").single();
   if (booking.error || !booking.data) { await cleanupCreatedClient(); return NextResponse.json({ error: "Unable to create the booking." }, { status: 500 }); }
   await audit(principal, "booking", booking.data.id);
-  return NextResponse.json(booking.data, { status: 201 });
+  let termsEmailDelayed = false;
+  const terms = await getCurrentBookingTerms();
+  if (terms) {
+    const fullProfile = await admin.from("client_profiles").select("id,client_id,user_id,email,normalized_email,first_name,last_name,mobile,status,email_verified_at").eq("id", profile.id).single<{ id: string; client_id: string; user_id: string | null; email: string; normalized_email: string; first_name: string; last_name: string; mobile: string | null; status: "invited" | "active" | "disabled"; email_verified_at: string | null }>();
+    if (!fullProfile.data) termsEmailDelayed = true;
+    else {
+      try { if (!fullProfile.data.user_id) await ensureCustomerAccount(fullProfile.data, "booking"); }
+      catch { termsEmailDelayed = true; }
+      const origin = process.env.PUBLIC_SITE_URL ?? new URL("/", "https://kahelstudio.com").origin;
+      const bookingPath = `/portal/bookings/${booking.data.reference}`;
+      const sent = await sendBookingTermsReviewRequest({ to: fullProfile.data.email, firstName: fullProfile.data.first_name, reference: booking.data.reference, portalUrl: `${origin}/sign-in?next=${encodeURIComponent(bookingPath)}`, termsVersionLabel: terms.versionLabel, termsUrl: `${origin}/booking-terms`, clientId: profile.client_id, profileId: profile.id, bookingId: booking.data.id });
+      if (!sent) termsEmailDelayed = true;
+    }
+  } else termsEmailDelayed = true;
+  if (termsEmailDelayed) await admin.from("staff_audit_log").insert({ actor_id: principal.userId, actor_name: principal.email, event: "Booking saved but terms email delayed", event_type: "documents", entity_type: "booking", entity_id: booking.data.id, metadata: { customer_acceptance_required: true } });
+  return NextResponse.json({ ...booking.data, customerAcceptanceRequired: true, termsEmailDelayed }, { status: 201 });
 }
 
 export async function GET(request: Request, context: { params: Promise<{ kind: string }> }) {

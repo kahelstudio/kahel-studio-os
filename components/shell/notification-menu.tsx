@@ -16,7 +16,7 @@ export function NotificationMenu() {
     if (!response.ok) return;
     const body = await response.json() as { notifications?: Notification[]; unread?: number };
     if (!active()) return;
-    setNotifications(body.notifications ?? []);
+    setNotifications((body.notifications ?? []).slice(0, 5));
     setUnread(body.unread ?? 0);
   }
 

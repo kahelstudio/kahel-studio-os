@@ -54,6 +54,9 @@ export async function POST(request: Request) {
     if (!auth.principal.userId) throw new PaymentApiError("Sign in with an active staff account to collect payment.", 403);
     const body = await readPaymentJson(request);
     if (!isUuid(body.bookingId)) throw new PaymentApiError("A valid booking ID is required.");
+    const agreement = await getSupabaseAdmin().from("booking_agreement_requirements").select("status,acceptance_id").eq("booking_id", body.bookingId).maybeSingle<{ status: string; acceptance_id: string | null }>();
+    if (agreement.error) throw new PaymentApiError("Unable to verify the booking agreement.", 503);
+    if (agreement.data?.status !== "accepted" || !agreement.data.acceptance_id) throw new PaymentApiError("The customer must accept the required Booking Terms and Conditions before payment collection.", 409);
     const method = body.method ?? body.paymentMethod;
     if (method !== "cash" && method !== "paymongo") throw new PaymentApiError("Payment method must be cash or PayMongo.");
     const balanceCentavos = requiredCentavos(body.balanceCentavos ?? body.balanceAmountCentavos ?? 0, "Balance amount", true);

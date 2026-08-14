@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Email } from "@/components/ui/email";
+import { BOOKING_TERMS_SUMMARY, type PublishedBookingTerms } from "@/lib/legal-documents";
 import { applyPromoDiscount } from "@/lib/promo-code";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import styles from "./marketing-site.module.css";
 
 type Page = "home" | "portfolio" | "services" | "about" | "book" | "privacy" | "terms" | "health-safety";
@@ -226,6 +227,7 @@ const eventAddOns = [
 
 const peso = (amount: number) => `₱${amount.toLocaleString("en-PH")}`;
 const pad = (number: number) => String(number).padStart(2, "0");
+const formatMobile = (value: string) => [value.slice(0, 3), value.slice(3, 6), value.slice(6, 10)].filter(Boolean).join(" ");
 const todayIso = () => {
   const date = new Date();
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -1187,6 +1189,9 @@ function Booking({ goHome }: { goHome: () => void }) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [promoCodeInput, setPromoCodeInput] = useState("");
   const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({});
+  const [openSessionCategory, setOpenSessionCategory] = useState<ServiceCategory | null>(null);
+  const [bookingTerms, setBookingTerms] = useState<PublishedBookingTerms | null>(null);
+  const [termsState, setTermsState] = useState<"loading" | "ready" | "unavailable">("loading");
   const bookingRequestId = useRef<string | null>(null);
   useEffect(() => {
     fetch("/api/paymongo/availability")
@@ -1201,6 +1206,14 @@ function Booking({ goHome }: { goHome: () => void }) {
         if (data) setBookedSlots(new Set(data.bookedSlots.map((s) => `${s.date}|${s.time}`)));
       })
       .catch(() => {});
+  }, []);
+  useEffect(() => {
+    let active = true;
+    fetch("/api/legal/booking-terms", { cache: "no-store" })
+      .then(async (response) => response.ok ? (response.json() as Promise<{ terms: PublishedBookingTerms }>) : null)
+      .then((result) => { if (!active) return; setBookingTerms(result?.terms ?? null); setTermsState(result?.terms ? "ready" : "unavailable"); })
+      .catch(() => { if (active) setTermsState("unavailable"); });
+    return () => { active = false; };
   }, []);
   const allPackages = [...studioPackages, ...eventPackages];
   const selected = allPackages.find((item) => item.name === form.session);
@@ -1240,7 +1253,7 @@ function Booking({ goHome }: { goHome: () => void }) {
   };
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!valid || !selected || !termsAccepted) return;
+    if (!valid || !selected || !termsAccepted || !bookingTerms) return;
     setStatus("submitting");
     try {
       const response = await fetch("/api/paymongo/checkout", {
@@ -1249,16 +1262,17 @@ function Booking({ goHome }: { goHome: () => void }) {
           "Content-Type": "application/json",
           "Idempotency-Key": (bookingRequestId.current ??= crypto.randomUUID()),
         },
-        body: JSON.stringify({ ...form, mobile: `+63${form.mobile}` }),
+        body: JSON.stringify({ ...form, mobile: `+63${form.mobile}`, termsAcceptance: { accepted: true, versionId: bookingTerms.id, contentHash: bookingTerms.contentHash } }),
       });
       const result = (await response.json()) as {
         checkoutUrl?: string;
         confirmed?: boolean;
+        requestSaved?: boolean;
         reference?: string;
         error?: string;
       };
       if (!response.ok) throw new Error(result.error || "Unable to complete the booking.");
-      if (result.confirmed) {
+      if (result.confirmed || result.requestSaved) {
         setReference(result.reference ?? "");
         setStatus("done");
         return;
@@ -1280,9 +1294,9 @@ function Booking({ goHome }: { goHome: () => void }) {
   if (status === "done")
     return (
       <main className={`${styles.page} ${styles.confirmation}`}>
-        <div className={styles.stamp}>Reserved</div>
-        <h1>Your date is reserved.</h1>
-        <p>We&apos;ve noted the slip and will confirm within 48 hours at {form.email}.</p>
+        <div className={styles.stamp}>Requested</div>
+        <h1>Your booking request is saved.</h1>
+        <p>This request is not yet confirmed. We&apos;ll review the schedule and confirmation requirements and contact you at {form.email}.</p>
         <div className={styles.confirmationCard}>
           <header>
             <span>Reference</span>
@@ -1332,29 +1346,23 @@ function Booking({ goHome }: { goHome: () => void }) {
             </label>
             <label>
               Email
-              <input required type="email" value={form.email} onChange={(event) => update("email", event.target.value)} autoComplete="email" placeholder="you@email.com" />
+              <input required type="email" value={form.email} onChange={(event) => update("email", event.target.value)} autoComplete="email" placeholder="name@email.com" />
             </label>
             <label className={styles.fullField}>
               Mobile number
-              <input required type="tel" value={form.mobile} onChange={(event) => update("mobile", event.target.value)} autoComplete="tel" placeholder="0917 000 0000" />
+              <input required type="tel" value={formatMobile(form.mobile)} onChange={(event) => update("mobile", event.target.value)} autoComplete="tel" inputMode="numeric" placeholder="917 000 0000" />
             </label>
             <fieldset className={styles.fullField}>
               <legend className={styles.srOnly}>Session</legend>
-              <small>Studio sessions</small>
-              <div className={styles.sessionChips}>
-                {studioPackages.map((item) => (
-                  <button type="button" key={item.name} aria-pressed={form.session === item.name} onClick={() => update("session", item.name)}>
-                    {item.name}
-                  </button>
-                ))}
-              </div>
-              <small>Events</small>
-              <div className={styles.sessionChips}>
-                {eventPackages.map((item) => (
-                  <button type="button" key={item.name} aria-pressed={form.session === item.name} onClick={() => update("session", item.name)}>
-                    {item.name}
-                  </button>
-                ))}
+              <div className={styles.sessionCategoryDropdowns}>
+                <div className={styles.sessionDropdown}>
+                  <button type="button" aria-expanded={openSessionCategory === "sessions"} aria-controls="studio-session-options" onClick={() => setOpenSessionCategory((current) => current === "sessions" ? null : "sessions")}>Studio sessions <ChevronDown /></button>
+                  {openSessionCategory === "sessions" && <div id="studio-session-options" className={styles.sessionChips} role="listbox" aria-label="Studio sessions">{studioPackages.map((item) => <button type="button" role="option" key={item.name} aria-selected={form.session === item.name} onClick={() => { update("session", item.name); setOpenSessionCategory(null); }}>{item.name}</button>)}</div>}
+                </div>
+                <div className={styles.sessionDropdown}>
+                  <button type="button" aria-expanded={openSessionCategory === "events"} aria-controls="event-session-options" onClick={() => setOpenSessionCategory((current) => current === "events" ? null : "events")}>Events <ChevronDown /></button>
+                  {openSessionCategory === "events" && <div id="event-session-options" className={styles.sessionChips} role="listbox" aria-label="Events">{eventPackages.map((item) => <button type="button" role="option" key={item.name} aria-selected={form.session === item.name} onClick={() => { update("session", item.name); setOpenSessionCategory(null); }}>{item.name}</button>)}</div>}
+                </div>
               </div>
             </fieldset>
             <fieldset className={`${styles.fullField} ${styles.scheduleField}`}>
@@ -1373,7 +1381,7 @@ function Booking({ goHome }: { goHome: () => void }) {
                 <div className={styles.payment}>
                   {availableAddons.map(([name, price]) => {
                     const quantity = addonQuantities[name] ?? 0;
-                    return <div className={styles.addonQuantity} data-selected={quantity > 0} key={name}><span><strong>{name}</strong><small>{price}</small></span><span className={styles.quantityControls}><button type="button" aria-label={`Remove one ${name}`} disabled={quantity === 0} onClick={() => adjustAddon(name, -1)}>−</button><output aria-label={`${name} quantity`}>{quantity}</output><button type="button" aria-label={`Add one ${name}`} disabled={quantity === 10} onClick={() => adjustAddon(name, 1)}>+</button></span></div>;
+                    return <div className={styles.addonQuantity} data-selected={quantity > 0} key={name}><button type="button" className={styles.addonSelect} aria-pressed={quantity > 0} onClick={() => { if (quantity === 0) adjustAddon(name, 1); }}><strong>{name}</strong><small>{price}</small></button>{quantity > 0 && <span className={styles.quantityControls}><button type="button" aria-label={`Remove one ${name}`} onClick={() => adjustAddon(name, -1)}>−</button><output aria-label={`${name} quantity`}>{quantity}</output><button type="button" aria-label={`Add one ${name}`} disabled={quantity === 10} onClick={() => adjustAddon(name, 1)}>+</button></span>}</div>;
                   })}
                 </div>
               </fieldset>
@@ -1383,11 +1391,11 @@ function Booking({ goHome }: { goHome: () => void }) {
               <div className={styles.payment}>
                 <button type="button" aria-pressed={form.pay === "full"} onClick={() => update("pay", "full")}>
                   <strong>Pay in full</strong>
-                  <span>Pay online via GCash / card</span>
+                  <span>Pay online via digital wallets / credit card</span>
                 </button>
                 <button type="button" aria-pressed={form.pay === "deposit"} onClick={() => update("pay", "deposit")}>
                   <strong>50% downpayment</strong>
-                  <span>Pay online via GCash / card</span>
+                  <span>Pay online via digital wallets / credit card</span>
                 </button>
                 <button type="button" aria-pressed={form.pay === "cash"} onClick={() => update("pay", "cash")}>
                   <strong>Cash</strong>
@@ -1426,23 +1434,26 @@ function Booking({ goHome }: { goHome: () => void }) {
             <div className={styles.promoField}>
               <label htmlFor="booking-promo-code" className={styles.srOnly}>Promo code</label>
               <input id="booking-promo-code" value={promoCodeInput} onChange={(event) => setPromoCodeInput(event.target.value)} placeholder="Promo code" autoComplete="off" />
-              <button type="button" aria-live="polite" onClick={() => update("promoCode", normalizedPromoCode)}>{promoApplied ? "Applied" : "Apply"}</button>
+              <button type="button" aria-live="polite" data-applied={promoApplied} onClick={() => update("promoCode", normalizedPromoCode)}>{promoApplied ? "Applied" : "Apply"}</button>
             </div>
             <p>
               <span>Total</span>
               <strong>{selected ? peso(total) : "—"}</strong>
             </p>
           </div>
+          <section className={styles.bookingTermsReview} aria-labelledby="booking-terms-review-title">
+            <h3 id="booking-terms-review-title">Booking terms</h3>
+            <ul>{BOOKING_TERMS_SUMMARY.map((item) => <li key={item}>{item}</li>)}</ul>
+            {termsState === "loading" ? <p role="status">Loading the current terms…</p> : bookingTerms ? <p><Link href="/booking-terms" target="_blank">Read the complete Booking Terms and Conditions</Link><span>{bookingTerms.versionLabel} · Effective {new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(new Date(`${bookingTerms.effectiveDate}T00:00:00+08:00`))}</span></p> : <p role="alert">Booking terms are unavailable. Online submission is temporarily disabled.</p>}
+          </section>
           <label className={styles.termsConsent}>
-            <input type="checkbox" required checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
-            <span>
-              I agree with the <Link href="/terms">Terms &amp; Conditions</Link>.
-            </span>
+            <input type="checkbox" required disabled={!bookingTerms} checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
+            <span>I have read and agree to the Kahel Studio <Link href="/booking-terms" target="_blank">Booking Terms and Conditions</Link>.</span>
           </label>
-          <button type="submit" disabled={!valid || !termsAccepted || status === "submitting"}>
+          <button type="submit" disabled={!valid || !termsAccepted || !bookingTerms || status === "submitting"}>
             {status === "submitting" && <i />} {status === "submitting" ? "Reserving…" : "Reserve this date"}
           </button>
-          <small>{form.pay === "cash" ? "No online payment · we'll confirm within 48 hours" : valid ? "No payment taken now · confirmation within 48 hours" : "Accepts GCash, credit cards, QR Ph."}</small>
+          <small>{form.pay === "cash" ? "No online payment · we'll confirm within 48 hours" : valid ? "No payment taken now · confirmation within 48 hours" : "Accepts GCash, Maya, GrabPay, QR Ph and major credit cards."}</small>
         </aside>
       </form>
     </main>

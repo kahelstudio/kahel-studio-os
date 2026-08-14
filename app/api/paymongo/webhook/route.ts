@@ -230,6 +230,9 @@ async function processLegacyBooking(event: PaidCheckout) {
   if (selected.error) return retryable(selected.error, event.eventId);
   const booking = selected.data;
   if (!booking) return NextResponse.json({ error: "Booking not found." }, { status: 404 });
+  const requirement = await admin.from("booking_agreement_requirements").select("status,acceptance_id").eq("booking_id", booking.id).maybeSingle<{ status: string; acceptance_id: string | null }>();
+  if (requirement.error) return retryable(requirement.error, event.eventId);
+  if (requirement.data?.status !== "accepted" || !requirement.data.acceptance_id) return NextResponse.json({ error: "Booking agreement acceptance is required before confirmation." }, { status: 409 });
   if (!booking.paymongo_checkout_session_id || booking.paymongo_checkout_session_id !== event.checkoutId || !event.reference || booking.reference !== event.reference) {
     return NextResponse.json({ error: "Checkout does not match booking." }, { status: 409 });
   }

@@ -464,6 +464,7 @@ export const APPS: AppDef[] = [
     nav: [
       { id: "general", label: "General", href: "/settings/general" },
       { id: "emails", label: "Email templates", href: "/settings/emails" },
+      { id: "legal", label: "Legal and policies", href: "/settings/legal/booking-terms" },
       { id: "team", label: "Team & roles", href: "/settings/team" },
       { id: "billing", label: "Billing & BIR", href: "/settings/billing" },
       { id: "payroll", label: "Payroll", href: "/settings/payroll" },

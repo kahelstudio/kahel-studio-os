@@ -97,6 +97,11 @@ describe("PayMongo webhook", () => {
     mocks.updateEq.mockReturnValue({ eq: mocks.updateCheckoutEq });
     mocks.update.mockReturnValue({ eq: mocks.updateEq });
     mocks.from.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({ data: { status: "accepted", acceptance_id: "test-acceptance" }, error: null })
+        })
+      }),
       select: () => ({ eq: () => ({ maybeSingle: mocks.maybeSingle }) }),
       update: mocks.update,
     });

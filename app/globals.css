@@ -84,6 +84,14 @@
   color-scheme: light;
 }
 
+@media print {
+  @page { margin: 18mm; }
+  body { background: #fff !important; color: #111 !important; }
+  header, nav[aria-label="Client Portal"], nav[aria-label="Client Portal mobile"] { position: static !important; }
+  a { color: #111 !important; text-decoration: none !important; }
+  section { break-inside: avoid; }
+}
+
 :root[data-theme="dark"] {
   --color-kahel-50: #2a1408;
   --color-kahel-100: #3d1c0a;

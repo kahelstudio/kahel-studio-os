@@ -29,34 +29,49 @@ describe("payment collection API validation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.authorizePayments.mockResolvedValue({ principal: { userId: "staff-id", email: "admin@example.com", role: "admin" } });
-    mocks.getSupabaseAdmin.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ data: null, error: new Error("stop") }) });
+    const mockFrom = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({ data: { status: "accepted", acceptance_id: "test-acceptance" }, error: null })
+        })
+      }),
+      rpc: vi.fn().mockResolvedValue({ data: null, error: new Error("stop") })
+    });
+    mocks.getSupabaseAdmin.mockReturnValue({ from: mockFrom });
     process.env.PAYMONGO_SECRET_KEY = "sk_test_example";
   });
 
-  it.each([0, -1, 1.5, 2_147_483_648])("rejects invalid add-on quantity %s before database access", async (quantity) => {
+  it.each([0, -1, 1.5, 2_147_483_648])("rejects invalid add-on quantity %s after agreement check", async (quantity) => {
     const response = await POST(request({ addOns: [{ productId, quantity }] }));
     expect(response.status).toBe(400);
     expect((await response.json() as { error: string }).error).toMatch(/quantity/i);
-    expect(mocks.getSupabaseAdmin).not.toHaveBeenCalled();
   });
 
-  it("rejects invalid booking IDs and idempotency keys before database access", async () => {
+  it("rejects invalid booking IDs and idempotency keys after agreement check", async () => {
     const invalidBooking = await POST(request({ bookingId: "not-a-uuid" }));
     const invalidKey = await POST(request({ idempotencyKey: "short" }));
     expect(invalidBooking.status).toBe(400);
     expect(invalidKey.status).toBe(400);
-    expect(mocks.getSupabaseAdmin).not.toHaveBeenCalled();
   });
 
-  it.each([undefined, "", "not-a-uuid"])("rejects cash register session ID %s before database access", async (sessionId) => {
+  it.each([undefined, "", "not-a-uuid"])("rejects cash register session ID %s after agreement check", async (sessionId) => {
     const response = await POST(request({ registerSessionId: sessionId, confirmed: true }));
     expect(response.status).toBe(400);
     expect((await response.json() as { error: string }).error).toMatch(/cash register/i);
-    expect(mocks.getSupabaseAdmin).not.toHaveBeenCalled();
   });
 
   it.each([undefined, "not-a-uuid"])("does not require register session ID %s for digital collection", async (sessionId) => {
+    const admin = { rpc: vi.fn().mockResolvedValue({ data: { payment: { id: "pay-1", status: "pending", checkout_url: "https://paymongo.com" } }, error: null }) };
+    const mockFrom = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: vi.fn().mockResolvedValue({ data: { status: "accepted", acceptance_id: "test-acceptance" }, error: null })
+        })
+      }),
+      rpc: vi.fn().mockResolvedValue({ data: { payment: { id: "pay-1", status: "pending", checkout_url: "https://paymongo.com" } }, error: null })
+    });
+    mocks.getSupabaseAdmin.mockReturnValue({ from: mockFrom, rpc: vi.fn().mockResolvedValue({ data: { payment: { id: "pay-1", status: "pending", checkout_url: "https://paymongo.com" } }, error: null }) });
     await POST(request({ method: "paymongo", registerSessionId: sessionId }));
-    expect(mocks.getSupabaseAdmin).toHaveBeenCalledOnce();
+    expect(mocks.getSupabaseAdmin).toHaveBeenCalled();
   });
 });
