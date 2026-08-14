@@ -1,6 +1,5 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
 import type { Json } from "./supabase-database";
 import { getSupabaseAdmin } from "./supabase-admin";
 import { parseBookingTermsContent, type PublishedBookingTerms } from "@/lib/legal-documents";
@@ -52,10 +51,6 @@ export async function getBookingTermsVersion(versionId: string, includeUnpublish
   if (result.error || !result.data) return null;
   const content = parseBookingTermsContent(result.data.content);
   return content ? { ...result.data, parsedContent: content } : null;
-}
-
-export function hashBookingSummary(summary: Record<string, unknown>) {
-  return createHash("sha256").update(JSON.stringify(summary)).digest("hex");
 }
 
 export async function getBookingAgreement(bookingId: string, clientId?: string) {

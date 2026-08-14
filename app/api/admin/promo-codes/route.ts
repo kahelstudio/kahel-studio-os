@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStaffPrincipal } from "@/lib/server/staff-auth";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
-import type { Json } from "@/lib/server/supabase-database";
 
 async function adminPrincipal(request: Request) {
   const principal = await getStaffPrincipal(request);

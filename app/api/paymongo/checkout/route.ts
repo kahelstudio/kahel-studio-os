@@ -93,14 +93,10 @@ export async function POST(request: Request) {
   }).slice(0, 10) : [];
   if (Array.isArray(input.addons) && addons.length !== input.addons.length) return NextResponse.json({ error: "One or more selected add-ons are unavailable." }, { status: 400 });
 
-  const admin = getSupabaseAdmin();
   const packageSubtotal = packagePrice * 100;
   const addonTotal = addons.reduce((sum, addon) => sum + addon.price * addon.quantity * 100, 0);
   const subtotalAmount = packageSubtotal + addonTotal;
 
-  let discountedPackageAmount = packageSubtotal;
-  let discountPercentage = 0;
-  let promoCodeId: string | null = null;
   const addonDescription = addons.map((addon) => `${addon.name} × ${addon.quantity}`);
   const studioDuration = studioSessionDurations[input.session];
   const [startHour, startMinute] = time.split(":").map(Number);

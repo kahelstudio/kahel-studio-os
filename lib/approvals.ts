@@ -157,7 +157,6 @@ export const APPROVAL_TYPES: ApprovalTypeDefinition[] = [
 export const APPROVAL_TYPE_BY_VALUE = Object.fromEntries(APPROVAL_TYPES.map((item) => [item.value, item])) as Record<string, ApprovalTypeDefinition>;
 
 export const FINANCIAL_REQUEST_TYPES = new Set(APPROVAL_TYPES.filter((item) => item.financial).map((item) => item.value));
-export const SENSITIVE_REQUEST_TYPES = new Set(APPROVAL_TYPES.filter((item) => item.sensitive).map((item) => item.value));
 export const BULK_ELIGIBLE_REQUEST_TYPES = new Set(APPROVAL_TYPES.filter((item) => item.bulkEligible && !item.sensitive).map((item) => item.value));
 
 export function validateApprovalDetails(requestType: string, details: Record<string, unknown>) {

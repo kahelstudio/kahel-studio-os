@@ -107,6 +107,15 @@ function cents(value: number | null) {
 }
 
 export async function getRegisterWorkspace(): Promise<RegisterWorkspace> {
+  try {
+    return await getRegisterWorkspaceFromDb();
+  } catch (error) {
+    console.error("getRegisterWorkspace: table not available", (error as Error).message);
+    return { registers: [], recentClosed: [], generatedAt: new Date().toISOString() };
+  }
+}
+
+async function getRegisterWorkspaceFromDb(): Promise<RegisterWorkspace> {
   const admin = getSupabaseAdmin();
   const [locationsResult, registersResult, activeResult, closedResult] = await Promise.all([
     admin.from("locations").select("id,code,name,minimum_cash_centavos").eq("active", true).order("name").returns<LocationRecord[]>(),

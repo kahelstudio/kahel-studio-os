@@ -61,7 +61,6 @@ describe("payment collection API validation", () => {
   });
 
   it.each([undefined, "not-a-uuid"])("does not require register session ID %s for digital collection", async (sessionId) => {
-    const admin = { rpc: vi.fn().mockResolvedValue({ data: { payment: { id: "pay-1", status: "pending", checkout_url: "https://paymongo.com" } }, error: null }) };
     const mockFrom = vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({

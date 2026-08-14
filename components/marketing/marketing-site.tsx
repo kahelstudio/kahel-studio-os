@@ -1084,6 +1084,28 @@ const emptyBooking: BookingForm = {
   addons: [],
 };
 
+type PackageBookingForm = {
+  name: string;
+  email: string;
+  mobile: string;
+  studioSession: string;
+  studioDate: string;
+  studioTime: string;
+  studioAddons: BookingAddon[];
+  eventSession: string;
+  eventDate: string;
+  eventTime: string;
+  eventLocation: string;
+  eventAddons: BookingAddon[];
+  pay: "deposit" | "full" | "cash";
+};
+const emptyPackage: PackageBookingForm = {
+  name: "", email: "", mobile: "",
+  studioSession: "", studioDate: "", studioTime: "", studioAddons: [],
+  eventSession: "", eventDate: "", eventTime: "", eventLocation: "",
+  eventAddons: [], pay: "deposit",
+};
+
 function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, onTimeChange, bookedDates, bookedTimes }: { dateValue: string; timeValue: string; durationMinutes: number; onDateChange: (value: string) => void; onTimeChange: (value: string) => void; bookedDates: Set<string>; bookedTimes: Set<string> }) {
   const initial = dateValue ? new Date(`${dateValue}T00:00`) : new Date();
   const [month, setMonth] = useState({
@@ -1182,14 +1204,21 @@ function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, 
 }
 
 function Booking({ goHome }: { goHome: () => void }) {
+  const [bookingMode, setBookingMode] = useState<"single" | "package">("single");
   const [form, setForm] = useState(emptyBooking);
+  const [pkg, setPkg] = useState(emptyPackage);
   const [status, setStatus] = useState<"idle" | "submitting" | "done">("idle");
   const [reference, setReference] = useState("");
+  const [eventReference, setEventReference] = useState("");
   const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set());
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [promoCodeInput, setPromoCodeInput] = useState("");
   const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({});
+  const [studioAddonQty, setStudioAddonQty] = useState<Record<string, number>>({});
+  const [eventAddonQty, setEventAddonQty] = useState<Record<string, number>>({});
   const [openSessionCategory, setOpenSessionCategory] = useState<ServiceCategory | null>(null);
+  const [openPkgStudio, setOpenPkgStudio] = useState(false);
+  const [openPkgEvent, setOpenPkgEvent] = useState(false);
   const [bookingTerms, setBookingTerms] = useState<PublishedBookingTerms | null>(null);
   const [termsState, setTermsState] = useState<"loading" | "ready" | "unavailable">("loading");
   const bookingRequestId = useRef<string | null>(null);
@@ -1251,6 +1280,51 @@ function Booking({ goHome }: { goHome: () => void }) {
       addons: availableAddons.flatMap(([addonName]) => quantities[addonName] ? [{ name: addonName, quantity: quantities[addonName] }] : []),
     }));
   };
+
+  // Package mode helpers
+  const pkgStudioSelected = studioPackages.find((p) => p.name === pkg.studioSession);
+  const pkgEventSelected = eventPackages.find((p) => p.name === pkg.eventSession);
+  const pkgStudioDuration = pkgStudioSelected ? (pkgStudioSelected.per === "30 minutes" ? 30 : 60) : -1;
+  const pkgStudioBookedTimes = new Set([...bookedSlots].filter((s) => s.startsWith(`${pkg.studioDate}|`)).map((s) => s.split("|")[1]));
+  const pkgEventBookedTimes = new Set([...bookedSlots].filter((s) => s.startsWith(`${pkg.eventDate}|`)).map((s) => s.split("|")[1]));
+  const pkgStudioTotal = pkgStudioSelected ? pkgStudioSelected.price + sessionAddOns.reduce((sum, [name, , price]) => sum + (studioAddonQty[name] ?? 0) * price, 0) : 0;
+  const pkgEventTotal = pkgEventSelected ? pkgEventSelected.price + eventAddOns.reduce((sum, [name, , price]) => sum + (eventAddonQty[name] ?? 0) * price, 0) : 0;
+  const pkgGrandTotal = Math.round((pkgStudioTotal + pkgEventTotal) * (pkg.pay === "deposit" ? 0.5 : 1));
+  const pkgValid = Boolean(
+    pkg.name && pkg.email && /^9\d{9}$/.test(pkg.mobile) &&
+    pkg.studioSession && pkg.studioDate && pkg.studioTime && pkg.studioDate >= todayIso() && !pkgStudioBookedTimes.has(pkg.studioTime) &&
+    pkg.eventSession && pkg.eventDate && pkg.eventTime && pkg.eventDate >= todayIso() && !pkgEventBookedTimes.has(pkg.eventTime)
+  );
+  const updatePkg = <K extends keyof PackageBookingForm>(key: K, value: PackageBookingForm[K]) => {
+    setPkg((current) => ({
+      ...current,
+      [key]: key === "mobile" ? String(value).replace(/\D/g, "").replace(/^0/, "").slice(0, 10) : value,
+      ...(key === "studioSession" ? { studioTime: "", studioAddons: [] } : key === "studioDate" ? { studioTime: "" } : {}),
+      ...(key === "eventSession" ? { eventTime: "", eventAddons: [] } : key === "eventDate" ? { eventTime: "" } : {}),
+    }));
+    if (key === "studioSession") setStudioAddonQty({});
+    if (key === "eventSession") setEventAddonQty({});
+  };
+  const adjustStudioAddon = (name: string, amount: number) => {
+    const quantity = Math.min(10, Math.max(0, (studioAddonQty[name] ?? 0) + amount));
+    const quantities = { ...studioAddonQty, [name]: quantity };
+    setStudioAddonQty(quantities);
+    setPkg((current) => ({ ...current, studioAddons: sessionAddOns.flatMap(([n]) => quantities[n] ? [{ name: n, quantity: quantities[n] }] : []) }));
+  };
+  const adjustEventAddon = (name: string, amount: number) => {
+    const quantity = Math.min(10, Math.max(0, (eventAddonQty[name] ?? 0) + amount));
+    const quantities = { ...eventAddonQty, [name]: quantity };
+    setEventAddonQty(quantities);
+    setPkg((current) => ({ ...current, eventAddons: eventAddOns.flatMap(([n]) => quantities[n] ? [{ name: n, quantity: quantities[n] }] : []) }));
+  };
+  const switchMode = (mode: "single" | "package") => {
+    setBookingMode(mode);
+    setStatus("idle");
+    setReference("");
+    setEventReference("");
+    setTermsAccepted(false);
+    bookingRequestId.current = null;
+  };
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!valid || !selected || !termsAccepted || !bookingTerms) return;
@@ -1284,6 +1358,30 @@ function Booking({ goHome }: { goHome: () => void }) {
       window.alert(error instanceof Error ? error.message : "Unable to open checkout.");
     }
   };
+  const submitPackage = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!pkgValid || !termsAccepted || !bookingTerms) return;
+    setStatus("submitting");
+    try {
+      const response = await fetch("/api/paymongo/checkout/package", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": (bookingRequestId.current ??= crypto.randomUUID()) },
+        body: JSON.stringify({
+          ...pkg,
+          mobile: `+63${pkg.mobile}`,
+          termsAcceptance: { accepted: true, versionId: bookingTerms.id, contentHash: bookingTerms.contentHash },
+        }),
+      });
+      const result = (await response.json()) as { studioReference?: string; eventReference?: string; requestSaved?: boolean; error?: string };
+      if (!response.ok) throw new Error(result.error || "Unable to save the package booking.");
+      setReference(result.studioReference ?? "");
+      setEventReference(result.eventReference ?? "");
+      setStatus("done");
+    } catch (error) {
+      setStatus("idle");
+      window.alert(error instanceof Error ? error.message : "Unable to save the package booking.");
+    }
+  };
   const dateLabel = form.date
     ? new Date(`${form.date}T00:00`).toLocaleDateString("en-PH", {
         day: "numeric",
@@ -1291,6 +1389,34 @@ function Booking({ goHome }: { goHome: () => void }) {
         year: "numeric",
       })
     : "—";
+  const formatDate = (iso: string) => iso ? new Date(`${iso}T00:00`).toLocaleDateString("en-PH", { day: "numeric", month: "short", year: "numeric" }) : "—";
+  const formatTime = (t: string) => t ? new Date(`2000-01-01T${t}:00`).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" }) : "—";
+
+  if (status === "done" && bookingMode === "package")
+    return (
+      <main className={`${styles.page} ${styles.confirmation}`}>
+        <div className={styles.stamp}>Requested</div>
+        <h1>Your pre-event package is saved.</h1>
+        <p>Both bookings are pending confirmation. We&apos;ll review the schedule and contact you at {pkg.email} to confirm dates and arrange payment.</p>
+        <div className={styles.confirmationCard}>
+          <header><span>Pre-Event Shoot</span><strong>{reference}</strong></header>
+          {[["Session", pkg.studioSession], ["Date", formatDate(pkg.studioDate)], ["Time", formatTime(pkg.studioTime)], ["Location", "Kahel Studio, Cobo, Tabaco City"], ["Rate", peso(pkgStudioSelected?.price ?? 0)]].map(([label, value]) => (
+            <p key={label}><span>{label}</span><strong>{value}</strong></p>
+          ))}
+        </div>
+        <div className={styles.confirmationCard}>
+          <header><span>Event</span><strong>{eventReference}</strong></header>
+          {[["Event", pkg.eventSession], ["Date", formatDate(pkg.eventDate)], ["Time", formatTime(pkg.eventTime)], ["Location", pkg.eventLocation || "To be confirmed"], ["Rate", peso(pkgEventSelected?.price ?? 0)]].map(([label, value]) => (
+            <p key={label}><span>{label}</span><strong>{value}</strong></p>
+          ))}
+        </div>
+        <div className={styles.confirmActions}>
+          <button type="button" onClick={() => { setPkg(emptyPackage); setStudioAddonQty({}); setEventAddonQty({}); setTermsAccepted(false); setStatus("idle"); bookingRequestId.current = null; }}>Book another</button>
+          <button type="button" onClick={goHome}>Back to home</button>
+        </div>
+      </main>
+    );
+
   if (status === "done")
     return (
       <main className={`${styles.page} ${styles.confirmation}`}>
@@ -1328,134 +1454,314 @@ function Booking({ goHome }: { goHome: () => void }) {
         </div>
       </main>
     );
+
+  const bookingTermsSection = (
+    <>
+      <section className={styles.bookingTermsReview} aria-labelledby="booking-terms-review-title">
+        <h3 id="booking-terms-review-title">Booking terms</h3>
+        <ul>{BOOKING_TERMS_SUMMARY.map((item) => <li key={item}>{item}</li>)}</ul>
+        {termsState === "loading" ? <p role="status">Loading the current terms…</p> : bookingTerms ? <p><Link href="/booking-terms" target="_blank">Read the complete Booking Terms and Conditions</Link><span>{bookingTerms.versionLabel} · Effective {new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(new Date(`${bookingTerms.effectiveDate}T00:00:00+08:00`))}</span></p> : <p role="alert">Booking terms are unavailable. Online submission is temporarily disabled.</p>}
+      </section>
+      <label className={styles.termsConsent}>
+        <input type="checkbox" required disabled={!bookingTerms} checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
+        <span>I have read and agree to the Kahel Studio <Link href="/booking-terms" target="_blank">Booking Terms and Conditions</Link>.</span>
+      </label>
+    </>
+  );
+
   return (
     <main className={`${styles.page} ${styles.container}`}>
       <Eyebrow>ONLINE BOOKING</Eyebrow>
       <h1>Reserve Your Date</h1>
       <p className={styles.lead}>Complete the booking form and choose your preferred payment method. Your date is secured once we confirm your booking.</p>
-      <form className={styles.bookingGrid} onSubmit={submit}>
-        <div className={styles.slip}>
-          <header>
-            <span>Booking order</span>
-            <span>Ref · Pending</span>
-          </header>
-          <div className={styles.fields}>
-            <label>
-              Full name
-              <input required value={form.name} onChange={(event) => update("name", event.target.value)} autoComplete="name" placeholder="Juan dela Cruz" />
-            </label>
-            <label>
-              Email
-              <input required type="email" value={form.email} onChange={(event) => update("email", event.target.value)} autoComplete="email" placeholder="name@email.com" />
-            </label>
-            <label className={styles.fullField}>
-              Mobile number
-              <input required type="tel" value={formatMobile(form.mobile)} onChange={(event) => update("mobile", event.target.value)} autoComplete="tel" inputMode="numeric" placeholder="917 000 0000" />
-            </label>
-            <fieldset className={styles.fullField}>
-              <legend className={styles.srOnly}>Session</legend>
-              <div className={styles.sessionCategoryDropdowns}>
-                <div className={styles.sessionDropdown}>
-                  <button type="button" aria-expanded={openSessionCategory === "sessions"} aria-controls="studio-session-options" onClick={() => setOpenSessionCategory((current) => current === "sessions" ? null : "sessions")}>Studio sessions <ChevronDown /></button>
-                  {openSessionCategory === "sessions" && <div id="studio-session-options" className={styles.sessionChips} role="listbox" aria-label="Studio sessions">{studioPackages.map((item) => <button type="button" role="option" key={item.name} aria-selected={form.session === item.name} onClick={() => { update("session", item.name); setOpenSessionCategory(null); }}>{item.name}</button>)}</div>}
-                </div>
-                <div className={styles.sessionDropdown}>
-                  <button type="button" aria-expanded={openSessionCategory === "events"} aria-controls="event-session-options" onClick={() => setOpenSessionCategory((current) => current === "events" ? null : "events")}>Events <ChevronDown /></button>
-                  {openSessionCategory === "events" && <div id="event-session-options" className={styles.sessionChips} role="listbox" aria-label="Events">{eventPackages.map((item) => <button type="button" role="option" key={item.name} aria-selected={form.session === item.name} onClick={() => { update("session", item.name); setOpenSessionCategory(null); }}>{item.name}</button>)}</div>}
+
+      <div className={styles.bookingTypeSelector} role="group" aria-label="Booking type">
+        <button type="button" aria-pressed={bookingMode === "single"} onClick={() => switchMode("single")}>
+          <strong>Single booking</strong>
+          <span>Studio session or event</span>
+        </button>
+        <button type="button" aria-pressed={bookingMode === "package"} onClick={() => switchMode("package")}>
+          <strong>Pre-Event Package</strong>
+          <span>Pre-event shoot + event in one request</span>
+        </button>
+      </div>
+
+      {bookingMode === "package" ? (
+        <form className={styles.bookingGrid} onSubmit={submitPackage}>
+          <div className={styles.slip}>
+            <header>
+              <span>Pre-Event Package</span>
+              <span>2 bookings · Ref · Pending</span>
+            </header>
+
+            <div className={styles.fields}>
+              <label>
+                Full name
+                <input required value={pkg.name} onChange={(e) => updatePkg("name", e.target.value)} autoComplete="name" placeholder="Juan dela Cruz" />
+              </label>
+              <label>
+                Email
+                <input required type="email" value={pkg.email} onChange={(e) => updatePkg("email", e.target.value)} autoComplete="email" placeholder="name@email.com" />
+              </label>
+              <label className={styles.fullField}>
+                Mobile number
+                <input required type="tel" value={formatMobile(pkg.mobile)} onChange={(e) => updatePkg("mobile", e.target.value)} autoComplete="tel" inputMode="numeric" placeholder="917 000 0000" />
+              </label>
+            </div>
+
+            <div className={styles.packageSection}>
+              <div className={styles.packageSectionHeader}>
+                <span className={styles.packageSectionBadge}>1</span>
+                <div>
+                  <strong>Pre-Event Shoot</strong>
+                  <span>Studio session for invitations, announcements &amp; teasers</span>
                 </div>
               </div>
-            </fieldset>
-            <fieldset className={`${styles.fullField} ${styles.scheduleField}`}>
-              <legend>Preferred date and time</legend>
-              <BookingSchedule dateValue={form.date} timeValue={form.time} durationMinutes={sessionDuration} onDateChange={(value) => update("date", value)} onTimeChange={(value) => update("time", value)} bookedDates={fullyBookedDates} bookedTimes={bookedTimesForDate} />
-            </fieldset>
-            {!studioSelected && (
-              <label className={styles.fullField}>
-                Location
-                <input value={form.location} onChange={(event) => update("location", event.target.value)} placeholder="City / venue" />
-              </label>
-            )}
-            {availableAddons.length > 0 && (
+              <div className={styles.fields}>
+                <fieldset className={styles.fullField}>
+                  <legend className={styles.srOnly}>Studio session</legend>
+                  <div className={styles.sessionDropdown}>
+                    <button type="button" aria-expanded={openPkgStudio} onClick={() => setOpenPkgStudio((v) => !v)}>
+                      {pkg.studioSession || "Choose a studio session"} <ChevronDown />
+                    </button>
+                    {openPkgStudio && (
+                      <div className={styles.sessionChips} role="listbox" aria-label="Studio sessions">
+                        {studioPackages.map((item) => (
+                          <button type="button" role="option" key={item.name} aria-selected={pkg.studioSession === item.name} onClick={() => { updatePkg("studioSession", item.name); setOpenPkgStudio(false); }}>
+                            {item.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </fieldset>
+                <fieldset className={`${styles.fullField} ${styles.scheduleField}`}>
+                  <legend>Shoot date and time</legend>
+                  <BookingSchedule dateValue={pkg.studioDate} timeValue={pkg.studioTime} durationMinutes={pkgStudioDuration} onDateChange={(v) => updatePkg("studioDate", v)} onTimeChange={(v) => updatePkg("studioTime", v)} bookedDates={fullyBookedDates} bookedTimes={pkgStudioBookedTimes} />
+                </fieldset>
+                <fieldset className={styles.fullField}>
+                  <legend>Add-ons</legend>
+                  <div className={styles.payment}>
+                    {sessionAddOns.map(([name, price]) => {
+                      const qty = studioAddonQty[name] ?? 0;
+                      return <div className={styles.addonQuantity} data-selected={qty > 0} key={name}><button type="button" className={styles.addonSelect} aria-pressed={qty > 0} onClick={() => { if (qty === 0) adjustStudioAddon(name, 1); }}><strong>{name}</strong><small>{price}</small></button>{qty > 0 && <span className={styles.quantityControls}><button type="button" aria-label={`Remove one ${name}`} onClick={() => adjustStudioAddon(name, -1)}>−</button><output aria-label={`${name} quantity`}>{qty}</output><button type="button" aria-label={`Add one ${name}`} disabled={qty === 10} onClick={() => adjustStudioAddon(name, 1)}>+</button></span>}</div>;
+                    })}
+                  </div>
+                </fieldset>
+              </div>
+            </div>
+
+            <div className={styles.packageSection}>
+              <div className={styles.packageSectionHeader}>
+                <span className={styles.packageSectionBadge}>2</span>
+                <div>
+                  <strong>Event</strong>
+                  <span>The main celebration — debut, birthday, christening, etc.</span>
+                </div>
+              </div>
+              <div className={styles.fields}>
+                <fieldset className={styles.fullField}>
+                  <legend className={styles.srOnly}>Event</legend>
+                  <div className={styles.sessionDropdown}>
+                    <button type="button" aria-expanded={openPkgEvent} onClick={() => setOpenPkgEvent((v) => !v)}>
+                      {pkg.eventSession || "Choose an event"} <ChevronDown />
+                    </button>
+                    {openPkgEvent && (
+                      <div className={styles.sessionChips} role="listbox" aria-label="Events">
+                        {eventPackages.map((item) => (
+                          <button type="button" role="option" key={item.name} aria-selected={pkg.eventSession === item.name} onClick={() => { updatePkg("eventSession", item.name); setOpenPkgEvent(false); }}>
+                            {item.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </fieldset>
+                <fieldset className={`${styles.fullField} ${styles.scheduleField}`}>
+                  <legend>Event date and time</legend>
+                  <BookingSchedule dateValue={pkg.eventDate} timeValue={pkg.eventTime} durationMinutes={0} onDateChange={(v) => updatePkg("eventDate", v)} onTimeChange={(v) => updatePkg("eventTime", v)} bookedDates={fullyBookedDates} bookedTimes={pkgEventBookedTimes} />
+                </fieldset>
+                <label className={styles.fullField}>
+                  Event location
+                  <input value={pkg.eventLocation} onChange={(e) => updatePkg("eventLocation", e.target.value)} placeholder="City / venue" />
+                </label>
+                <fieldset className={styles.fullField}>
+                  <legend>Add-ons</legend>
+                  <div className={styles.payment}>
+                    {eventAddOns.map(([name, price]) => {
+                      const qty = eventAddonQty[name] ?? 0;
+                      return <div className={styles.addonQuantity} data-selected={qty > 0} key={name}><button type="button" className={styles.addonSelect} aria-pressed={qty > 0} onClick={() => { if (qty === 0) adjustEventAddon(name, 1); }}><strong>{name}</strong><small>{price}</small></button>{qty > 0 && <span className={styles.quantityControls}><button type="button" aria-label={`Remove one ${name}`} onClick={() => adjustEventAddon(name, -1)}>−</button><output aria-label={`${name} quantity`}>{qty}</output><button type="button" aria-label={`Add one ${name}`} disabled={qty === 10} onClick={() => adjustEventAddon(name, 1)}>+</button></span>}</div>;
+                    })}
+                  </div>
+                </fieldset>
+              </div>
+            </div>
+
+            <div className={styles.fields}>
               <fieldset className={styles.fullField}>
-                <legend>Add-ons</legend>
+                <legend>Payment preference</legend>
                 <div className={styles.payment}>
-                  {availableAddons.map(([name, price]) => {
-                    const quantity = addonQuantities[name] ?? 0;
-                    return <div className={styles.addonQuantity} data-selected={quantity > 0} key={name}><button type="button" className={styles.addonSelect} aria-pressed={quantity > 0} onClick={() => { if (quantity === 0) adjustAddon(name, 1); }}><strong>{name}</strong><small>{price}</small></button>{quantity > 0 && <span className={styles.quantityControls}><button type="button" aria-label={`Remove one ${name}`} onClick={() => adjustAddon(name, -1)}>−</button><output aria-label={`${name} quantity`}>{quantity}</output><button type="button" aria-label={`Add one ${name}`} disabled={quantity === 10} onClick={() => adjustAddon(name, 1)}>+</button></span>}</div>;
-                  })}
+                  <button type="button" aria-pressed={pkg.pay === "deposit"} onClick={() => updatePkg("pay", "deposit")}>
+                    <strong>50% downpayment</strong>
+                    <span>We&apos;ll arrange payment once both dates are confirmed</span>
+                  </button>
+                  <button type="button" aria-pressed={pkg.pay === "full"} onClick={() => updatePkg("pay", "full")}>
+                    <strong>Pay in full</strong>
+                    <span>We&apos;ll arrange payment once both dates are confirmed</span>
+                  </button>
+                  <button type="button" aria-pressed={pkg.pay === "cash"} onClick={() => updatePkg("pay", "cash")}>
+                    <strong>Cash</strong>
+                    <span>Pay at the studio for each booking</span>
+                  </button>
                 </div>
               </fieldset>
-            )}
-            <fieldset className={styles.fullField}>
-              <legend>Payment</legend>
-              <div className={styles.payment}>
-                <button type="button" aria-pressed={form.pay === "full"} onClick={() => update("pay", "full")}>
-                  <strong>Pay in full</strong>
-                  <span>Pay online via digital wallets / credit card</span>
-                </button>
-                <button type="button" aria-pressed={form.pay === "deposit"} onClick={() => update("pay", "deposit")}>
-                  <strong>50% downpayment</strong>
-                  <span>Pay online via digital wallets / credit card</span>
-                </button>
-                <button type="button" aria-pressed={form.pay === "cash"} onClick={() => update("pay", "cash")}>
-                  <strong>Cash</strong>
-                  <span>Pay at the studio</span>
-                </button>
-              </div>
-            </fieldset>
-          </div>
-        </div>
-        <aside className={styles.summary}>
-          <header>Booking details</header>
-          <div>
-            <p>
-              <span>Session</span>
-              <strong>{form.session || "—"}</strong>
-            </p>
-            <p>
-              <span>Date</span>
-              <strong>{dateLabel}</strong>
-            </p>
-            <p>
-              <span>Time</span>
-              <strong>{form.time ? new Date(`2000-01-01T${form.time}:00`).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" }) : "—"}</strong>
-            </p>
-            <p>
-              <span>Session rate</span>
-              <strong>{selected ? peso(selected.price) : "—"}</strong>
-            </p>
-            {selectedAddons.length > 0 && <h3 className={styles.addonSummaryTitle}>Add-ons</h3>}
-            {selectedAddons.map((addon) => (
-              <p className={styles.addonSummaryRow} key={addon.name}>
-                <span>{addon.name} × {addon.quantity}</span>
-                <strong>{peso(addon.total)}</strong>
-              </p>
-            ))}
-            <div className={styles.promoField}>
-              <label htmlFor="booking-promo-code" className={styles.srOnly}>Promo code</label>
-              <input id="booking-promo-code" value={promoCodeInput} onChange={(event) => setPromoCodeInput(event.target.value)} placeholder="Promo code" autoComplete="off" />
-              <button type="button" aria-live="polite" data-applied={promoApplied} onClick={() => update("promoCode", normalizedPromoCode)}>{promoApplied ? "Applied" : "Apply"}</button>
             </div>
-            <p>
-              <span>Total</span>
-              <strong>{selected ? peso(total) : "—"}</strong>
-            </p>
           </div>
-          <section className={styles.bookingTermsReview} aria-labelledby="booking-terms-review-title">
-            <h3 id="booking-terms-review-title">Booking terms</h3>
-            <ul>{BOOKING_TERMS_SUMMARY.map((item) => <li key={item}>{item}</li>)}</ul>
-            {termsState === "loading" ? <p role="status">Loading the current terms…</p> : bookingTerms ? <p><Link href="/booking-terms" target="_blank">Read the complete Booking Terms and Conditions</Link><span>{bookingTerms.versionLabel} · Effective {new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(new Date(`${bookingTerms.effectiveDate}T00:00:00+08:00`))}</span></p> : <p role="alert">Booking terms are unavailable. Online submission is temporarily disabled.</p>}
-          </section>
-          <label className={styles.termsConsent}>
-            <input type="checkbox" required disabled={!bookingTerms} checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
-            <span>I have read and agree to the Kahel Studio <Link href="/booking-terms" target="_blank">Booking Terms and Conditions</Link>.</span>
-          </label>
-          <button type="submit" disabled={!valid || !termsAccepted || !bookingTerms || status === "submitting"}>
-            {status === "submitting" && <i />} {status === "submitting" ? "Reserving…" : "Reserve this date"}
-          </button>
-          <small>{form.pay === "cash" ? "No online payment · we'll confirm within 48 hours" : valid ? "No payment taken now · confirmation within 48 hours" : "Accepts GCash, Maya, GrabPay, QR Ph and major credit cards."}</small>
-        </aside>
-      </form>
+
+          <aside className={styles.summary}>
+            <header>Package details</header>
+            <div>
+              <p><span>Pre-Event Shoot</span><strong>{pkg.studioSession || "—"}</strong></p>
+              <p><span>Shoot date</span><strong>{formatDate(pkg.studioDate)}</strong></p>
+              <p><span>Shoot time</span><strong>{formatTime(pkg.studioTime)}</strong></p>
+              {pkg.studioAddons.length > 0 && <h3 className={styles.addonSummaryTitle}>Shoot add-ons</h3>}
+              {pkg.studioAddons.map((a) => <p className={styles.addonSummaryRow} key={a.name}><span>{a.name} × {a.quantity}</span><strong>{peso(sessionAddOns.find(([n]) => n === a.name)?.[2] ?? 0 * a.quantity)}</strong></p>)}
+              <p><span>Shoot rate</span><strong>{pkgStudioSelected ? peso(pkgStudioSelected.price) : "—"}</strong></p>
+              <p className={styles.packageDivider}><span>Event</span><strong>{pkg.eventSession || "—"}</strong></p>
+              <p><span>Event date</span><strong>{formatDate(pkg.eventDate)}</strong></p>
+              <p><span>Event time</span><strong>{formatTime(pkg.eventTime)}</strong></p>
+              {pkg.eventAddons.length > 0 && <h3 className={styles.addonSummaryTitle}>Event add-ons</h3>}
+              {pkg.eventAddons.map((a) => <p className={styles.addonSummaryRow} key={a.name}><span>{a.name} × {a.quantity}</span></p>)}
+              <p><span>Event rate</span><strong>{pkgEventSelected ? peso(pkgEventSelected.price) : "—"}</strong></p>
+              <p>
+                <span>{pkg.pay === "deposit" ? "50% deposit due" : "Total"}</span>
+                <strong>{pkgStudioSelected && pkgEventSelected ? peso(pkgGrandTotal) : "—"}</strong>
+              </p>
+            </div>
+            {bookingTermsSection}
+            <button type="submit" disabled={!pkgValid || !termsAccepted || !bookingTerms || status === "submitting"}>
+              {status === "submitting" && <i />} {status === "submitting" ? "Saving…" : "Request package booking"}
+            </button>
+            <small>No payment taken now · we&apos;ll confirm both dates within 48 hours</small>
+          </aside>
+        </form>
+      ) : (
+        <form className={styles.bookingGrid} onSubmit={submit}>
+          <div className={styles.slip}>
+            <header>
+              <span>Booking order</span>
+              <span>Ref · Pending</span>
+            </header>
+            <div className={styles.fields}>
+              <label>
+                Full name
+                <input required value={form.name} onChange={(event) => update("name", event.target.value)} autoComplete="name" placeholder="Juan dela Cruz" />
+              </label>
+              <label>
+                Email
+                <input required type="email" value={form.email} onChange={(event) => update("email", event.target.value)} autoComplete="email" placeholder="name@email.com" />
+              </label>
+              <label className={styles.fullField}>
+                Mobile number
+                <input required type="tel" value={formatMobile(form.mobile)} onChange={(event) => update("mobile", event.target.value)} autoComplete="tel" inputMode="numeric" placeholder="917 000 0000" />
+              </label>
+              <fieldset className={styles.fullField}>
+                <legend className={styles.srOnly}>Session</legend>
+                <div className={styles.sessionCategoryDropdowns}>
+                  <div className={styles.sessionDropdown}>
+                    <button type="button" aria-expanded={openSessionCategory === "sessions"} aria-controls="studio-session-options" onClick={() => setOpenSessionCategory((current) => current === "sessions" ? null : "sessions")}>Studio sessions <ChevronDown /></button>
+                    {openSessionCategory === "sessions" && <div id="studio-session-options" className={styles.sessionChips} role="listbox" aria-label="Studio sessions">{studioPackages.map((item) => <button type="button" role="option" key={item.name} aria-selected={form.session === item.name} onClick={() => { update("session", item.name); setOpenSessionCategory(null); }}>{item.name}</button>)}</div>}
+                  </div>
+                  <div className={styles.sessionDropdown}>
+                    <button type="button" aria-expanded={openSessionCategory === "events"} aria-controls="event-session-options" onClick={() => setOpenSessionCategory((current) => current === "events" ? null : "events")}>Events <ChevronDown /></button>
+                    {openSessionCategory === "events" && <div id="event-session-options" className={styles.sessionChips} role="listbox" aria-label="Events">{eventPackages.map((item) => <button type="button" role="option" key={item.name} aria-selected={form.session === item.name} onClick={() => { update("session", item.name); setOpenSessionCategory(null); }}>{item.name}</button>)}</div>}
+                  </div>
+                </div>
+              </fieldset>
+              <fieldset className={`${styles.fullField} ${styles.scheduleField}`}>
+                <legend>Preferred date and time</legend>
+                <BookingSchedule dateValue={form.date} timeValue={form.time} durationMinutes={sessionDuration} onDateChange={(value) => update("date", value)} onTimeChange={(value) => update("time", value)} bookedDates={fullyBookedDates} bookedTimes={bookedTimesForDate} />
+              </fieldset>
+              {!studioSelected && (
+                <label className={styles.fullField}>
+                  Location
+                  <input value={form.location} onChange={(event) => update("location", event.target.value)} placeholder="City / venue" />
+                </label>
+              )}
+              {availableAddons.length > 0 && (
+                <fieldset className={styles.fullField}>
+                  <legend>Add-ons</legend>
+                  <div className={styles.payment}>
+                    {availableAddons.map(([name, price]) => {
+                      const quantity = addonQuantities[name] ?? 0;
+                      return <div className={styles.addonQuantity} data-selected={quantity > 0} key={name}><button type="button" className={styles.addonSelect} aria-pressed={quantity > 0} onClick={() => { if (quantity === 0) adjustAddon(name, 1); }}><strong>{name}</strong><small>{price}</small></button>{quantity > 0 && <span className={styles.quantityControls}><button type="button" aria-label={`Remove one ${name}`} onClick={() => adjustAddon(name, -1)}>−</button><output aria-label={`${name} quantity`}>{quantity}</output><button type="button" aria-label={`Add one ${name}`} disabled={quantity === 10} onClick={() => adjustAddon(name, 1)}>+</button></span>}</div>;
+                    })}
+                  </div>
+                </fieldset>
+              )}
+              <fieldset className={styles.fullField}>
+                <legend>Payment</legend>
+                <div className={styles.payment}>
+                  <button type="button" aria-pressed={form.pay === "full"} onClick={() => update("pay", "full")}>
+                    <strong>Pay in full</strong>
+                    <span>Pay online via digital wallets / credit card</span>
+                  </button>
+                  <button type="button" aria-pressed={form.pay === "deposit"} onClick={() => update("pay", "deposit")}>
+                    <strong>50% downpayment</strong>
+                    <span>Pay online via digital wallets / credit card</span>
+                  </button>
+                  <button type="button" aria-pressed={form.pay === "cash"} onClick={() => update("pay", "cash")}>
+                    <strong>Cash</strong>
+                    <span>Pay at the studio</span>
+                  </button>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+          <aside className={styles.summary}>
+            <header>Booking details</header>
+            <div>
+              <p>
+                <span>Session</span>
+                <strong>{form.session || "—"}</strong>
+              </p>
+              <p>
+                <span>Date</span>
+                <strong>{dateLabel}</strong>
+              </p>
+              <p>
+                <span>Time</span>
+                <strong>{form.time ? new Date(`2000-01-01T${form.time}:00`).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" }) : "—"}</strong>
+              </p>
+              <p>
+                <span>Session rate</span>
+                <strong>{selected ? peso(selected.price) : "—"}</strong>
+              </p>
+              {selectedAddons.length > 0 && <h3 className={styles.addonSummaryTitle}>Add-ons</h3>}
+              {selectedAddons.map((addon) => (
+                <p className={styles.addonSummaryRow} key={addon.name}>
+                  <span>{addon.name} × {addon.quantity}</span>
+                  <strong>{peso(addon.total)}</strong>
+                </p>
+              ))}
+              <div className={styles.promoField}>
+                <label htmlFor="booking-promo-code" className={styles.srOnly}>Promo code</label>
+                <input id="booking-promo-code" value={promoCodeInput} onChange={(event) => setPromoCodeInput(event.target.value)} placeholder="Promo code" autoComplete="off" />
+                <button type="button" aria-live="polite" data-applied={promoApplied} onClick={() => update("promoCode", normalizedPromoCode)}>{promoApplied ? "Applied" : "Apply"}</button>
+              </div>
+              <p>
+                <span>Total</span>
+                <strong>{selected ? peso(total) : "—"}</strong>
+              </p>
+            </div>
+            {bookingTermsSection}
+            <button type="submit" disabled={!valid || !termsAccepted || !bookingTerms || status === "submitting"}>
+              {status === "submitting" && <i />} {status === "submitting" ? "Reserving…" : "Reserve this date"}
+            </button>
+            <small>{form.pay === "cash" ? "No online payment · we'll confirm within 48 hours" : valid ? "No payment taken now · confirmation within 48 hours" : "Accepts GCash, Maya, GrabPay, QR Ph and major credit cards."}</small>
+          </aside>
+        </form>
+      )}
     </main>
   );
 }

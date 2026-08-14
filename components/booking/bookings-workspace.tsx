@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Filter, FolderKanban, Mail, MoreHorizontal, ReceiptText, UserRound } from "lucide-react";
 import type { BookingWorkspaceFilters, BookingWorkspaceRow, BookingWorkspaceSummary } from "@/lib/bookings-workspace";
-import { bookingCounts, bookingTypeFor, filteredBookings, formatCompactAge, formatManilaDate, formatManilaTime, formatPeso, getBookingActionLabel, isToday, manilaIsoDate, paymentBalance, paymentLabel, statusLabel, statusTone, PRIMARY_STATUSES, MORE_STATUSES, bookingTypeOptions, attentionRequired } from "@/lib/bookings-workspace";
+import { bookingTypeFor, filteredBookings, formatCompactAge, formatManilaDate, formatManilaTime, formatPeso, getBookingActionLabel, isToday, manilaIsoDate, paymentBalance, paymentLabel, statusLabel, statusTone, PRIMARY_STATUSES, MORE_STATUSES, bookingTypeOptions, attentionRequired } from "@/lib/bookings-workspace";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -32,8 +32,6 @@ export function BookingsWorkspace({ rows, summary, initialFilters, selectedRef, 
   const pageCount = Math.max(1, Math.ceil(visibleRows.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
   const paginatedRows = visibleRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const rowsForCounts = useMemo(() => filteredBookings(rows, { ...filters, q: query, status: "all" }), [filters, query, rows]);
-  const counts = useMemo(() => bookingCounts(rowsForCounts), [rowsForCounts]);
   const selectedRow = selected ? visibleRows.find((row) => row.reference === selected) ?? rows.find((row) => row.reference === selected) ?? null : null;
 
   useEffect(() => {
@@ -50,29 +48,6 @@ export function BookingsWorkspace({ rows, summary, initialFilters, selectedRef, 
     }, 120);
     return () => { if (queryTimer.current) window.clearTimeout(queryTimer.current); };
   }, [detailsOpen, filters, query, selected]);
-
-  const visibleSummary = useMemo(() => {
-    if (!query && filters.status === "all" && !filters.bookingType && !filters.service && !filters.location && !filters.payment && !filters.assigned && !filters.attention && !filters.date) return summary;
-    const todayIso = manilaIsoDate();
-    const matching = visibleRows;
-    const response = matching.filter((row) => ["inquiry", "quoted"].includes(row.status) || ["pending", "failed"].includes(row.paymentStatus));
-    const todayRows = matching.filter((row) => row.serviceDate === todayIso).sort((a, b) => a.serviceTime.localeCompare(b.serviceTime));
-    const oldestInquiry = response.reduce<BookingWorkspaceRow | null>((oldest, row) => {
-      if (!oldest) return row;
-      return Date.parse(row.createdAt) < Date.parse(oldest.createdAt) ? row : oldest;
-    }, null);
-    const upcomingBalance = matching.filter((row) => row.serviceDate >= todayIso && paymentBalance(row) > 0 && !["cancelled", "no_show"].includes(row.status));
-    return {
-      needsResponse: { count: response.length, context: oldestInquiry ? `Oldest inquiry: ${formatCompactAge(oldestInquiry.createdAt)}` : "No open requests" },
-      today: {
-        count: todayRows.length,
-        nextSession: todayRows[0] ? formatManilaTime(todayRows[0].serviceTime) : "No sessions",
-        nextClient: todayRows[0] ? todayRows[0].clientName : "No upcoming sessions",
-        issue: todayRows.find((row) => attentionRequired(row) && row.status !== "cancelled") ? `${todayRows.find((row) => attentionRequired(row) && row.status !== "cancelled")!.reference} needs attention` : null,
-      },
-      awaitingPayment: { amount: formatPeso(upcomingBalance.reduce((sum, row) => sum + paymentBalance(row), 0)), count: upcomingBalance.length, upcoming: upcomingBalance.length > 0 },
-    } satisfies BookingWorkspaceSummary;
-  }, [filters, query, summary, visibleRows]);
 
   function updateUrl(next: Partial<BookingWorkspaceFilters>) {
     setPage(1);
@@ -307,11 +282,6 @@ function BookingDetailsPanel({ row, close }: { row: BookingWorkspaceRow; close: 
       </div>
     </div>
   );
-}
-
-function Metric({ title, value, detail, tone, sub }: { title: string; value: string; detail: string; tone: "info" | "success" | "warning" | "neutral"; sub?: string }) {
-  const toneClass = tone === "success" ? "text-[var(--color-success-text)]" : tone === "warning" ? "text-[var(--color-warning-text)]" : tone === "info" ? "text-[var(--color-info-text)]" : "text-[var(--color-text-primary)]";
-  return <div className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-4"><div className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--color-text-secondary)]">{title}</div><div className={cn("mt-2 font-display text-[26px] font-semibold tabular-nums", toneClass)}>{value}</div><div className="mt-1 text-xs text-[var(--color-text-secondary)]">{detail}</div>{sub ? <div className="mt-1 text-[11px] text-[var(--color-text-muted)]">{sub}</div> : null}</div>;
 }
 
 function StatusTab({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {

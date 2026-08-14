@@ -41,8 +41,6 @@ export type PaymentRow = {
   amt: string;
 };
 
-export type PaymentKpi = { label: string; value: string; change: string };
-
 export type PaymentLineSnapshot = {
   id: string;
   paymentId: string;
@@ -357,11 +355,6 @@ export async function getPaymentWorkspace(): Promise<PaymentWorkspace> {
   return { receivedToday, collectibleBookings, outstandingBookings, outstanding: outstandingBookings, transactions, products, settlements, cashRegisters, summary };
 }
 
-export async function getPaymentsWorkspace(principal?: unknown) {
-  void principal;
-  return getPaymentWorkspace();
-}
-
 export async function getPaymentReceipt(paymentId: string) {
   const admin = db();
   const [paymentResult, receiptResult, paymentLinesResult] = await Promise.all([
@@ -374,30 +367,4 @@ export async function getPaymentReceipt(paymentId: string) {
   if (receiptResult.error) throw new PaymentsDataError("receipt", receiptResult.error);
   const paymentLines = requireResult("line snapshots", paymentLinesResult).map((line) => ({ id: line.id, paymentId: line.payment_id, lineType: line.line_type, productId: line.product_id, description: line.description, quantity: line.quantity, unitPriceCentavos: number(line.unit_price_centavos), totalCentavos: number(line.total_centavos) }));
   return { payment: paymentResult.data, receipt: receiptResult.data, lines: paymentLines };
-}
-
-const STATUS_BADGE = { label: "Paid", bg: "var(--color-success-bg)", color: "var(--color-success-text)" };
-const formatCurrency = (centavos: number) => `\u20B1${(centavos / 100).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const formatPaidAt = (value: string | null) => value ? new Date(value).toLocaleDateString("en-PH", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Asia/Manila" }) : "-";
-const formatMethod = (row: PaymentTransaction) => row.paymentMethod === "cash" ? "Cash" : (row.paymentMethodDetail ?? "PayMongo").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-
-export async function getPayments(): Promise<{ rows: PaymentRow[]; kpis: PaymentKpi[] }> {
-  const workspace = await getPaymentWorkspace();
-  const paid = workspace.transactions.filter((row) => isRevenueStatus(row.status));
-  const rows = paid.map<PaymentRow>((row) => ({ ref: row.bookingReference, method: formatMethod(row), paymentId: row.providerPaymentId ?? row.id, paymentIntentId: row.providerPaymentIntentId, description: row.lines.map((line) => line.description).join(", ") || row.purpose, paidAt: formatPaidAt(row.paidAt), settlementStatus: row.settlementStatus.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()), stLabel: STATUS_BADGE.label, stBg: STATUS_BADGE.bg, stColor: STATUS_BADGE.color, amt: formatCurrency(netRevenueCentavos(row.status, row.amountCentavos, row.refundedAmountCentavos)) }));
-  const total = paid.reduce((sum, row) => sum + netRevenueCentavos(row.status, row.amountCentavos, row.refundedAmountCentavos), 0);
-  return { rows, kpis: [{ label: "Total received", value: formatCurrency(total), change: `${paid.length} payments` }, { label: "Received today", value: formatCurrency(workspace.receivedToday.totalCentavos), change: `${workspace.receivedToday.count} payments` }, { label: "Pending collections", value: formatCurrency(workspace.outstandingBookings.reduce((sum, row) => sum + row.availableToCollectCentavos, 0)), change: "Available to collect" }] };
-}
-
-export async function getPaymentCounts(): Promise<{ paid: number; pending: number; total: number }> {
-  const admin = db();
-  const [paid, pending, total] = await Promise.all([
-    admin.from("bookings").select("id", { count: "exact", head: true }).eq("payment_status", "paid"),
-    admin.from("bookings").select("id", { count: "exact", head: true }).eq("payment_status", "pending"),
-    admin.from("bookings").select("id", { count: "exact", head: true }),
-  ]);
-  if (paid.error) throw new PaymentsDataError("paid booking count", paid.error);
-  if (pending.error) throw new PaymentsDataError("pending booking count", pending.error);
-  if (total.error) throw new PaymentsDataError("booking count", total.error);
-  return { paid: paid.count ?? 0, pending: pending.count ?? 0, total: total.count ?? 0 };
 }

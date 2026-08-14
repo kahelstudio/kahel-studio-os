@@ -2,7 +2,7 @@ import "server-only";
 
 import { PASSWORD_BREACHED_MESSAGE, PASSWORD_REQUIREMENTS_MESSAGE, passwordMeetsPolicy } from "@/lib/password-policy";
 
-export { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, PASSWORD_REQUIREMENTS_MESSAGE, passwordMeetsPolicy } from "@/lib/password-policy";
+export { PASSWORD_REQUIREMENTS_MESSAGE, passwordMeetsPolicy } from "@/lib/password-policy";
 
 const HIBP_RANGE_URL = "https://api.pwnedpasswords.com/range/";
 const HIBP_TIMEOUT_MS = 2_000;
