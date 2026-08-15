@@ -102,6 +102,12 @@ jobs:
       - uses: actions/setup-node@v7
         with: { node-version: 22, cache: "npm" }
       - run: npm ci
+      - name: Log in to Docker Hub
+        run: echo "$DOCKERHUB_TOKEN" | docker login --username "$DOCKERHUB_USERNAME" --password-stdin
+        continue-on-error: true
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
       - run: npx supabase start --ignore-health-check
       - run: npx supabase db reset --local
       - run: npx supabase migration list --local
