@@ -109,6 +109,7 @@ create or replace function public.promo_code_create(
   requested_description text,
   requested_type public.promo_code_type,
   requested_value numeric,
+  requested_actor_user_id uuid,
   requested_currency text default 'PHP',
   requested_usage_limit integer default null,
   requested_max_uses_per_customer integer default null,
@@ -116,8 +117,7 @@ create or replace function public.promo_code_create(
   requested_applicable_services uuid[] default '{}',
   requested_excluded_services uuid[] default '{}',
   requested_minimum_booking_amount integer default null,
-  requested_maximum_discount_amount integer default null,
-  requested_actor_user_id uuid
+  requested_maximum_discount_amount integer default null
 )
 returns public.promo_codes
 language plpgsql
@@ -320,7 +320,7 @@ begin
 end;
 $$;
 
-grant execute on function public.promo_code_create(text,text,text,public.promo_code_type,numeric,text,integer,integer,timestamptz,uuid[],uuid[],integer,integer,uuid) to service_role;
+grant execute on function public.promo_code_create(text,text,text,public.promo_code_type,numeric,uuid,text,integer,integer,timestamptz,uuid[],uuid[],integer,integer) to service_role;
 grant execute on function public.promo_code_update(uuid,text,text,public.promo_code_type,numeric,text,integer,integer,timestamptz,uuid[],uuid[],integer,integer,public.promo_code_status,uuid) to service_role;
 grant execute on function public.promo_code_retire(uuid,uuid) to service_role;
 grant execute on function public.validate_promo_code(text,uuid,integer,uuid) to service_role;
