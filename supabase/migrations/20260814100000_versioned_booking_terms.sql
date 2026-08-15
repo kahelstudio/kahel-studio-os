@@ -419,8 +419,8 @@ begin
   perform pg_advisory_xact_lock(hashtextextended(selected_version.legal_document_id::text, 0));
   select * into selected_version from public.legal_document_versions where id = requested_version_id for update;
   if selected_version.state <> 'approved' then raise exception 'only an approved version can be published' using errcode = '22023'; end if;
-  if selected_version.effective_date is null or selected_version.effective_date > current_date then
-    raise exception 'an effective date on or before publication is required' using errcode = '22023';
+  if selected_version.effective_date is null then
+    raise exception 'an effective date is required for publication' using errcode = '22023';
   end if;
   if selected_version.content_hash <> encode(sha256(convert_to(selected_version.content::text, 'UTF8')), 'hex') then
     raise exception 'legal document content hash mismatch' using errcode = '55000';
@@ -755,7 +755,7 @@ insert into public.legal_document_versions (
 )
 select
   'b1000000-0000-4000-8000-000000000001', 'b0000000-0000-4000-8000-000000000001', 1,
-  draft.content ->> 'version_label', draft.content ->> 'title', draft.content -> 'summary', null,
+  draft.content ->> 'version_label', draft.content ->> 'title', draft.content -> 'summary', nullif(draft.content ->> 'effective_date', '')::date,
   'draft', draft.content,
   encode(sha256(convert_to(draft.content::text, 'UTF8')), 'hex'),
   'Initial editable working draft requiring legal and business review.', null
