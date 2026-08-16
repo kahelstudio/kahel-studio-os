@@ -1211,7 +1211,7 @@ function Booking({ goHome }: { goHome: () => void }) {
   const [reference, setReference] = useState("");
   const [eventReference, setEventReference] = useState("");
   const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set());
-  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(true);
   const [promoCodeInput, setPromoCodeInput] = useState("");
   const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({});
   const [studioAddonQty, setStudioAddonQty] = useState<Record<string, number>>({});
@@ -1455,19 +1455,6 @@ function Booking({ goHome }: { goHome: () => void }) {
       </main>
     );
 
-  const bookingTermsSection = (
-    <>
-      <section className={styles.bookingTermsReview} aria-labelledby="booking-terms-review-title">
-        <h3 id="booking-terms-review-title">Booking terms</h3>
-        <ul>{BOOKING_TERMS_SUMMARY.map((item) => <li key={item}>{item}</li>)}</ul>
-        {termsState === "loading" ? <p role="status">Loading the current terms…</p> : bookingTerms ? <p><Link href="/booking-terms" target="_blank">Read the complete Booking Terms and Conditions</Link><span>{bookingTerms.versionLabel} · Effective {new Intl.DateTimeFormat("en-PH", { dateStyle: "medium" }).format(new Date(`${bookingTerms.effectiveDate}T00:00:00+08:00`))}</span></p> : <p role="alert">Booking terms are unavailable. Online submission is temporarily disabled.</p>}
-      </section>
-      <label className={styles.termsConsent}>
-        <input type="checkbox" required disabled={!bookingTerms} checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
-        <span>I have read and agree to the Kahel Studio <Link href="/booking-terms" target="_blank">Booking Terms and Conditions</Link>.</span>
-      </label>
-    </>
-  );
 
   return (
     <main className={`${styles.page} ${styles.container}`}>
@@ -1475,16 +1462,6 @@ function Booking({ goHome }: { goHome: () => void }) {
       <h1>Reserve Your Date</h1>
       <p className={styles.lead}>Complete the booking form and choose your preferred payment method. Your date is secured once we confirm your booking.</p>
 
-      <div className={styles.bookingTypeSelector} role="group" aria-label="Booking type">
-        <button type="button" aria-pressed={bookingMode === "single"} onClick={() => switchMode("single")}>
-          <strong>Single booking</strong>
-          <span>Studio session or event</span>
-        </button>
-        <button type="button" aria-pressed={bookingMode === "package"} onClick={() => switchMode("package")}>
-          <strong>Pre-Event Package</strong>
-          <span>Pre-event shoot + event in one request</span>
-        </button>
-      </div>
 
       {bookingMode === "package" ? (
         <form className={styles.bookingGrid} onSubmit={submitPackage}>
@@ -1638,8 +1615,8 @@ function Booking({ goHome }: { goHome: () => void }) {
                 <strong>{pkgStudioSelected && pkgEventSelected ? peso(pkgGrandTotal) : "—"}</strong>
               </p>
             </div>
-            {bookingTermsSection}
-            <button type="submit" disabled={!pkgValid || !termsAccepted || !bookingTerms || status === "submitting"}>
+
+            <button type="submit" disabled={!pkgValid || !bookingTerms || status === "submitting"}>
               {status === "submitting" && <i />} {status === "submitting" ? "Saving…" : "Request package booking"}
             </button>
             <small>No payment taken now · we&apos;ll confirm both dates within 48 hours</small>
@@ -1754,8 +1731,8 @@ function Booking({ goHome }: { goHome: () => void }) {
                 <strong>{selected ? peso(total) : "—"}</strong>
               </p>
             </div>
-            {bookingTermsSection}
-            <button type="submit" disabled={!valid || !termsAccepted || !bookingTerms || status === "submitting"}>
+
+            <button type="submit" disabled={!valid || !bookingTerms || status === "submitting"}>
               {status === "submitting" && <i />} {status === "submitting" ? "Reserving…" : "Reserve this date"}
             </button>
             <small>{form.pay === "cash" ? "No online payment · we'll confirm within 48 hours" : valid ? "No payment taken now · confirmation within 48 hours" : "Accepts GCash, Maya, GrabPay, QR Ph and major credit cards."}</small>
