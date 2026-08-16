@@ -16,6 +16,7 @@ import {
   Search,
   Banknote,
   ListChecks,
+  CalendarDays,
   CalendarRange,
   Bug,
   TrendingUp,
@@ -92,8 +93,17 @@ export const APPS: AppDef[] = [
     launcherGroup: "live",
     nav: [
       { id: "list", label: "Bookings", href: "/booking/list" },
-      { id: "calendar", label: "Calendar", href: "/booking/calendar" },
     ],
+  },
+  {
+    id: "calendar",
+    name: "Calendar",
+    description: "Monthly and weekly booking schedule",
+    accent: "orange",
+    icon: CalendarDays,
+    href: "/calendar",
+    launcherGroup: "live",
+    nav: [],
   },
   {
     id: "crm",

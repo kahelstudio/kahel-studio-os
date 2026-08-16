@@ -15,10 +15,10 @@ export default async function InventoryEquipmentPage() {
   const equipment = await getEquipment();
 
   return (
-    <div className="p-12 pt-9">
-      <div className="flex items-end justify-between">
+    <div>
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6 flex items-end justify-between">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
             Equipment
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -26,8 +26,9 @@ export default async function InventoryEquipmentPage() {
           </p>
         </div>
         <div className="flex gap-2"><Link href="/approvals?create=purchase_equipment" className="flex h-10 shrink-0 items-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-semibold text-[#FF5300]">Request purchase</Link><OperationCreateButton kind="equipment" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]"><Plus className="h-4 w-4" /> Add equipment</OperationCreateButton></div>
-      </div>
+      </header>
 
+      <div className="px-4 sm:px-6 pb-12">
       <div className="mt-[26px] overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="grid h-11 grid-cols-[1.1fr_1.6fr_1fr_1fr_1.4fr] items-center bg-[var(--color-canvas)] px-5 text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
           <div>Serial</div>
@@ -63,6 +64,7 @@ export default async function InventoryEquipmentPage() {
           );
         })}
       </div>
+    </div>
     </div>
   );
 }

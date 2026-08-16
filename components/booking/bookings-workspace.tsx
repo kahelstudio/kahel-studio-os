@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, Filter, FolderKanban, Mail, MoreHorizontal, ReceiptText, UserRound } from "lucide-react";
 import type { BookingWorkspaceFilters, BookingWorkspaceRow, BookingWorkspaceSummary } from "@/lib/bookings-workspace";
-import { bookingTypeFor, filteredBookings, formatCompactAge, formatManilaDate, formatManilaTime, formatPeso, getBookingActionLabel, isToday, manilaIsoDate, paymentBalance, paymentLabel, statusLabel, statusTone, PRIMARY_STATUSES, MORE_STATUSES, bookingTypeOptions, attentionRequired } from "@/lib/bookings-workspace";
+import { bookingTypeFor, filteredBookings, formatManilaDate, formatManilaTime, formatPeso, getBookingActionLabel, isToday, manilaIsoDate, paymentBalance, paymentLabel, statusLabel, statusTone, PRIMARY_STATUSES, MORE_STATUSES, bookingTypeOptions, attentionRequired } from "@/lib/bookings-workspace";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -18,7 +18,7 @@ type Props = {
 const PAYMENT_OPTIONS = ["Deposit required", "Deposit pending", "Paid", "Partially paid", "Refunded", "Payment issue"] as const;
 const PAGE_SIZE = 10;
 
-export function BookingsWorkspace({ rows, summary, initialFilters, selectedRef, headerAction }: Props) {
+export function BookingsWorkspace({ rows, initialFilters, selectedRef, headerAction }: Props) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const query = initialFilters.q;
   const [filters, setFilters] = useState(initialFilters);

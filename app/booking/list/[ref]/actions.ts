@@ -24,7 +24,7 @@ export async function rescheduleBooking(ref: string, serviceDate: string, servic
   if (error) throw new Error(error.message);
   revalidatePath(`/booking/list/${ref}`);
   revalidatePath("/booking/list");
-  revalidatePath("/booking/calendar");
+  revalidatePath("/calendar");
 }
 
 export async function saveDepositVerificationId(ref: string, verificationId: string) {

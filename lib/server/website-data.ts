@@ -15,6 +15,7 @@ export type PortfolioItem = {
 export type WebsitePage = {
   id: string;
   title: string;
+  slug: string;
   status: string;
   createdAt: string;
 };
@@ -52,7 +53,7 @@ export async function getPages(): Promise<WebsitePage[]> {
 
     const { data, error } = await admin
       .from("website_portfolio_items")
-      .select("id, title, status, created_at")
+      .select("id, slot, title, status, created_at")
       .order("created_at", { ascending: false });
 
     if (error) throw error;
@@ -60,6 +61,7 @@ export async function getPages(): Promise<WebsitePage[]> {
     return (data ?? []).map((p: any) => ({
       id: p.id,
       title: p.title,
+      slug: p.slot ?? "",
       status: p.status,
       createdAt: p.created_at,
     }));

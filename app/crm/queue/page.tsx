@@ -27,7 +27,7 @@ export default async function CrmQueuePage() {
 
   return (
     <div className="app-page p-10 pt-8">
-      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9">
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 pb-9 pt-[34px] sm:px-6">
         <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
           Follow-up queue
         </h1>

@@ -77,11 +77,12 @@ export function GalleryManager() {
   if (loading) return <div className="p-6 text-sm text-[var(--color-text-secondary)] sm:p-10">Loading galleries...</div>;
   if (error && !data) return <div className="grid min-h-[60dvh] place-items-center p-5"><div className="max-w-md rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center"><CircleAlert className="mx-auto h-6 w-6 text-[var(--color-danger-text)]" /><h1 className="mt-3 font-display text-xl font-semibold">Gallery access unavailable</h1><p className="mt-2 text-sm text-[var(--color-text-secondary)]">{error}</p><Link href="/login" className="mt-5 inline-flex min-h-11 items-center rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white">Staff sign in</Link></div></div>;
 
-  return <div className="app-page min-w-0 p-4 pb-14 sm:p-8 lg:p-10">
-    <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]"><ImageIcon className="h-3.5 w-3.5 text-[var(--color-kahel-500)]" /> Client delivery</div><h1 className="mt-2 font-display text-[32px] font-semibold tracking-[-0.025em] sm:text-[36px]">Galleries</h1><p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">Prepare, approve and publish canonical project galleries.</p></div>
+  return <div className="app-page min-w-0">
+    <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]"><ImageIcon className="h-3.5 w-3.5 text-[var(--color-kahel-500)]" /> Client delivery</div><h1 className="mt-2 font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em]">Galleries</h1><p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">Prepare, approve and publish canonical project galleries.</p></div>
       {canManage ? <button type="button" onClick={() => setCreating(true)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-control bg-[var(--color-kahel-500)] px-4 text-sm font-semibold text-white"><Plus className="h-4 w-4" /> New gallery</button> : null}
     </header>
+    <div className="px-4 sm:px-6 pb-12">
     <div className="mt-7 grid min-w-0 gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
       <aside className="min-w-0 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-3 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)] lg:self-start lg:overflow-y-auto">
         <label className="flex min-h-11 items-center gap-2 rounded-control border border-[var(--color-border)] px-3"><Search className="h-4 w-4 text-[var(--color-text-muted)]" /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search galleries" className="min-w-0 flex-1 bg-transparent text-sm outline-none" /></label>
@@ -91,6 +92,7 @@ export function GalleryManager() {
       <main className="min-w-0">{selected ? <GalleryEditor key={`${selected.id}-${selected.updated_at ?? ""}`} gallery={selected} data={data as Payload} canManage={Boolean(canManage)} canPublish={Boolean(canPublish)} onReload={() => load(selected.id)} /> : <div className="grid min-h-72 place-items-center rounded-card border border-dashed border-[var(--color-border-strong)] bg-[var(--color-surface)] p-8 text-center"><div><FolderOpen className="mx-auto h-6 w-6 text-[var(--color-text-muted)]" /><h2 className="mt-3 font-display text-xl font-semibold">Create the first gallery</h2><p className="mt-1 text-sm text-[var(--color-text-secondary)]">Choose a canonical project and client to begin.</p></div></div>}</main>
     </div>
     {creating && data && <CreateGallery data={data} onClose={() => setCreating(false)} onCreated={(id) => { setCreating(false); void load(id); }} />}
+  </div>
   </div>;
 }
 

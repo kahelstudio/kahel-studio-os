@@ -237,12 +237,21 @@ async function processLegacyBooking(event: PaidCheckout) {
     return NextResponse.json({ error: "Checkout does not match booking." }, { status: 409 });
   }
 
-  const expectedAmount = booking.payment_type === "deposit" ? Math.round(booking.total_amount_php * 0.5) : booking.total_amount_php;
-  if ((event.currency && event.currency !== "PHP") || (event.amount !== null && event.amount !== expectedAmount)) {
-    return NextResponse.json({ error: "Payment amount does not match booking." }, { status: 409 });
+  if (event.currency && event.currency !== "PHP") {
+    return NextResponse.json({ error: "Payment currency does not match booking." }, { status: 409 });
   }
-  const paymentStatus = expectedAmount < booking.total_amount_php ? "partially_paid" : "paid";
-  const unchanged = booking.paid_amount_php === expectedAmount
+  // Deposit checkouts charge 50% of the package + 100% of add-ons, which differs from
+  // total_amount_php × 0.5 when add-ons are present. Accept any partial amount; reject
+  // full-payment mismatches and any out-of-range deposit amounts.
+  if (event.amount !== null) {
+    const amountValid = booking.payment_type === "deposit"
+      ? event.amount > 0 && event.amount < booking.total_amount_php
+      : event.amount === booking.total_amount_php;
+    if (!amountValid) return NextResponse.json({ error: "Payment amount does not match booking." }, { status: 409 });
+  }
+  const paidAmount = event.amount ?? (booking.payment_type === "deposit" ? Math.round(booking.total_amount_php * 0.5) : booking.total_amount_php);
+  const paymentStatus = paidAmount < booking.total_amount_php ? "partially_paid" : "paid";
+  const unchanged = booking.paid_amount_php === paidAmount
     && booking.payment_status === paymentStatus
     && booking.paymongo_payment_id === event.paymentId
     && booking.paymongo_payment_intent_id === event.paymentIntentId
@@ -254,7 +263,7 @@ async function processLegacyBooking(event: PaidCheckout) {
   if (unchanged) return NextResponse.json({ received: true });
 
   const updated = await admin.from("bookings").update({
-    paid_amount_php: expectedAmount,
+    paid_amount_php: paidAmount,
     payment_status: paymentStatus,
     paymongo_payment_id: event.paymentId,
     paymongo_payment_intent_id: event.paymentIntentId,

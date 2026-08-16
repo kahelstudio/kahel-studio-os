@@ -6,10 +6,10 @@ export default async function PerformanceReviewsPage() {
   const reviews = await getPerformanceReviews();
 
   return (
-    <div className="p-12 pt-9">
-      <div className="flex items-end justify-between">
+    <div>
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6 flex items-end justify-between">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
             Reviews
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -17,8 +17,9 @@ export default async function PerformanceReviewsPage() {
           </p>
         </div>
         <span className="text-xs tracking-[0.04em] text-[var(--color-text-muted)]">H1 2026</span>
-      </div>
+      </header>
 
+      <div className="px-4 sm:px-6 pb-12">
       <div className="mt-[26px] overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="grid h-11 grid-cols-[2fr_1.4fr_1fr_1fr] items-center bg-[var(--color-canvas)] px-5 text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
           <div>Team member</div>
@@ -64,6 +65,7 @@ export default async function PerformanceReviewsPage() {
           );
         })}
       </div>
+    </div>
     </div>
   );
 }

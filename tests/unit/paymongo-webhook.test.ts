@@ -231,6 +231,23 @@ describe("PayMongo webhook", () => {
     expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ paid_amount_php: 49950, payment_status: "partially_paid" }));
   });
 
+  it("records the correct paid amount for a deposit with add-ons", async () => {
+    // total_amount_php = package (99900) + addon (30000) = 129900
+    // PayMongo charge = package × 50% (49950) + addon full (30000) = 79950
+    // which is not equal to total_amount_php × 50% (64950)
+    mocks.maybeSingle.mockResolvedValue({ data: booking({ payment_type: "deposit", total_amount_php: 129900 }), error: null });
+    const agreementAccepted = vi.fn().mockResolvedValue({ data: { status: "accepted", acceptance_id: "test-acceptance" }, error: null });
+    mocks.from.mockImplementation((table: string) => {
+      if (table === "booking_agreement_requirements") {
+        return { select: () => ({ eq: () => ({ maybeSingle: agreementAccepted }) }) };
+      }
+      return { select: () => ({ eq: () => ({ maybeSingle: mocks.maybeSingle }) }), update: mocks.update };
+    });
+    const response = await deliver(event({ metadata: { booking_id: "booking-test" }, amount: 79950 }));
+    expect(response.status).toBe(200);
+    expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({ paid_amount_php: 79950, payment_status: "partially_paid" }));
+  });
+
   it("preserves legacy booking checkout payloads that omit amount", async () => {
     mocks.maybeSingle.mockResolvedValue({ data: booking(), error: null });
     const agreementAccepted = vi.fn().mockResolvedValue({ data: { status: "accepted", acceptance_id: "test-acceptance" }, error: null });
