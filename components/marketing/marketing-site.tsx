@@ -214,7 +214,6 @@ const sessionAddOns = [
   ["+5 Edited Photos", "₱300", 300],
   ["HMUA (Hair & Makeup)", "₱1,300", 1300],
   ["Additional Hour", "₱800 / hr", 800],
-  ["Extra Outfit", "₱300", 300],
   ["Rush Edit", "₱100 / photo", 100],
 ] as const;
 const eventAddOns = [
@@ -1068,7 +1067,7 @@ type BookingForm = {
   time: string;
   location: string;
   promoCode: string;
-  pay: "deposit" | "full" | "cash";
+  pay: "" | "deposit" | "full" | "cash";
   addons: BookingAddon[];
 };
 const emptyBooking: BookingForm = {
@@ -1080,12 +1079,12 @@ const emptyBooking: BookingForm = {
   time: "",
   location: "",
   promoCode: "",
-  pay: "deposit",
+  pay: "",
   addons: [],
 };
 
 
-function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, onTimeChange, bookedDates, bookedTimes }: { dateValue: string; timeValue: string; durationMinutes: number; onDateChange: (value: string) => void; onTimeChange: (value: string) => void; bookedDates: Set<string>; bookedTimes: Set<string> }) {
+function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, onTimeChange, bookedDates, bookedTimes, onWaitlist }: { dateValue: string; timeValue: string; durationMinutes: number; onDateChange: (value: string) => void; onTimeChange: (value: string) => void; bookedDates: Set<string>; bookedTimes: Set<string>; onWaitlist: () => void }) {
   const initial = dateValue ? new Date(`${dateValue}T00:00`) : new Date();
   const [month, setMonth] = useState({
     year: initial.getFullYear(),
@@ -1175,7 +1174,8 @@ function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, 
           </div>
         )}
         <p className={styles.waitlist}>
-          Can&apos;t find a suitable time? <a href="mailto:customercare@kahelstudio.com?subject=Booking%20waitlist">Join waitlist</a>
+          Can&apos;t find a suitable time?{" "}
+          <button type="button" className={styles.waitlistLink} onClick={onWaitlist}>Join waitlist</button>
         </p>
       </section>
     </div>
@@ -1185,6 +1185,7 @@ function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, 
 function Booking({ goHome }: { goHome: () => void }) {
   const [form, setForm] = useState(emptyBooking);
   const [status, setStatus] = useState<"idle" | "submitting" | "done">("idle");
+  const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [reference, setReference] = useState("");
   const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set());
   const [termsAccepted] = useState(true);
@@ -1233,7 +1234,7 @@ function Booking({ goHome }: { goHome: () => void }) {
     bookedTimesByDate.get(date)!.add(time);
   }
   const fullyBookedDates = new Set([...bookedTimesByDate.entries()].filter(([, times]) => times.size >= 9).map(([date]) => date));
-  const valid = Boolean(form.name && form.email && /^9\d{9}$/.test(form.mobile) && form.session && form.date && form.time && form.date >= todayIso() && !bookedTimesForDate.has(form.time));
+  const valid = Boolean(form.name && form.email && /^9\d{9}$/.test(form.mobile) && form.session && form.date && form.time && form.pay && form.date >= todayIso() && !bookedTimesForDate.has(form.time));
   const update = <Key extends keyof BookingForm>(key: Key, value: BookingForm[Key]) => {
     if (key === "session") setAddonQuantities({});
     setForm((current) => ({
@@ -1254,7 +1255,7 @@ function Booking({ goHome }: { goHome: () => void }) {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!valid || !selected || !termsAccepted || !bookingTerms) return;
+    if (!valid || !selected || !termsAccepted) return;
     setStatus("submitting");
     try {
       const response = await fetch("/api/paymongo/checkout", {
@@ -1263,7 +1264,7 @@ function Booking({ goHome }: { goHome: () => void }) {
           "Content-Type": "application/json",
           "Idempotency-Key": (bookingRequestId.current ??= crypto.randomUUID()),
         },
-        body: JSON.stringify({ ...form, mobile: `+63${form.mobile}`, termsAcceptance: { accepted: true, versionId: bookingTerms.id, contentHash: bookingTerms.contentHash } }),
+        body: JSON.stringify({ ...form, mobile: `+63${form.mobile}`, ...(bookingTerms ? { termsAcceptance: { accepted: true, versionId: bookingTerms.id, contentHash: bookingTerms.contentHash } } : {}) }),
       });
       const result = (await response.json()) as {
         checkoutUrl?: string;
@@ -1331,6 +1332,7 @@ function Booking({ goHome }: { goHome: () => void }) {
 
 
   return (
+    <>
     <main className={`${styles.page} ${styles.container}`}>
       <Eyebrow>ONLINE BOOKING</Eyebrow>
       <h1>Reserve Your Date</h1>
@@ -1371,7 +1373,7 @@ function Booking({ goHome }: { goHome: () => void }) {
               </fieldset>
               <fieldset className={`${styles.fullField} ${styles.scheduleField}`}>
                 <legend>Preferred date and time</legend>
-                <BookingSchedule dateValue={form.date} timeValue={form.time} durationMinutes={sessionDuration} onDateChange={(value) => update("date", value)} onTimeChange={(value) => update("time", value)} bookedDates={fullyBookedDates} bookedTimes={bookedTimesForDate} />
+                <BookingSchedule dateValue={form.date} timeValue={form.time} durationMinutes={sessionDuration} onDateChange={(value) => update("date", value)} onTimeChange={(value) => update("time", value)} bookedDates={fullyBookedDates} bookedTimes={bookedTimesForDate} onWaitlist={() => setWaitlistOpen(true)} />
               </fieldset>
               {!studioSelected && (
                 <label className={styles.fullField}>
@@ -1446,13 +1448,15 @@ function Booking({ goHome }: { goHome: () => void }) {
               </p>
             </div>
 
-            <button type="submit" disabled={!valid || !bookingTerms || status === "submitting"}>
+            <button type="submit" disabled={!valid || status === "submitting"}>
               {status === "submitting" && <i />} {status === "submitting" ? "Reserving…" : "Reserve this date"}
             </button>
             <small>{form.pay === "cash" ? "No online payment · we'll confirm within 48 hours" : valid ? "No payment taken now · confirmation within 48 hours" : "Accepts GCash, Maya, GrabPay, QR Ph and major credit cards."}</small>
           </aside>
         </form>
     </main>
+    {waitlistOpen && <WaitlistModal preselectedSession={form.session} onClose={() => setWaitlistOpen(false)} />}
+    </>
   );
 }
 
@@ -1636,6 +1640,184 @@ export function MarketingSite({ initialPage = "home" }: { initialPage?: Page }) 
       </div>
       {page !== "book" && page !== "privacy" && page !== "terms" && page !== "health-safety" && <FinalCta goBook={() => go("book")} />}
       <Footer go={go} />
+    </div>
+  );
+}
+
+type WaitlistConfig = { turnstileRequired: boolean; turnstileConfigured: boolean; turnstileSiteKey: string; services: { id: string; code: string; name: string }[] };
+type TurnstileWindow = Window & { turnstile?: { render: (el: HTMLElement, opts: Record<string, unknown>) => string; remove: (id: string) => void; reset: (id: string) => void } };
+
+function WaitlistModal({ preselectedSession, onClose }: { preselectedSession: string; onClose: () => void }) {
+  const [config, setConfig] = useState<WaitlistConfig | null>(null);
+  const [form, setForm] = useState({ name: "", email: "", phone: "", service_id: "", preferred_start: "", preferred_end: "", time_of_day: "any", notes: "", email_confirm: "" });
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [scriptReady, setScriptReady] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "submitting" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+  const turnstileContainer = useRef<HTMLDivElement>(null);
+  const widgetId = useRef<string | null>(null);
+  const firstInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/waitlist")
+      .then((r) => r.ok ? r.json() as Promise<WaitlistConfig> : null)
+      .then((data) => {
+        if (!data) return;
+        setConfig(data);
+        if (preselectedSession && data.services.length) {
+          const match = data.services.find((s) => s.name.toLowerCase() === preselectedSession.toLowerCase());
+          if (match) setForm((f) => ({ ...f, service_id: match.id }));
+        }
+      })
+      .catch(() => {});
+    firstInput.current?.focus();
+  }, [preselectedSession]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const win = window as TurnstileWindow;
+    if (!win.turnstile) {
+      const script = document.createElement("script");
+      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+      script.async = true;
+      script.onload = () => setScriptReady(true);
+      document.head.appendChild(script);
+    } else {
+      setScriptReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    const win = window as TurnstileWindow;
+    if (!scriptReady || !config?.turnstileRequired || !config.turnstileSiteKey || !turnstileContainer.current || !win.turnstile || widgetId.current) return;
+    widgetId.current = win.turnstile.render(turnstileContainer.current, {
+      sitekey: config.turnstileSiteKey,
+      action: "turnstile-spin-v2",
+      appearance: "always",
+      size: "flexible",
+      theme: "dark",
+      callback: (token: string) => setTurnstileToken(token),
+      "expired-callback": () => setTurnstileToken(""),
+      "error-callback": () => { setTurnstileToken(""); },
+    });
+    return () => {
+      if (widgetId.current && win.turnstile) win.turnstile.remove(widgetId.current);
+      widgetId.current = null;
+    };
+  }, [config?.turnstileRequired, config?.turnstileSiteKey, scriptReady]);
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) { if (event.key === "Escape") onClose(); }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  function set(field: string, value: string) { setForm((f) => ({ ...f, [field]: value })); }
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (config?.turnstileRequired && !turnstileToken) { setErrorMsg("Please complete the security check."); return; }
+    setPhase("submitting");
+    setErrorMsg("");
+    try {
+      const response = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, "cf-turnstile-response": turnstileToken }),
+      });
+      const result = await response.json() as { ok?: boolean; error?: string };
+      if (!response.ok || !result.ok) { setPhase("error"); setErrorMsg(result.error ?? "Something went wrong. Please try again."); return; }
+      setPhase("success");
+    } catch {
+      setPhase("error");
+      setErrorMsg("A network error occurred. Please try again.");
+    }
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  return (
+    <div className={styles.waitlistOverlay} role="dialog" aria-modal="true" aria-label="Join the waitlist" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className={styles.waitlistDialog}>
+        <div className={styles.waitlistHeader}>
+          <h2>Join the waitlist</h2>
+          <button type="button" onClick={onClose} aria-label="Close" className={styles.waitlistClose}><X size={18} /></button>
+        </div>
+
+        {phase === "success" ? (
+          <div className={styles.waitlistSuccess}>
+            <div className={styles.waitlistSuccessIcon}><Check size={28} /></div>
+            <h3>You&apos;re on the waitlist</h3>
+            <p>We&apos;ve sent a confirmation to your email. We&apos;ll be in touch as soon as a slot opens.</p>
+            <button type="button" onClick={onClose} className={styles.waitlistSubmit}>Close</button>
+          </div>
+        ) : (
+          <form onSubmit={submit} className={styles.waitlistForm} noValidate>
+            {/* Honeypot — hidden from humans, filled by bots */}
+            <input name="email_confirm" value={form.email_confirm} onChange={(e) => set("email_confirm", e.target.value)} autoComplete="off" tabIndex={-1} aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }} />
+
+            <div className={styles.waitlistRow}>
+              <label>
+                Your name <span aria-hidden="true">*</span>
+                <input ref={firstInput} value={form.name} onChange={(e) => set("name", e.target.value)} required minLength={2} maxLength={200} autoComplete="name" placeholder="Full name" disabled={phase === "submitting"} />
+              </label>
+              <label>
+                Email <span aria-hidden="true">*</span>
+                <input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} required autoComplete="email" placeholder="you@example.com" disabled={phase === "submitting"} />
+              </label>
+            </div>
+
+            <label>
+              Phone <span className={styles.waitlistOptional}>(optional)</span>
+              <input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} autoComplete="tel" placeholder="+63 9XX XXX XXXX" maxLength={30} disabled={phase === "submitting"} />
+            </label>
+
+            <label>
+              Session type <span className={styles.waitlistOptional}>(leave blank for any)</span>
+              <select value={form.service_id} onChange={(e) => set("service_id", e.target.value)} disabled={phase === "submitting" || !config}>
+                <option value="">Any session type</option>
+                {config?.services.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </label>
+
+            <div className={styles.waitlistRow}>
+              <label>
+                Earliest date <span aria-hidden="true">*</span>
+                <input type="date" value={form.preferred_start} onChange={(e) => { set("preferred_start", e.target.value); if (!form.preferred_end || e.target.value > form.preferred_end) set("preferred_end", e.target.value); }} required min={today} disabled={phase === "submitting"} />
+              </label>
+              <label>
+                Latest date <span aria-hidden="true">*</span>
+                <input type="date" value={form.preferred_end} onChange={(e) => set("preferred_end", e.target.value)} required min={form.preferred_start || today} disabled={phase === "submitting"} />
+              </label>
+            </div>
+
+            <fieldset className={styles.waitlistTimeGroup}>
+              <legend>Preferred time of day</legend>
+              {(["any", "morning", "afternoon", "evening"] as const).map((t) => (
+                <label key={t} className={styles.waitlistRadio}>
+                  <input type="radio" name="time_of_day" value={t} checked={form.time_of_day === t} onChange={() => set("time_of_day", t)} disabled={phase === "submitting"} />
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </label>
+              ))}
+            </fieldset>
+
+            <label>
+              Notes <span className={styles.waitlistOptional}>(optional)</span>
+              <textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} maxLength={1000} placeholder="Anything we should know (e.g. group size, special requirements)" disabled={phase === "submitting"} />
+            </label>
+
+            {config?.turnstileRequired && (
+              <div ref={turnstileContainer} className={styles.waitlistTurnstile} />
+            )}
+
+            {phase === "error" && <p role="alert" className={styles.waitlistError}>{errorMsg}</p>}
+
+            <button type="submit" className={styles.waitlistSubmit} disabled={phase === "submitting" || (config?.turnstileRequired === true && !turnstileToken)}>
+              {phase === "submitting" ? "Submitting…" : "Join waitlist"}
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 }

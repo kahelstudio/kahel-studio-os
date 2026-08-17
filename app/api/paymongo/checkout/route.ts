@@ -105,10 +105,9 @@ export async function POST(request: Request) {
   const idempotencyKey = request.headers.get("Idempotency-Key")?.trim();
   if (!idempotencyKey || idempotencyKey.length < 8 || idempotencyKey.length > 200) return NextResponse.json({ error: "Refresh the page and submit the booking again." }, { status: 400 });
   const acceptedTerms = termsInput(input.termsAcceptance);
-  if (!acceptedTerms) return NextResponse.json({ error: "Accept the current Booking Terms and Conditions before continuing." }, { status: 428 });
   const currentTerms = await getCurrentBookingTerms();
-  if (!currentTerms) return NextResponse.json({ error: "Booking terms are temporarily unavailable. No payment has been initiated." }, { status: 503 });
-  if (acceptedTerms.versionId !== currentTerms.id || acceptedTerms.contentHash !== currentTerms.contentHash) return NextResponse.json({ error: "The Booking Terms and Conditions changed. Review the current version and accept it before continuing." }, { status: 409 });
+  if (currentTerms && !acceptedTerms) return NextResponse.json({ error: "Accept the current Booking Terms and Conditions before continuing." }, { status: 428 });
+  if (currentTerms && acceptedTerms && (acceptedTerms.versionId !== currentTerms.id || acceptedTerms.contentHash !== currentTerms.contentHash)) return NextResponse.json({ error: "The Booking Terms and Conditions changed. Review the current version and accept it before continuing." }, { status: 409 });
   const bookingLocation = typeof input.location === "string" && input.location.trim() ? input.location.trim().slice(0, 500) : "Kahel Studio, Cobo, Tabaco City";
 
   try {
@@ -118,7 +117,7 @@ export async function POST(request: Request) {
     if (input.pay === "cash") {
       const cashPrior = await admin.from("bookings").select("id,client_id,client_profile_id,reference").eq("idempotency_key", idempotencyKey).maybeSingle<CashBookingRow>();
       if (cashPrior.error) throw cashPrior.error;
-      if (cashPrior.data) { await acceptTerms(admin, cashPrior.data.id, acceptedTerms, idempotencyKey, request); return NextResponse.json({ reference: cashPrior.data.reference, requestSaved: true }); }
+      if (cashPrior.data) { if (acceptedTerms) await acceptTerms(admin, cashPrior.data.id, acceptedTerms, idempotencyKey, request); return NextResponse.json({ reference: cashPrior.data.reference, requestSaved: true }); }
       const { data: conflict } = await admin.from("bookings").select("id").eq("service_date", date).eq("service_time", time).not("status", "in", '("cancelled","inquiry")').maybeSingle();
       if (conflict) return NextResponse.json({ error: "This date and time is no longer available. Please select a different slot." }, { status: 409 });
       const names = splitName(input.name);
@@ -159,18 +158,18 @@ export async function POST(request: Request) {
           discount_amount: packageSubtotal - discountedPackageAmountCash,
         });
       }
-      const cashAcceptance = await acceptTerms(admin, cashBooking.id, acceptedTerms, idempotencyKey, request);
+      const cashAcceptance = acceptedTerms ? await acceptTerms(admin, cashBooking.id, acceptedTerms, idempotencyKey, request) : null;
       await auditCustomerEvent({ action: "booking_created", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: cashBooking.id });
       if (!profile.user_id) {
         try { await ensureCustomerAccount(profile, "booking"); }
         catch { await auditCustomerEvent({ action: "invitation_failed", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: cashBooking.id, metadata: { retry_required: true } }); }
       }
       const origin = process.env.PUBLIC_SITE_URL ?? new URL(request.url).origin;
-      const agreementPath = `/portal/agreements/${cashAcceptance.id}`;
+      const cashAgreementPath = cashAcceptance ? `/portal/agreements/${cashAcceptance.id}` : null;
       const paymentSummaryCash = promoCodeIdCash
         ? `Cash at studio after authorized staff records and receipts it (Promo: ${discountPercentageCash}% off)`
         : "Cash at studio after authorized staff records and receipts it";
-      await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, location: bookingLocation, paymentSummary: paymentSummaryCash, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms`, agreementUrl: `${origin}/sign-in?next=${encodeURIComponent(agreementPath)}`, clientId: profile.client_id, profileId: profile.id, bookingId: cashBooking.id });
+      await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, location: bookingLocation, paymentSummary: paymentSummaryCash, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, ...(currentTerms ? { termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms` } : {}), ...(cashAgreementPath ? { agreementUrl: `${origin}/sign-in?next=${encodeURIComponent(cashAgreementPath)}` } : {}), clientId: profile.client_id, profileId: profile.id, bookingId: cashBooking.id });
       return NextResponse.json({ reference, requestSaved: true });
     }
 
@@ -216,7 +215,7 @@ export async function POST(request: Request) {
           discount_amount: packageSubtotal - discountedPackageAmountOnline,
         });
       }
-      await acceptTerms(admin, prior.data.id, acceptedTerms, idempotencyKey, request);
+      if (acceptedTerms) await acceptTerms(admin, prior.data.id, acceptedTerms, idempotencyKey, request);
       return NextResponse.json({ checkoutUrl: prior.data.paymongo_checkout_url, reference: prior.data.reference, reused: true });
     }
 
@@ -248,7 +247,7 @@ export async function POST(request: Request) {
       }
     }
 
-    const acceptance = await acceptTerms(admin, booking.id, acceptedTerms, idempotencyKey, request);
+    const acceptance = acceptedTerms ? await acceptTerms(admin, booking.id, acceptedTerms, idempotencyKey, request) : null;
 
     let invitationDelayed = false;
     if (!profile.user_id) {
@@ -289,10 +288,10 @@ export async function POST(request: Request) {
     }
     const updated = await admin.from("bookings").update({ paymongo_checkout_session_id: result.data?.id ?? null, paymongo_checkout_url: checkoutUrl, checkout_creation_started_at: null }).eq("id", booking.id).eq("client_id", booking.client_id);
     if (updated.error) throw updated.error;
-    const agreementPath = `/portal/agreements/${acceptance.id}`;
+    const agreementPath = acceptance ? `/portal/agreements/${acceptance.id}` : null;
     const paymentDue = packageAmountDue + addonTotal;
     const promoText = discountPercentageOnline > 0 ? ` (Promo: ${discountPercentageOnline}% off)` : "";
-    const emailSent = await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference: booking.reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, location: bookingLocation, paymentSummary: `${input.pay === "deposit" ? "Deposit and add-ons" : "Full payment"}: PHP ${(paymentDue / 100).toLocaleString("en-PH")}${promoText}`, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms`, agreementUrl: `${origin}/sign-in?next=${encodeURIComponent(agreementPath)}`, clientId: booking.client_id, profileId: booking.client_profile_id, bookingId: booking.id });
+    const emailSent = await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference: booking.reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time, location: bookingLocation, paymentSummary: `${input.pay === "deposit" ? "Deposit and add-ons" : "Full payment"}: PHP ${(paymentDue / 100).toLocaleString("en-PH")}${promoText}`, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, ...(currentTerms ? { termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms` } : {}), ...(agreementPath ? { agreementUrl: `${origin}/sign-in?next=${encodeURIComponent(agreementPath)}` } : {}), clientId: booking.client_id, profileId: booking.client_profile_id, bookingId: booking.id });
     if (!emailSent) await auditCustomerEvent({ action: "booking_confirmation_delayed", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: booking.id, metadata: { retry_required: true } });
     return NextResponse.json({ checkoutUrl, reference: booking.reference, invitationDelayed, confirmationDelayed: !emailSent });
   } catch (error) {
