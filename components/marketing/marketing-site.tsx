@@ -1142,8 +1142,11 @@ function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, 
             const outside = date.getMonth() !== month.month;
             const past = iso < todayIso();
             const booked = bookedDates.has(iso);
+            const now = new Date();
+            const nowTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+            const allSlotsPast = iso === todayIso() && bookingTimeSlots.every((t) => t <= nowTime);
             return (
-              <button type="button" key={iso} aria-label={`${date.toLocaleDateString("en-PH", { month: "long", day: "numeric" })}${booked ? ", fully booked" : ""}`} aria-pressed={iso === dateValue} disabled={outside || past || booked} data-outside={outside} data-booked={booked} onClick={() => onDateChange(iso)}>
+              <button type="button" key={iso} aria-label={`${date.toLocaleDateString("en-PH", { month: "long", day: "numeric" })}${booked ? ", fully booked" : ""}`} aria-pressed={iso === dateValue} disabled={outside || past || booked || allSlotsPast} data-outside={outside} data-booked={booked} onClick={() => onDateChange(iso)}>
                 {date.getDate()}
               </button>
             );
