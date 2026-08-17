@@ -3,6 +3,7 @@ import { auditCustomerEvent, consumeCustomerRateLimit, createCustomerProfile, en
 import { sendBookingConfirmation } from "@/lib/server/customer-email";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
 import { getCurrentBookingTerms } from "@/lib/server/legal-documents";
+import { isValidPhMobile } from "@/lib/phone";
 
 export const runtime = "nodejs";
 
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
   const mobile = typeof input.mobile === "string" ? normalizeMobile(input.mobile) : "";
   const date = typeof input.date === "string" ? input.date : "";
   const time = typeof input.time === "string" ? input.time : "";
-  if (!short(input.name, 120) || !isValidEmail(email) || !/^\+639\d{9}$/.test(mobile) || !short(input.session, 80) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time) || (input.pay !== "deposit" && input.pay !== "full" && input.pay !== "cash")) return NextResponse.json({ error: "Complete the required booking details before checkout." }, { status: 400 });
+  if (!short(input.name, 120) || !isValidEmail(email) || !(mobile.startsWith("+63") && isValidPhMobile(mobile.slice(3))) || !short(input.session, 80) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time) || (input.pay !== "deposit" && input.pay !== "full" && input.pay !== "cash")) return NextResponse.json({ error: "Complete the required booking details before checkout." }, { status: 400 });
   const packagePrice = packagePrices[input.session];
   if (!packagePrice) return NextResponse.json({ error: "Selected package is unavailable." }, { status: 400 });
   const addonPrices = studioSessionDurations[input.session] ? studioAddonPrices : eventAddonPrices;

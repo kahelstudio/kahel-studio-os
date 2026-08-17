@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Email } from "@/components/ui/email";
 import { type PublishedBookingTerms } from "@/lib/legal-documents";
 import { applyPromoDiscount } from "@/lib/promo-code";
+import { isValidPhMobile } from "@/lib/phone";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import styles from "./marketing-site.module.css";
@@ -1237,7 +1238,7 @@ function Booking({ goHome }: { goHome: () => void }) {
     bookedTimesByDate.get(date)!.add(time);
   }
   const fullyBookedDates = new Set([...bookedTimesByDate.entries()].filter(([, times]) => times.size >= 9).map(([date]) => date));
-  const valid = Boolean(form.name && form.email && /^9\d{9}$/.test(form.mobile) && form.session && form.date && form.time && form.pay && form.date >= todayIso() && !bookedTimesForDate.has(form.time));
+  const valid = Boolean(form.name && form.email && isValidPhMobile(form.mobile) && form.session && form.date && form.time && form.pay && form.date >= todayIso() && !bookedTimesForDate.has(form.time));
   const update = <Key extends keyof BookingForm>(key: Key, value: BookingForm[Key]) => {
     if (key === "session") setAddonQuantities({});
     setForm((current) => ({
