@@ -145,6 +145,7 @@ export async function getAccounts(): Promise<AccountRow[]> {
     const { data: clients, error } = await admin
       .from("clients")
       .select("id, name, status, account_type, external_ref, created_at, primary_contact_profile_id")
+      .neq("status", "archived")
       .order("created_at", { ascending: false })
       .limit(200);
 
