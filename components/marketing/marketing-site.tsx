@@ -1300,7 +1300,7 @@ function Booking({ goHome }: { goHome: () => void }) {
   if (status === "done")
     return (
       <main className={`${styles.page} ${styles.confirmation}`}>
-        <div className={styles.stamp}>Requested</div>
+        <div className={styles.statusBadge}><span className={styles.statusDot} />Requested</div>
         <h1>Your booking request is saved.</h1>
         <p>This request is not yet confirmed. We&apos;ll review the schedule and confirmation requirements and contact you at {form.email}.</p>
         <div className={styles.confirmationCard}>

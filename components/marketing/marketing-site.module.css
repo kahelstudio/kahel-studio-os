@@ -1901,18 +1901,25 @@
   color: var(--text2);
   line-height: 1.55;
 }
-.stamp {
-  display: inline-block;
-  padding: 11px 22px;
-  transform: rotate(-4deg);
-  border: 2px solid var(--primary);
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
   color: var(--primary);
-  font:
-    700 16px var(--font-archivo),
-    Archivo,
-    sans-serif;
-  letter-spacing: 0.18em;
+  font: 600 12px var(--font-archivo), Archivo, sans-serif;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
 }
 .confirmationCard {
   margin-top: 32px;
