@@ -1079,7 +1079,7 @@ const emptyBooking: BookingForm = {
   time: "",
   location: "",
   promoCode: "",
-  pay: "",
+  pay: "full",
   addons: [],
 };
 
