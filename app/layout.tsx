@@ -24,7 +24,7 @@ export function generateMetadata(): Metadata {
   return {
     title: {
       template: "%s | Kahel Studio",
-      default: "Kahel Studio | Photography Studio in Tabaco City, Albay",
+      default: "Kahel Studio | Creating Visual Experiences",
     },
     description:
       "Professional photography studio in Tabaco City, Albay, Philippines. Portrait sessions, debut, christening, birthday, and event photography across Bicol and Luzon.",
