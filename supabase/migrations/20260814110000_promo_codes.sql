@@ -258,7 +258,6 @@ set search_path = ''
 as $$
 declare
   promo public.promo_codes%rowtype;
-  usage_count integer;
   client_usage integer;
   discount_amount integer;
 begin
