@@ -1102,7 +1102,7 @@ function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, 
   const bookingTimeSlots = Array.from({ length: studioSession ? 9 : 24 }, (_, index) => {
     const totalMinutes = (studioSession ? 8 * 60 : 0) + index * 60;
     return `${pad(Math.floor(totalMinutes / 60))}:${pad(totalMinutes % 60)}`;
-  });
+  }).filter((t) => t !== "12:00");
   const selectedDateLabel = dateValue
     ? new Date(`${dateValue}T00:00`).toLocaleDateString("en-PH", {
         weekday: "long",
@@ -1238,7 +1238,7 @@ function Booking({ goHome }: { goHome: () => void }) {
     bookedTimesByDate.get(date)!.add(time);
   }
   const fullyBookedDates = new Set([...bookedTimesByDate.entries()].filter(([, times]) => times.size >= 9).map(([date]) => date));
-  const valid = Boolean(form.name && form.email && isValidPhMobile(form.mobile) && form.session && form.date && form.time && form.pay && form.date >= todayIso() && !bookedTimesForDate.has(form.time));
+  const valid = Boolean(form.name && form.email && form.mobile && form.session && form.date && form.time && form.pay && form.date >= todayIso() && !bookedTimesForDate.has(form.time));
   const update = <Key extends keyof BookingForm>(key: Key, value: BookingForm[Key]) => {
     if (key === "session") setAddonQuantities({});
     setForm((current) => ({

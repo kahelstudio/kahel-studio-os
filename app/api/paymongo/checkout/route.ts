@@ -103,6 +103,7 @@ export async function POST(request: Request) {
   const [startHour, startMinute] = time.split(":").map(Number);
   const startMinutes = startHour * 60 + startMinute;
   if (studioDuration && (startMinutes < 8 * 60 || startMinutes + studioDuration > 17 * 60)) return NextResponse.json({ error: "Select a studio time between 8:00 AM and 5:00 PM." }, { status: 400 });
+  if (studioDuration && startMinutes === 12 * 60) return NextResponse.json({ error: "12:00 PM is reserved for staff lunch. Please select a different time." }, { status: 400 });
   const idempotencyKey = request.headers.get("Idempotency-Key")?.trim();
   if (!idempotencyKey || idempotencyKey.length < 8 || idempotencyKey.length > 200) return NextResponse.json({ error: "Refresh the page and submit the booking again." }, { status: 400 });
   const acceptedTerms = termsInput(input.termsAcceptance);
