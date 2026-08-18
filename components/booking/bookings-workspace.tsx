@@ -7,6 +7,15 @@ import type { BookingWorkspaceFilters, BookingWorkspaceRow, BookingWorkspaceSumm
 import { bookingTypeFor, filteredBookings, formatManilaDate, formatManilaTime, formatPeso, getBookingActionLabel, isToday, manilaIsoDate, paymentBalance, paymentLabel, statusLabel, statusTone, PRIMARY_STATUSES, MORE_STATUSES, bookingTypeOptions, attentionRequired } from "@/lib/bookings-workspace";
 import { cn } from "@/lib/utils";
 
+function formatMobile(mobile: string | null | undefined) {
+  if (!mobile) return mobile ?? null;
+  const digits = mobile.replace(/\D/g, "");
+  if (digits.startsWith("63") && digits.length === 12) {
+    return `+63 ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8)}`;
+  }
+  return mobile;
+}
+
 type Props = {
   rows: BookingWorkspaceRow[];
   summary: BookingWorkspaceSummary;
@@ -154,7 +163,7 @@ export function BookingsWorkspace({ rows, initialFilters, selectedRef, headerAct
                       </Td>
                       <Td selected={selectedRow}>
                         <div className="font-medium text-[var(--color-text-primary)]">{row.clientName}</div>
-                        <div className="text-[11px] text-[var(--color-text-muted)]">{row.clientPhone ?? row.clientEmail ?? row.clientExternalRef ?? "No contact"}</div>
+                        <div className="text-[11px] text-[var(--color-text-muted)]">{formatMobile(row.clientPhone) ?? row.clientEmail ?? row.clientExternalRef ?? "No contact"}</div>
                       </Td>
                       <Td selected={selectedRow}><Badge tone={tone}>{lifecycle}</Badge></Td>
                       <Td selected={selectedRow}>

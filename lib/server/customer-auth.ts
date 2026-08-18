@@ -179,7 +179,10 @@ export async function createCustomerProfile(input: { firstName: string; lastName
     mobile: input.mobile ? normalizeMobile(input.mobile) : null,
     status: "invited",
   }).select("id,client_id,user_id,email,normalized_email,first_name,last_name,mobile,status,email_verified_at").single<CustomerProfile>();
-  if (!profileError) return profile;
+  if (!profileError) {
+    await admin.from("clients").update({ primary_contact_profile_id: profile.id }).eq("id", client.id);
+    return profile;
+  }
   await admin.from("clients").delete().eq("id", client.id);
   const concurrent = await getProfileByEmail(email);
   if (concurrent) return concurrent;

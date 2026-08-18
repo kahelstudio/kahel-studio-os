@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ACCENTS } from "@/lib/apps-config";
 import { getAccounts } from "@/lib/server/crm-data";
 import { cn } from "@/lib/utils";
@@ -13,13 +14,33 @@ function formatPHP(n: number) {
   return `₱${n.toLocaleString("en-PH")}`;
 }
 
+function formatMobile(mobile: string | null) {
+  if (!mobile) return "—";
+  const digits = mobile.replace(/\D/g, "");
+  if (digits.startsWith("63") && digits.length === 12) {
+    return `+63 ${digits.slice(2, 5)} ${digits.slice(5, 8)} ${digits.slice(8)}`;
+  }
+  return mobile;
+}
+
+const PAGE_SIZE = 10;
+
+function pageHref(filter: string, page: number) {
+  const params = new URLSearchParams();
+  if (filter !== "All") params.set("type", filter);
+  if (page > 1) params.set("page", String(page));
+  const qs = params.toString();
+  return `/crm/accounts${qs ? `?${qs}` : ""}`;
+}
+
 export default async function CrmAccountsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string }>;
+  searchParams: Promise<{ type?: string; page?: string }>;
 }) {
-  const { type } = await searchParams;
+  const { type, page: pageParam } = await searchParams;
   const activeFilter: Filter = (FILTERS as readonly string[]).includes(type ?? "") ? (type as Filter) : "All";
+  const currentPage = Math.max(1, parseInt(pageParam ?? "1", 10) || 1);
 
   const rows = await getAccounts();
   const allAccounts = rows.map((r) => ({
@@ -32,16 +53,20 @@ export default async function CrmAccountsPage({
       ? new Date(r.lastBooking).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
       : "—",
     ltv: formatPHP(r.totalSpent),
-    phone: r.mobile ?? "—",
+    phone: formatMobile(r.mobile),
   }));
 
-  const accounts = allAccounts.filter((a) => {
+  const filtered = allAccounts.filter((a) => {
     if (activeFilter === "All") return true;
     if (activeFilter === "Corporate") return a.type === "Corporate";
     if (activeFilter === "Consumer") return a.type === "Consumer";
     if (activeFilter === "Referral source") return a.source !== "";
     return true;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const accounts = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <div className="app-page p-4 pt-6 sm:p-10 sm:pt-8">
@@ -57,7 +82,7 @@ export default async function CrmAccountsPage({
             return (
               <Link
                 key={f}
-                href={f === "All" ? "/crm/accounts" : `/crm/accounts?type=${encodeURIComponent(f)}`}
+                href={pageHref(f, 1)}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "shrink-0 pb-3 text-sm font-semibold capitalize transition-colors",
@@ -76,7 +101,7 @@ export default async function CrmAccountsPage({
       <div className="overflow-x-auto rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
         <div className="grid h-11 min-w-[720px] grid-cols-[2fr_1.4fr_0.9fr_1.1fr_1fr] items-center bg-[var(--color-canvas)] px-[18px] text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
           <div>Customer</div>
-          <div>Mobile</div>
+          <div>Mobile number</div>
           <div>Type</div>
           <div>Last booking</div>
           <div className="text-right">Lifetime</div>
@@ -111,6 +136,35 @@ export default async function CrmAccountsPage({
               </Link>
             );
           })
+        )}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-[var(--color-border)] px-[18px] py-3">
+            <span className="text-xs text-[var(--color-text-secondary)]">
+              Page {safePage} of {totalPages}
+            </span>
+            <div className="flex items-center gap-1">
+              <Link
+                href={pageHref(activeFilter, safePage - 1)}
+                aria-disabled={safePage <= 1}
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-text-secondary)] transition-colors",
+                  safePage <= 1 ? "pointer-events-none opacity-40" : "hover:bg-[var(--color-canvas)] hover:text-[var(--color-text-primary)]"
+                )}
+              >
+                <ChevronLeft size={16} />
+              </Link>
+              <Link
+                href={pageHref(activeFilter, safePage + 1)}
+                aria-disabled={safePage >= totalPages}
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-md border border-[var(--color-border)] text-[var(--color-text-secondary)] transition-colors",
+                  safePage >= totalPages ? "pointer-events-none opacity-40" : "hover:bg-[var(--color-canvas)] hover:text-[var(--color-text-primary)]"
+                )}
+              >
+                <ChevronRight size={16} />
+              </Link>
+            </div>
+          </div>
         )}
       </div>
     </div>
