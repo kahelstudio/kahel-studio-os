@@ -31,8 +31,3 @@ The Worker deployment configuration is in `wrangler.jsonc`. Staging is `kahel.st
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for the complete Github variable checklist, Supabase and Cloudflare setup, branch and environment protections, rollout procedure, and rollback guidance. It intentionally contains no project references, credentials, or secret values.
 
-## Transactional Email
-
-Apply `supabase/migrations/20260813150000_transactional_email_model.sql`, configure `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, and `EMAIL_QUEUE_SECRET`, then point Resend webhooks at `/api/resend/webhook`. A scheduler may call `POST /api/email/queue/process` with `Authorization: Bearer <EMAIL_QUEUE_SECRET>`; administrators can also invoke it from a trusted origin. Provider acceptance is recorded separately from delivery, and signed webhook events promote status monotonically.
-
-All application sends are server-side and use the canonical transactional email service. Security codes and reset links are sent transiently but persisted only as unavailable/redacted previews, so they cannot be manually resent after the secret expires.
