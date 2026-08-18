@@ -1,6 +1,10 @@
+const RETIRED_CODES = new Set(["kahel40"]);
+
 export function promoDiscountPercentage(code: unknown) {
   if (typeof code !== "string") return 0;
-  const match = /^kahel(\d{1,3})$/i.exec(code.trim());
+  const normalized = code.trim().toLowerCase();
+  if (RETIRED_CODES.has(normalized)) return 0;
+  const match = /^kahel(\d{1,3})$/i.exec(normalized);
   if (!match) return 0;
   const percentage = Number(match[1]);
   return percentage >= 1 && percentage <= 100 ? percentage : 0;
