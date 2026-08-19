@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Email } from "@/components/ui/email";
 import { type PublishedBookingTerms } from "@/lib/legal-documents";
 import { applyPromoDiscount } from "@/lib/promo-code";
-import { isValidPhMobile } from "@/lib/phone";
+
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import styles from "./marketing-site.module.css";
@@ -1360,7 +1360,7 @@ function Booking({ goHome }: { goHome: () => void }) {
               </label>
               <label className={styles.fullField}>
                 Mobile number
-                <input required type="tel" value={formatMobile(form.mobile)} onChange={(event) => update("mobile", event.target.value)} autoComplete="tel" inputMode="numeric" placeholder="917 000 0000" />
+                <input required type="tel" value={formatMobile(form.mobile)} onChange={(event) => update("mobile", event.target.value)} autoComplete="tel" inputMode="numeric" placeholder="9XX XXX XXXX" />
               </label>
               <fieldset className={styles.fullField}>
                 <legend className={styles.srOnly}>Session</legend>
@@ -1687,7 +1687,8 @@ function WaitlistModal({ preselectedSession, onClose }: { preselectedSession: st
       script.onload = () => setScriptReady(true);
       document.head.appendChild(script);
     } else {
-      setScriptReady(true);
+      const id = setTimeout(() => setScriptReady(true), 0);
+      return () => clearTimeout(id);
     }
   }, []);
 
