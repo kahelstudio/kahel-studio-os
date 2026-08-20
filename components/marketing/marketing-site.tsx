@@ -137,6 +137,7 @@ const gallery = [
     place: "Antipolo",
     position: "50% 18%",
     src: "/Duo_De Luna Edmon_7.jpg",
+    wide: true,
   },
   {
     ref: "12",
@@ -177,6 +178,7 @@ const gallery = [
     place: "Baler",
     position: "50% 18%",
     src: "/Solo_Mariella_4.jpg",
+    wide: true,
   },
   {
     ref: "55",
@@ -185,6 +187,7 @@ const gallery = [
     place: "Tayabas",
     position: "22% 46%",
     src: "/Valentines_Duo_Marycris Celendro_10.jpg",
+    wide: true,
   },
   {
     ref: "16",
@@ -334,7 +337,7 @@ function Gallery({ filter, home = false }: { filter: string; home?: boolean }) {
     <>
       <div className={`${styles.gallery} ${home ? styles.homeGallery : ""}`}>
         {frames.map((frame, index) => (
-          <figure key={frame.ref} className={home && (index === 0 || index === 5 || index === 6) ? styles.wideFrame : ""}>
+          <figure key={frame.ref} className={home && frame.wide ? styles.wideFrame : ""}>
             <button type="button" onClick={() => openViewer(index)} className={styles.figureButton} aria-label={`View ${frame.label}, ${frame.category}`}>
               <Photo alt={`${frame.label}, ${frame.category} photography in ${frame.place}`} src={frame.src} position={frame.position} />
               <span className={styles.corner} />
