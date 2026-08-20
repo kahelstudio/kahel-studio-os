@@ -179,6 +179,14 @@ const gallery = [
     src: "/Solo_Mariella_4.jpg",
   },
   {
+    ref: "55",
+    category: "Brand",
+    label: "M & N",
+    place: "Tayabas",
+    position: "22% 46%",
+    src: "/Valentines_Duo_Marycris Celendro_10.jpg",
+  },
+  {
     ref: "16",
     category: "Brand",
     label: "Alon Co.",
@@ -193,14 +201,6 @@ const gallery = [
     place: "Rizal",
     position: "75% 69%",
     src: "/BU Nursing_3.jpg",
-  },
-  {
-    ref: "55",
-    category: "Brand",
-    label: "M & N",
-    place: "Tayabas",
-    position: "22% 46%",
-    src: "/Valentines_Duo_Marycris Celendro_10.jpg",
   },
 ];
 
