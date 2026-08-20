@@ -264,6 +264,9 @@ export const APPS: AppDef[] = [
     launcherGroup: "operations",
     nav: [
       { id: "portfolio", label: "Portfolio", href: "/website/portfolio" },
+      { id: "posts", label: "Posts", href: "/website/posts" },
+      { id: "collections", label: "Collections", href: "/website/collections" },
+      { id: "services", label: "Services", href: "/website/services" },
       { id: "pages", label: "Pages", href: "/website/pages" },
     ],
   },
