@@ -1458,7 +1458,7 @@ function Booking({ goHome }: { goHome: () => void }) {
             <button type="submit" disabled={!valid || status === "submitting"}>
               {status === "submitting" && <i />} {status === "submitting" ? "Reserving…" : "Reserve this date"}
             </button>
-            <small>{form.pay === "cash" ? "No online payment · we'll confirm within 24 hours" : valid ? "No payment taken now · confirmation within 48 hours" : "Accepts GCash, Maya, GrabPay, QR Ph and major credit cards."}</small>
+            <small>{form.pay === "cash" ? "No online payment · we'll confirm within 24 hours" : valid ? "No payment taken now · confirmation within 48 hours" : "Pay your way with GCash, Maya, GrabPay, QR Ph, major credit cards, or Buy Now, Pay Later."}</small>
           </aside>
         </form>
     </main>
