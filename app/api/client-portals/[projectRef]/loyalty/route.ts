@@ -5,10 +5,14 @@ import { getLoyaltySummary, resolveProjectClientId } from "@/lib/server/loyalty"
 
 export const runtime = "nodejs";
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export async function GET(request: Request, { params }: { params: Promise<{ projectRef: string }> }) {
   try {
     const { projectRef } = await params;
-    const token = request.headers.get("cookie")?.match(new RegExp(`(?:^|; )client_portal_access_${projectRef}=([^;]+)`))?.[1];
+    const token = request.headers.get("cookie")?.match(new RegExp(`(?:^|; )${escapeRegExp(`client_portal_access_${projectRef}`)}=([^;]+)`))?.[1];
     if (!authenticationDisabled() && (!token || !await verifyPortalTokenAccess(projectRef, token))) {
       return NextResponse.json({ error: "Portal authorization required." }, { status: 401 });
     }

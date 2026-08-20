@@ -69,11 +69,30 @@ export async function getWaitlistEntries(status?: string): Promise<WaitlistEntry
   }));
 }
 
+// Session types a customer can pick on the public booking page. Excludes demo
+// duplicates (solo, duo, express, group, theme) and internal pseudo-services
+// (blocked, power-interruption, other, studio-rental) that share the same names.
+const PUBLIC_SERVICE_CODES = [
+  "theme-session",
+  "express-session",
+  "group-session",
+  "duo-session",
+  "solo-session",
+  "mini-session",
+  "baby-shower",
+  "engagement-party",
+  "birthday",
+  "christening",
+  "debut",
+  "anniversary-celebration",
+];
+
 export async function getWaitlistServices(): Promise<{ id: string; code: string; name: string }[]> {
   const { data, error } = await getSupabaseAdmin()
     .from("services")
     .select("id, code, name")
     .eq("active", true)
+    .in("code", PUBLIC_SERVICE_CODES)
     .not("code", "like", "complimentary-%")
     .order("name") as { data: { id: string; code: string; name: string }[] | null; error: unknown };
   if (error) return [];

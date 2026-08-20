@@ -4,9 +4,13 @@ import { authenticationDisabled } from "@/lib/server/staff-auth";
 
 export const runtime = "nodejs";
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 async function hasPortalSession(request: Request, projectRef: string) {
   if (authenticationDisabled()) return true;
-  const token = request.headers.get("cookie")?.match(new RegExp(`(?:^|; )client_portal_access_${projectRef}=([^;]+)`))?.[1];
+  const token = request.headers.get("cookie")?.match(new RegExp(`(?:^|; )${escapeRegExp(`client_portal_access_${projectRef}`)}=([^;]+)`))?.[1];
   return Boolean(token && await verifyPortalTokenAccess(projectRef, token));
 }
 
