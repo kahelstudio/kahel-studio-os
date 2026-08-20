@@ -334,7 +334,7 @@ function Gallery({ filter, home = false }: { filter: string; home?: boolean }) {
     <>
       <div className={`${styles.gallery} ${home ? styles.homeGallery : ""}`}>
         {frames.map((frame, index) => (
-          <figure key={frame.ref} className={home && (index === 0 || index === 5 || index === 8) ? styles.wideFrame : ""}>
+          <figure key={frame.ref} className={home && (index === 0 || index === 5 || index === 6) ? styles.wideFrame : ""}>
             <button type="button" onClick={() => openViewer(index)} className={styles.figureButton} aria-label={`View ${frame.label}, ${frame.category}`}>
               <Photo alt={`${frame.label}, ${frame.category} photography in ${frame.place}`} src={frame.src} position={frame.position} />
               <span className={styles.corner} />
