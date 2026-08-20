@@ -10,7 +10,7 @@ const jsonRequest = (path: string, body: unknown, headers: Record<string, string
 describe("customer authentication boundaries", () => {
   afterEach(() => {
     process.env.KAHEL_STAFF_EMAILS = "";
-    process.env.PAYMONGO_SECRET_KEY = undefined;
+    process.env.PAYMONGO_SECRET_KEY = "";
   });
 
   it("normalizes customer identifiers", () => {
