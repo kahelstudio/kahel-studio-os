@@ -38,18 +38,25 @@ function formatTime(time: string) {
   return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
+function formatEventTime(event: CalendarEvent) {
+  if (!event.endsAt) return formatTime(event.time);
+  const end = new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", hour: "numeric", minute: "2-digit" }).format(new Date(event.endsAt));
+  return `${formatTime(event.time)}–${end}`;
+}
+
 function EventChip({ event, onDragStart }: { event: CalendarEvent; onDragStart: () => void }) {
   const cfg = CATEGORY_CONFIG[event.category] ?? CATEGORY_CONFIG.other;
   return (
     <div
-      draggable
-      onDragStart={onDragStart}
-      className="mb-1 cursor-grab select-none rounded-lg px-2 py-1.5 active:cursor-grabbing"
+      draggable={event.draggable !== false}
+      onDragStart={event.draggable === false ? (dragEvent) => dragEvent.preventDefault() : onDragStart}
+      className={`mb-1 select-none rounded-lg px-2 py-1.5 ${event.draggable === false ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}
       style={{ background: cfg.bg }}
     >
       <div className="text-[9px] font-bold tracking-[0.08em] text-white/80">{cfg.label}</div>
-      <div className="text-[12px] font-bold leading-snug text-white">{formatTime(event.time)}</div>
+      <div className="text-[12px] font-bold leading-snug text-white">{formatEventTime(event)}</div>
       <div className="truncate text-[11px] leading-snug text-white/90">{event.title}</div>
+      {event.resourceName && <div className="truncate text-[10px] leading-snug text-white/70">{event.resourceName}</div>}
     </div>
   );
 }
@@ -58,15 +65,16 @@ function EventChipExpanded({ event, onDragStart }: { event: CalendarEvent; onDra
   const cfg = CATEGORY_CONFIG[event.category] ?? CATEGORY_CONFIG.other;
   return (
     <div
-      draggable
-      onDragStart={onDragStart}
-      className="mb-1.5 cursor-grab select-none rounded-lg px-2.5 py-2 active:cursor-grabbing"
+      draggable={event.draggable !== false}
+      onDragStart={event.draggable === false ? (dragEvent) => dragEvent.preventDefault() : onDragStart}
+      className={`mb-1.5 select-none rounded-lg px-2.5 py-2 ${event.draggable === false ? "cursor-default" : "cursor-grab active:cursor-grabbing"}`}
       style={{ background: cfg.bg }}
     >
       <div className="text-[9px] font-bold tracking-[0.08em] text-white/80">{cfg.label}</div>
-      <div className="text-[13px] font-bold leading-snug text-white">{formatTime(event.time)}</div>
+      <div className="text-[13px] font-bold leading-snug text-white">{formatEventTime(event)}</div>
       <div className="mt-0.5 text-[12px] leading-snug text-white/90">{event.title}</div>
       <div className="mt-0.5 text-[11px] text-white/70">{event.serviceType}</div>
+      {event.resourceName && event.resourceName !== event.serviceType && <div className="mt-0.5 text-[11px] text-white/70">Resource: {event.resourceName}</div>}
     </div>
   );
 }
@@ -104,6 +112,7 @@ export function CalendarGrid({
   const [activeFilter, setActiveFilter] = useState<"all" | EventCategory>("all");
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
   const dragRef = useRef<{ ref: string; sourceDate: string; sourceTime: string } | null>(null);
   const expanded = view === "week";
 
@@ -114,7 +123,7 @@ export function CalendarGrid({
   function handleDragOver(e: React.DragEvent, cellKey: string) {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    if (dragRef.current && cellKey !== dragRef.current.sourceDate) setDropTarget(cellKey);
+    if (dragRef.current && (expanded || cellKey !== dragRef.current.sourceDate)) setDropTarget(cellKey);
   }
 
   function handleDragLeave() { setDropTarget(null); }
@@ -122,17 +131,19 @@ export function CalendarGrid({
   async function handleDrop(e: React.DragEvent, cellKey: string) {
     e.preventDefault();
     setDropTarget(null);
-    if (!dragRef.current || cellKey === dragRef.current.sourceDate || cellKey.startsWith("blank-")) return;
+    if (!dragRef.current || (!expanded && cellKey === dragRef.current.sourceDate) || cellKey.startsWith("blank-")) return;
     const time = expanded ? estimateTimeFromY(e.currentTarget as HTMLElement, e.clientY) : dragRef.current.sourceTime;
     const { ref } = dragRef.current;
     dragRef.current = null;
     setStatus("saving");
+    setErrorMessage("");
     try {
       await rescheduleBooking(ref, cellKey, time);
       setStatus("idle");
       router.refresh();
-    } catch {
+    } catch (error) {
       setStatus("error");
+      setErrorMessage(error instanceof Error ? error.message : "Could not reschedule. Please try again.");
     }
   }
 
@@ -170,7 +181,7 @@ export function CalendarGrid({
             <Link href={`/calendar?date=${selectedIso}&view=month`} aria-current={view === "month" ? "page" : undefined} className={`flex h-[30px] items-center rounded-[6px] px-3.5 text-[13px] ${view === "month" ? "bg-[var(--color-surface)] font-semibold shadow-sm" : "font-medium text-[var(--color-text-secondary)]"}`}>Month</Link>
             <Link href={`/calendar?date=${selectedIso}&view=week`} aria-current={view === "week" ? "page" : undefined} className={`flex h-[30px] items-center rounded-[6px] px-3.5 text-[13px] ${view === "week" ? "bg-[var(--color-surface)] font-semibold shadow-sm" : "font-medium text-[var(--color-text-secondary)]"}`}>Week</Link>
           </div>
-          <Link href="/booking/list" className="flex h-[34px] items-center rounded-control bg-[var(--color-kahel-500)] px-4 text-[13px] font-semibold text-white hover:bg-[var(--color-kahel-600)]">
+          <Link href="/booking/list?create=booking" className="flex h-[34px] items-center rounded-control bg-[var(--color-kahel-500)] px-4 text-[13px] font-semibold text-white hover:bg-[var(--color-kahel-600)]">
             + New Booking
           </Link>
         </div>
@@ -246,8 +257,8 @@ export function CalendarGrid({
         ))}
       </div>
 
-      {status === "saving" && <div className="fixed bottom-5 left-1/2 -translate-x-1/2 rounded-control bg-[var(--color-surface-muted)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] shadow-md">Rescheduling…</div>}
-      {status === "error" && <div className="fixed bottom-5 left-1/2 -translate-x-1/2 rounded-control bg-red-500 px-4 py-2 text-sm font-medium text-white shadow-md">Could not reschedule. Please try again.</div>}
+      {status === "saving" && <div role="status" aria-live="polite" className="fixed bottom-5 left-1/2 -translate-x-1/2 rounded-control bg-[var(--color-surface-muted)] px-4 py-2 text-sm font-medium text-[var(--color-text-secondary)] shadow-md">Rescheduling…</div>}
+      {status === "error" && <div role="alert" className="fixed bottom-5 left-1/2 -translate-x-1/2 rounded-control bg-red-500 px-4 py-2 text-sm font-medium text-white shadow-md">{errorMessage}</div>}
     </div>
   );
 }

@@ -19,8 +19,9 @@ TURNSTILE_SECRET=replace-with-your-private-secret-key
 GOOGLE_AUTH_ENABLED=false
 # Server-only PayMongo test secret. Never prefix this variable with NEXT_PUBLIC_.
 PAYMONGO_SECRET_KEY=sk_test_replace_me
-# Optional comma-separated subset: card,gcash,paymaya,qrph,billease
-PAYMONGO_PAYMENT_METHODS=card,gcash,paymaya,qrph,billease
+# Add billease only after PayMongo activates it for this environment's merchant account.
+PAYMONGO_PAYMENT_METHODS=card,gcash,paymaya,grab_pay,qrph
+PAYMONGO_BNPL_ENABLED=false
 # Signing secret returned when this exact webhook endpoint is created.
 PAYMONGO_WEBHOOK_SECRET=whsk_replace_me
 # Cloudflare Pages deploy hook for the static kahelstudio.com site. Server-only:

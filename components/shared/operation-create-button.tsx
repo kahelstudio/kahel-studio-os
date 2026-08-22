@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { useToast } from "@/components/toast/toast-provider";
@@ -18,6 +18,28 @@ type Field = {
 };
 
 export type OperationKind = "booking" | "quotation" | "maintenance" | "equipment" | "compliance" | "portfolio" | "campaign" | "expense" | "invoice" | "payroll-run" | "payroll-adjustment" | "candidate" | "onboarding" | "offboarding" | "shift" | "report" | "remittance" | "payroll-correction";
+
+type BookingAvailability = {
+  resource: { name: string };
+  timezone: string;
+  durationMinutes: number;
+  prepBufferMinutes: number;
+  cleanupBufferMinutes: number;
+  refreshAfterSeconds: number;
+  slots: Array<{ time: string; available: boolean }>;
+};
+
+function formatMinutes(minutes: number) {
+  if (minutes < 60) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
+}
+
+function formatSlotTime(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return new Intl.DateTimeFormat("en-PH", { hour: "numeric", minute: "2-digit" }).format(new Date(2000, 0, 1, hours, minutes));
+}
 
 const configs: Record<OperationKind, { title: string; description: string; submit: string; adminOnly?: boolean; permission?: string; fields: Field[] }> = {
   booking: { title: "New booking", description: "Create a studio booking. Existing clients are matched by phone number.", submit: "Create booking", permission: "bookings.manage", fields: [
@@ -53,28 +75,104 @@ export function OperationCreateButton({ kind, children, className, defaults = {}
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [allowed, setAllowed] = useState(!config.adminOnly && !config.permission);
+  const [bookingFields, setBookingFields] = useState({ serviceType: defaults.serviceType ?? "", serviceDate: defaults.serviceDate ?? "", serviceTime: defaults.serviceTime ?? "" });
+  const [availability, setAvailability] = useState<BookingAvailability | null>(null);
+  const [availabilityState, setAvailabilityState] = useState<"idle" | "loading" | "loaded" | "error">("idle");
+  const availabilityRequest = useRef<AbortController | null>(null);
+  const availabilityDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bookingFieldsRef = useRef(bookingFields);
 
+  const loadAvailability = useCallback(async (serviceType: string, serviceDate: string) => {
+    if (!serviceType.trim() || !serviceDate) {
+      availabilityRequest.current?.abort();
+      setAvailability(null);
+      setAvailabilityState("idle");
+      return;
+    }
+    availabilityRequest.current?.abort();
+    const controller = new AbortController();
+    availabilityRequest.current = controller;
+    setAvailabilityState("loading");
+    try {
+      const query = new URLSearchParams({ service: serviceType.trim(), date: serviceDate });
+      const response = await fetch(`/api/paymongo/availability?${query}`, { cache: "no-store", signal: controller.signal });
+      const result = await response.json().catch(() => ({})) as BookingAvailability & { error?: string };
+      if (!response.ok) throw new Error(result.error ?? "Availability could not be loaded.");
+      setAvailability(result);
+      setAvailabilityState("loaded");
+      setBookingFields((current) => current.serviceTime && !result.slots.some((slot) => slot.time === current.serviceTime && slot.available) ? { ...current, serviceTime: "" } : current);
+    } catch {
+      if (controller.signal.aborted) return;
+      setAvailability(null);
+      setAvailabilityState("error");
+    }
+  }, []);
+
+  function scheduleAvailability(serviceType: string, serviceDate: string) {
+    if (availabilityDebounce.current) clearTimeout(availabilityDebounce.current);
+    availabilityRequest.current?.abort();
+    setAvailability(null);
+    setAvailabilityState(serviceType.trim() && serviceDate ? "loading" : "idle");
+    availabilityDebounce.current = setTimeout(() => void loadAvailability(serviceType, serviceDate), 300);
+  }
+
+  useEffect(() => {
+    bookingFieldsRef.current = bookingFields;
+  }, [bookingFields]);
   useEffect(() => {
     if (!config.adminOnly && !config.permission) return;
     fetch("/api/staff/me").then(async (response) => response.ok ? await response.json() as { role?: string; permissions?: string[] } : null).then((data) => setAllowed(config.adminOnly ? data?.role === "admin" || data?.role === "super_admin" : Boolean(config.permission && data?.permissions?.includes(config.permission)))).catch(() => setAllowed(false));
   }, [config.adminOnly, config.permission]);
   useEffect(() => {
-    if (allowed && (autoOpen || new URLSearchParams(window.location.search).get("create") === kind)) dialog.current?.showModal();
-  }, [allowed, autoOpen, kind]);
+    if (allowed && (autoOpen || new URLSearchParams(window.location.search).get("create") === kind)) {
+      dialog.current?.showModal();
+      if (kind === "booking") queueMicrotask(() => void loadAvailability(bookingFieldsRef.current.serviceType, bookingFieldsRef.current.serviceDate));
+    }
+  }, [allowed, autoOpen, kind, loadAvailability]);
+  useEffect(() => () => {
+    availabilityRequest.current?.abort();
+    if (availabilityDebounce.current) clearTimeout(availabilityDebounce.current);
+  }, []);
+  useEffect(() => {
+    if (kind !== "booking") return;
+    const refreshWhenActive = () => {
+      if (document.visibilityState === "visible" && dialog.current?.open) void loadAvailability(bookingFieldsRef.current.serviceType, bookingFieldsRef.current.serviceDate);
+    };
+    window.addEventListener("focus", refreshWhenActive);
+    document.addEventListener("visibilitychange", refreshWhenActive);
+    return () => {
+      window.removeEventListener("focus", refreshWhenActive);
+      document.removeEventListener("visibilitychange", refreshWhenActive);
+    };
+  }, [kind, loadAvailability]);
+  useEffect(() => {
+    if (kind !== "booking" || availabilityState !== "loaded" || !availability) return;
+    const timer = window.setTimeout(() => void loadAvailability(bookingFieldsRef.current.serviceType, bookingFieldsRef.current.serviceDate), Math.max(5, availability.refreshAfterSeconds) * 1000);
+    return () => window.clearTimeout(timer);
+  }, [kind, availabilityState, availability, loadAvailability]);
 
   if (!allowed) return null;
-  const close = () => { if (!pending) { dialog.current?.close(); setError(""); } };
+  const close = () => { if (!pending) { dialog.current?.close(); setError(""); availabilityRequest.current?.abort(); } };
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending) return;
+    const form = event.currentTarget;
     setPending(true); setError("");
-    const body = Object.fromEntries(new FormData(event.currentTarget));
+    const body = Object.fromEntries(new FormData(form));
     try {
       const response = await fetch(`/api/operations/${kind}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...defaults, ...body }) });
       const result = await response.json().catch(() => ({})) as { error?: string };
-      if (!response.ok) throw new Error(result.error ?? "Unable to save this record.");
+      if (!response.ok) {
+        if (kind === "booking" && response.status === 409) void loadAvailability(bookingFields.serviceType, bookingFields.serviceDate);
+        throw new Error(result.error ?? "Unable to save this record.");
+      }
       dialog.current?.close();
-      (event.target as HTMLFormElement).reset();
+      form.reset();
+      if (kind === "booking") {
+        setBookingFields({ serviceType: defaults.serviceType ?? "", serviceDate: defaults.serviceDate ?? "", serviceTime: defaults.serviceTime ?? "" });
+        setAvailability(null);
+        setAvailabilityState("idle");
+      }
       fireToast(`${config.title} saved.`, "success");
       window.dispatchEvent(new CustomEvent("operation-created", { detail: { kind } }));
       router.refresh();
@@ -83,11 +181,22 @@ export function OperationCreateButton({ kind, children, className, defaults = {}
   }
 
   return <>
-    <button type="button" className={className} onClick={() => dialog.current?.showModal()}>{children}</button>
+    <button type="button" className={className} onClick={() => { dialog.current?.showModal(); if (kind === "booking") void loadAvailability(bookingFields.serviceType, bookingFields.serviceDate); }}>{children}</button>
     <dialog ref={dialog} onCancel={(event) => { if (pending) event.preventDefault(); }} onClose={() => setError("")} className="m-auto max-h-[92dvh] w-[calc(100%-1rem)] max-w-2xl overflow-y-auto rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-0 text-[var(--color-text-primary)] shadow-[var(--shadow-dialog)] backdrop:bg-black/45">
       <form onSubmit={submit} className="p-5 sm:p-6">
         <div className="flex items-start justify-between gap-4"><div><h2 className="font-display text-xl font-semibold">{config.title}</h2><p className="mt-1 text-sm text-[var(--color-text-secondary)]">{config.description}</p></div><button type="button" onClick={close} aria-label="Close" className="grid min-h-11 min-w-11 place-items-center rounded-control hover:bg-[var(--color-surface-muted)]"><X className="h-4 w-4" /></button></div>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">{config.fields.map((field, index) => <label key={field.name} className={`grid gap-1.5 text-sm font-semibold ${field.type === "textarea" ? "sm:col-span-2" : ""}`}><span>{field.label}{field.required ? <span aria-hidden="true" className="text-[var(--color-danger-text)]"> *</span> : null}</span>{field.type === "textarea" ? <textarea name={field.name} defaultValue={defaults[field.name]} required={field.required} rows={3} maxLength={1000} className="rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 font-normal" /> : field.type === "select" ? <select name={field.name} defaultValue={defaults[field.name] ?? field.options?.[0]} required={field.required} className="min-h-11 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 font-normal">{field.options?.map((option) => <option key={option} value={option}>{kind === "shift" && field.name === "dayOfWeek" ? ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][Number(option)] : option.replaceAll("_", " ")}</option>)}</select> : <input autoFocus={index === 0} name={field.name} defaultValue={defaults[field.name]} type={field.type ?? "text"} required={field.required} placeholder={field.placeholder} min={field.min} max={field.max} step={field.step} maxLength={500} className="min-h-11 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 font-normal" />}</label>)}</div>
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">{config.fields.map((field, index) => {
+          const bookingField = kind === "booking" && field.name in bookingFields;
+          const value = bookingField ? bookingFields[field.name as keyof typeof bookingFields] : undefined;
+          return <label key={field.name} className={`grid gap-1.5 text-sm font-semibold ${field.type === "textarea" ? "sm:col-span-2" : ""}`}><span>{field.label}{field.required ? <span aria-hidden="true" className="text-[var(--color-danger-text)]"> *</span> : null}</span>{field.type === "textarea" ? <textarea name={field.name} defaultValue={defaults[field.name]} required={field.required} rows={3} maxLength={1000} className="rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 font-normal" /> : field.type === "select" ? <select name={field.name} defaultValue={defaults[field.name] ?? field.options?.[0]} required={field.required} className="min-h-11 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 font-normal">{field.options?.map((option) => <option key={option} value={option}>{kind === "shift" && field.name === "dayOfWeek" ? ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][Number(option)] : option.replaceAll("_", " ")}</option>)}</select> : <input autoFocus={index === 0} name={field.name} {...(bookingField ? { value, onChange: (event: React.ChangeEvent<HTMLInputElement>) => { const next = { ...bookingFields, [field.name]: event.target.value, ...(field.name === "serviceType" || field.name === "serviceDate" ? { serviceTime: "" } : {}) }; setBookingFields(next); if (field.name === "serviceType" || field.name === "serviceDate") scheduleAvailability(next.serviceType, next.serviceDate); } } : { defaultValue: defaults[field.name] })} readOnly={kind === "booking" && field.name === "serviceTime"} type={field.type ?? "text"} required={field.required} placeholder={field.name === "serviceTime" && kind === "booking" ? "Choose an available slot below" : field.placeholder} min={field.min} max={field.max} step={field.step} maxLength={500} className="min-h-11 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 font-normal read-only:bg-[var(--color-surface-muted)]" />}</label>;
+        })}</div>
+        {kind === "booking" ? <section className="mt-5 rounded-card border border-[var(--color-border)] bg-[var(--color-surface-muted)] p-4" aria-labelledby="booking-availability-heading">
+          <div className="flex items-start justify-between gap-3"><div><h3 id="booking-availability-heading" className="text-sm font-semibold">Canonical availability</h3>{availability ? <p className="mt-1 text-xs text-[var(--color-text-secondary)]">{availability.resource.name} · {formatMinutes(availability.durationMinutes)} · Prep {formatMinutes(availability.prepBufferMinutes)} · Cleanup {formatMinutes(availability.cleanupBufferMinutes)}</p> : null}</div>{bookingFields.serviceType && bookingFields.serviceDate ? <button type="button" onClick={() => void loadAvailability(bookingFields.serviceType, bookingFields.serviceDate)} disabled={availabilityState === "loading"} className="min-h-11 shrink-0 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs font-semibold disabled:opacity-60">Refresh</button> : null}</div>
+          <div className="mt-3 text-sm" aria-live="polite" aria-atomic="true">
+            {!bookingFields.serviceType || !bookingFields.serviceDate ? <p className="text-[var(--color-text-secondary)]">Enter a configured service and session date to load times.</p> : availabilityState === "loading" ? <p>Loading live availability...</p> : availabilityState === "error" ? <p className="text-[var(--color-danger-text)]">Availability could not be loaded. Check the network and try again.</p> : availability?.slots.length === 0 ? <p className="text-[var(--color-text-secondary)]">This resource is closed on the selected date.</p> : availability && !availability.slots.some((slot) => slot.available) ? <p className="text-[var(--color-text-secondary)]">No available slots remain for this date.</p> : availability ? <p className="text-[var(--color-text-secondary)]">Choose an available start time. Time zone: {availability.timezone}.</p> : null}
+          </div>
+          {availability?.slots.length ? <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3" aria-label="Session times">{availability.slots.map((slot) => <button key={slot.time} type="button" disabled={!slot.available} aria-pressed={slot.available && bookingFields.serviceTime === slot.time} onClick={() => setBookingFields((current) => ({ ...current, serviceTime: slot.time }))} className="min-h-11 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-2 py-2 text-sm font-semibold aria-pressed:border-[var(--color-kahel-500)] aria-pressed:bg-[var(--color-kahel-500)] aria-pressed:text-white disabled:cursor-not-allowed disabled:opacity-60"><span className="block">{formatSlotTime(slot.time)}</span>{!slot.available ? <span className="block text-xs font-normal">Unavailable</span> : null}</button>)}</div> : null}
+        </section> : null}
         {error ? <p className="mt-4 rounded-control bg-[var(--color-danger-bg)] px-3 py-2 text-sm text-[var(--color-danger-text)]" role="alert">{error}</p> : null}
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={close} disabled={pending} className="min-h-11 rounded-control border border-[var(--color-border)] px-4 text-sm font-semibold disabled:opacity-50">Cancel</button><button type="submit" disabled={pending} className="min-h-11 rounded-control bg-[var(--color-kahel-500)] px-5 text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)] disabled:opacity-60">{pending ? "Saving..." : config.submit}</button></div>
       </form>

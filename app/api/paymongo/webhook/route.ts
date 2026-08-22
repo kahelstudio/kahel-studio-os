@@ -1,5 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
+import { getPaymentReceipt } from "@/lib/server/payments-data";
+import { sendPaymentReceipt } from "@/lib/server/payment-receipt-email";
 
 export const runtime = "nodejs";
 
@@ -25,6 +27,7 @@ type ParsedEvent = {
   paidAt: string | null;
   availableAt: string | null;
   creditedAt: string | null;
+  livemode: boolean | null;
 };
 type PaidCheckout = ParsedEvent & { paymentId: string; paidAt: string };
 type BookingRow = {
@@ -116,12 +119,13 @@ export function parsePayMongoEvent(payload: unknown, receivedAt = new Date()): P
     amount,
     currency: currency?.toUpperCase() ?? null,
     paymentId: text(paymentData?.id),
-    paymentIntentId: text(payment?.payment_intent_id),
+    paymentIntentId: text(payment?.payment_intent_id) ?? text(object(checkout.payment_intent)?.id),
     paymentMethod: text(checkout.payment_method_used) ?? text(source?.type),
     description: text(payment?.description) ?? text(checkout.description),
     paidAt,
     availableAt: firstTimestamp(payment?.available_at, checkout.available_at),
     creditedAt: firstTimestamp(payment?.credited_at, checkout.credited_at),
+    livemode: typeof eventAttributes?.livemode === "boolean" ? eventAttributes.livemode : null,
   };
 }
 
@@ -173,7 +177,15 @@ function safePayload(event: ParsedEvent) {
     timestamps: { paid_at: event.paidAt, available_at: event.availableAt, credited_at: event.creditedAt },
     amount: event.amount,
     currency: event.currency,
+    routing: { payment_id: event.metadataPaymentId, booking_id: event.bookingId },
+    booking_id: event.bookingId,
+    payment_id: event.metadataPaymentId,
   };
+}
+
+async function sha256(value: string) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Buffer.from(digest).toString("hex");
 }
 
 function retryable(error: unknown, eventId?: string) {
@@ -187,7 +199,7 @@ function acknowledge() {
 
 async function processLedgerEvent(event: ParsedEvent) {
   const admin = getSupabaseAdmin();
-  const rpc = admin.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ error: unknown }>;
+  const rpc = admin.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
   if (event.eventType === PAID_EVENT) {
     if (!event.paymentId || !event.paidAt || event.amount === null || event.currency !== "PHP") {
       return NextResponse.json({ error: "Invalid paid event." }, { status: 400 });
@@ -207,6 +219,8 @@ async function processLedgerEvent(event: ParsedEvent) {
       requested_payload: safePayload(event),
     });
     if (result.error) return retryable(result.error, event.eventId);
+    const payment = result.data as { id?: string; booking_id?: string } | null;
+    if (payment?.id && payment.booking_id) after(() => sendConfirmedPaymentReceipt(payment.id!, payment.booking_id!));
   } else if (FAILURE_EVENTS.has(event.eventType)) {
     const result = await rpc("fail_or_expire_provider_payment", {
       requested_provider_event_id: event.eventId,
@@ -217,8 +231,50 @@ async function processLedgerEvent(event: ParsedEvent) {
       requested_payload: safePayload(event),
     });
     if (result.error) return retryable(result.error, event.eventId);
+    const payment = result.data as { booking_id?: string } | null;
+    if (payment?.booking_id) {
+      const released = await rpc("release_failed_booking_checkout", {
+        requested_booking_id: payment.booking_id,
+        requested_checkout_session_id: event.checkoutId,
+        requested_payment_status: event.eventType === "checkout_session.expired" ? "expired" : "failed",
+      });
+      if (released.error) return retryable(released.error, event.eventId);
+    }
   }
   return NextResponse.json({ received: true });
+}
+
+async function sendConfirmedPaymentReceipt(paymentId: string, bookingId: string) {
+  try {
+    const data = await getPaymentReceipt(paymentId);
+    if (!data?.receipt) return;
+    const receipt = data.receipt as Record<string, unknown>;
+    const admin = getSupabaseAdmin();
+    const booking = await admin.from("bookings").select("client_id,client_profile_id").eq("id", bookingId).maybeSingle<{ client_id: string; client_profile_id: string }>();
+    if (!booking.data) return;
+    const profile = await admin.from("client_profiles").select("email").eq("id", booking.data.client_profile_id).eq("status", "active").maybeSingle<{ email: string }>();
+    if (!profile.data?.email) return;
+    await sendPaymentReceipt({
+      to: profile.data.email,
+      receiptNumber: String(receipt.receipt_number),
+      customerName: String(receipt.client_name),
+      bookingReference: String(receipt.booking_reference),
+      invoiceReference: typeof receipt.invoice_reference === "string" ? receipt.invoice_reference : null,
+      method: receipt.payment_method === "billease" ? "Buy Now Pay Later" : String(receipt.payment_method),
+      amountCentavos: Number(receipt.amount_centavos),
+      cashReceivedCentavos: receipt.cash_received_centavos === null ? null : Number(receipt.cash_received_centavos),
+      changeCentavos: receipt.change_centavos === null ? null : Number(receipt.change_centavos),
+      issuedAt: String(receipt.issued_at),
+      lines: data.lines.map((line) => ({ description: line.description, quantity: line.quantity, totalCentavos: line.totalCentavos })),
+      clientId: booking.data.client_id,
+      profileId: booking.data.client_profile_id,
+      bookingId,
+      paymentId,
+      source: "system",
+    });
+  } catch (error) {
+    console.error("[paymongo-webhook] Receipt delivery was deferred", { paymentId, error: error instanceof Error ? error.message : "unknown error" });
+  }
 }
 
 async function processLegacyBooking(event: PaidCheckout) {
@@ -279,6 +335,16 @@ async function processLegacyBooking(event: PaidCheckout) {
   return NextResponse.json({ received: true });
 }
 
+async function processLegacyFailure(event: ParsedEvent) {
+  const result = await getSupabaseAdmin().rpc("release_failed_booking_checkout", {
+    requested_booking_id: event.bookingId!,
+    requested_checkout_session_id: event.checkoutId,
+    requested_payment_status: event.eventType === "checkout_session.expired" ? "expired" : "failed",
+  });
+  if (result.error) return retryable(result.error, event.eventId);
+  return acknowledge();
+}
+
 export async function POST(request: Request) {
   const webhookSecret = process.env.PAYMONGO_WEBHOOK_SECRET;
   if (!webhookSecret) return NextResponse.json({ error: "Webhook is not configured." }, { status: 503 });
@@ -301,27 +367,44 @@ export async function POST(request: Request) {
     console.error("[paymongo-webhook] Ignored a signed payload without a supported event envelope.");
     return acknowledge();
   }
+  const environment = String(process.env.APP_ENV);
+  if ((environment === "production" && event.livemode !== true) || (environment === "staging" && event.livemode === true)) {
+    return NextResponse.json({ error: "Webhook mode does not match this environment." }, { status: 400 });
+  }
 
-  after(async () => {
-    try {
-      let result: NextResponse;
-      if (event.metadataPaymentId && (event.eventType === PAID_EVENT || FAILURE_EVENTS.has(event.eventType))) {
-        result = await processLedgerEvent(event);
-      } else if (event.eventType === PAID_EVENT && event.bookingId) {
-        const paid = paidCheckout(payload);
-        result = paid
-          ? await processLegacyBooking(paid)
-          : NextResponse.json({ error: "Invalid paid event." }, { status: 400 });
-      } else {
-        return;
-      }
-      if (!result.ok) {
-        console.error("[paymongo-webhook] Event acknowledged but not processed:", event.eventId, event.eventType, result.status);
-      }
-    } catch (error) {
-      retryable(error, event.eventId);
-    }
-  });
+  try {
+    const admin = getSupabaseAdmin();
+    const inbox = await admin.rpc("enqueue_provider_webhook_event", {
+      requested_provider: "paymongo",
+      requested_event_id: event.eventId,
+      requested_event_type: event.eventType,
+      requested_fingerprint: await sha256(body),
+      requested_safe_payload: safePayload(event),
+    });
+    if (inbox.error) return retryable(inbox.error, event.eventId);
+    if ((inbox.data as { status?: string } | null)?.status === "processed") return acknowledge();
 
-  return acknowledge();
+    let result: NextResponse;
+    if (event.metadataPaymentId && (event.eventType === PAID_EVENT || FAILURE_EVENTS.has(event.eventType))) {
+      result = await processLedgerEvent(event);
+    } else if (event.bookingId && event.eventType === PAID_EVENT) {
+      const paid = paidCheckout(payload);
+      result = paid ? await processLegacyBooking(paid) : NextResponse.json({ error: "Invalid paid event." }, { status: 400 });
+    } else if (event.bookingId && FAILURE_EVENTS.has(event.eventType)) {
+      result = await processLegacyFailure(event);
+    } else result = acknowledge();
+
+    const completion = await admin.rpc("finish_provider_webhook_event", {
+      requested_provider: "paymongo",
+      requested_event_id: event.eventId,
+      requested_succeeded: result.ok,
+      requested_last_error: result.ok ? null : `Processing returned HTTP ${result.status}`,
+    });
+    if (completion.error) return retryable(completion.error, event.eventId);
+    if (result.status >= 500) return result;
+    if (!result.ok) console.error("[paymongo-webhook] Ignored non-retryable event:", event.eventId, event.eventType, result.status);
+    return acknowledge();
+  } catch (error) {
+    return retryable(error, event.eventId);
+  }
 }

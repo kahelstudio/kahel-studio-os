@@ -10,7 +10,7 @@ import {
   type BookingStatusId,
 } from "@/lib/sample-data";
 import { useToast } from "@/components/toast/toast-provider";
-import { updateBookingStatus, saveDepositVerificationId } from "./actions";
+import { cancelBooking, updateBookingStatus, saveDepositVerificationId } from "./actions";
 
 const STEP_LABELS: Record<BookingStatusId, string> = {
   inquiry: "Inquiry",
@@ -27,6 +27,8 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
   const [verificationId, setVerificationId] = useState(booking.payment?.depositVerificationId ?? "");
   const [editingVerif, setEditingVerif] = useState(false);
   const [verifDraft, setVerifDraft] = useState("");
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
   const verifInputRef = useRef<HTMLInputElement>(null);
   const { fireToast } = useToast();
   const statusMeta = BOOKING_STATUS[status];
@@ -64,6 +66,20 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
         fireToast("Verification ID saved", "success");
       } catch {
         fireToast("Failed to save verification ID.", "danger");
+      }
+    });
+  }
+
+  function submitCancellation() {
+    if (!cancellationReason.trim()) return;
+    startTransition(async () => {
+      try {
+        await cancelBooking(booking.ref, cancellationReason);
+        setStatus("cancelled");
+        setCancelling(false);
+        fireToast("Booking cancelled and schedule released.", "success");
+      } catch (error) {
+        fireToast(error instanceof Error ? error.message : "Failed to cancel booking.", "danger");
       }
     });
   }
@@ -265,6 +281,14 @@ export function BookingDetailClient({ booking }: { booking: BookingRow }) {
                 </div>
               )}
             </>
+          )}
+
+          {status !== "cancelled" && status !== "completed" && (
+            <div className="rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+              <div className="font-display text-[15px] font-semibold">Cancel booking</div>
+              <p className="mt-1 text-[13px] leading-5 text-[var(--color-text-secondary)]">Cancellation preserves the booking, payment, and audit history while releasing its active resource reservation.</p>
+              {cancelling ? <div className="mt-3 grid gap-3"><label className="grid gap-1.5 text-sm font-semibold">Cancellation reason<textarea value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} required maxLength={500} rows={3} className="rounded-control border border-[var(--color-border)] bg-[var(--color-canvas)] px-3 py-2 font-normal" /></label><div className="flex gap-2"><button type="button" onClick={() => setCancelling(false)} disabled={isPending} className="min-h-11 flex-1 rounded-control border border-[var(--color-border)] px-3 text-sm font-semibold">Keep booking</button><button type="button" onClick={submitCancellation} disabled={isPending || !cancellationReason.trim()} className="min-h-11 flex-1 rounded-control bg-[var(--color-danger-text)] px-3 text-sm font-semibold text-white disabled:opacity-60">{isPending ? "Cancelling..." : "Confirm cancellation"}</button></div></div> : <button type="button" onClick={() => setCancelling(true)} className="mt-3 min-h-11 w-full rounded-control border border-[var(--color-danger-text)] px-4 text-sm font-semibold text-[var(--color-danger-text)]">Cancel this booking</button>}
+            </div>
           )}
         </div>
       </div>

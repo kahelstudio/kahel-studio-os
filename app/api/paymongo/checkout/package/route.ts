@@ -3,25 +3,16 @@ import { auditCustomerEvent, consumeCustomerRateLimit, createCustomerProfile, en
 import { sendBookingConfirmation } from "@/lib/server/customer-email";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
 import { getCurrentBookingTerms } from "@/lib/server/legal-documents";
+import { isBookingSlotConflict } from "@/lib/server/booking-slots";
+import { resolveBookableService } from "@/lib/server/booking-availability";
 
 export const runtime = "nodejs";
 
 const packagePrices: Record<string, number> = { Theme: 3000, Express: 2500, Group: 2199, Duo: 1800, Solo: 1500, "Mini Session": 999, "Baby Shower": 5000, "Engagement Party": 6000, Birthday: 7000, Christening: 8000, Debut: 10000, "Anniversary Celebration": 10000 };
 const studioSessionDurations: Record<string, number> = { Theme: 60, Express: 60, Group: 60, Duo: 60, Solo: 60, "Mini Session": 30 };
+const eventSessionDurations: Record<string, number> = { "Baby Shower": 240, "Engagement Party": 240, Birthday: 240, Christening: 240, Debut: 480, "Anniversary Celebration": 480 };
 const studioAddonPrices: Record<string, number> = { "Extra Pax": 200, "+5 Edited Photos": 300, "HMUA (Hair & Makeup)": 1300, "Additional Hour": 800, "Extra Outfit": 300, "Rush Edit": 100 };
 const eventAddonPrices: Record<string, number> = { "Additional hour of coverage": 3500, "Second photographer": 8000, "Same-day edit (reel)": 6000, "Express 7-day delivery": 5000, "Printed album, 20 spreads": 7500 };
-
-function serviceCode(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "session";
-}
-
-async function resolveServiceId(admin: ReturnType<typeof getSupabaseAdmin>, name: string) {
-  const code = serviceCode(name);
-  const { data: existing } = await admin.from("services").select("id").eq("code", code).maybeSingle<{ id: string }>();
-  if (existing?.id) return existing.id;
-  const { data: created } = await admin.from("services").upsert({ code, name, active: true }, { onConflict: "code" }).select("id").single<{ id: string }>();
-  return created?.id ?? "00000000-0000-0000-0000-000000000000";
-}
 
 type PackageRequest = {
   name?: unknown; email?: unknown; mobile?: unknown;
@@ -29,8 +20,6 @@ type PackageRequest = {
   eventSession?: unknown; eventDate?: unknown; eventTime?: unknown; eventLocation?: unknown; eventAddons?: unknown;
   pay?: unknown; promoCode?: unknown; termsAcceptance?: unknown;
 };
-
-type CreatedBooking = { id: string; client_id: string; client_profile_id: string; reference: string };
 
 const short = (value: unknown, max: number): value is string => typeof value === "string" && value.trim().length > 0 && value.length <= max;
 
@@ -142,23 +131,6 @@ export async function POST(request: Request) {
     if (!await consumeCustomerRateLimit(request, "customer_booking", email, 6, "1 hour")) return NextResponse.json({ error: "Please wait before submitting another booking." }, { status: 429 });
     const admin = getSupabaseAdmin();
 
-    // Idempotency: return early if both bookings already exist
-    const [studioExisting, eventExisting] = await Promise.all([
-      admin.from("bookings").select("id,reference").eq("idempotency_key", studioIdempotencyKey).maybeSingle<{ id: string; reference: string }>(),
-      admin.from("bookings").select("id,reference").eq("idempotency_key", eventIdempotencyKey).maybeSingle<{ id: string; reference: string }>(),
-    ]);
-    if (studioExisting.data && eventExisting.data) {
-      return NextResponse.json({ studioReference: studioExisting.data.reference, eventReference: eventExisting.data.reference, requestSaved: true });
-    }
-
-    // Conflict check: ensure neither date+time is already taken
-    const [studioConflict, eventConflict] = await Promise.all([
-      admin.from("bookings").select("id").eq("service_date", studioDate).eq("service_time", studioTime).not("status", "in", '("cancelled","inquiry")').maybeSingle(),
-      admin.from("bookings").select("id").eq("service_date", eventDate).eq("service_time", eventTime).not("status", "in", '("cancelled","inquiry")').maybeSingle(),
-    ]);
-    if (studioConflict.data) return NextResponse.json({ error: "The pre-event shoot date and time is no longer available. Please select a different slot." }, { status: 409 });
-    if (eventConflict.data) return NextResponse.json({ error: "The event date and time is no longer available. Please select a different slot." }, { status: 409 });
-
     const names = splitName(input.name as string);
     const profile = await getProfileByEmail(email) ?? await createCustomerProfile({ ...names, email, mobile });
 
@@ -166,53 +138,37 @@ export async function POST(request: Request) {
     const studioAddonTotal = studioAddons.reduce((sum, a) => sum + a.price * a.quantity * 100, 0);
     const studioSubtotal = studioPrice * 100;
     const studioTotal = studioSubtotal + studioAddonTotal;
+    const studioBookingDuration = studioDuration + studioAddons.filter((addon) => addon.name === "Additional Hour").reduce((sum, addon) => sum + addon.quantity * 60, 0);
 
     const eventPrice = packagePrices[input.eventSession as string];
     const eventAddonTotal = eventAddons.reduce((sum, a) => sum + a.price * a.quantity * 100, 0);
     const eventSubtotal = eventPrice * 100;
     const eventTotal = eventSubtotal + eventAddonTotal;
+    const eventBookingDuration = eventSessionDurations[input.eventSession as string] + eventAddons.filter((addon) => addon.name === "Additional hour of coverage").reduce((sum, addon) => sum + addon.quantity * 60, 0);
 
+    const [studioService, eventService] = await Promise.all([
+      resolveBookableService(input.studioSession as string),
+      resolveBookableService(input.eventSession as string),
+    ]);
+    if (!studioService || !eventService) return NextResponse.json({ error: "One of the selected services is unavailable." }, { status: 400 });
     const [studioFingerprint, eventFingerprint] = await Promise.all([
-      makeFingerprint(studioIdempotencyKey),
-      makeFingerprint(eventIdempotencyKey),
+      makeFingerprint(JSON.stringify({ studioIdempotencyKey, clientId: profile.client_id, session: input.studioSession, date: studioDate, time: studioTime, location: studioLocation, pay: input.pay, total: studioTotal, addons: studioAddons })),
+      makeFingerprint(JSON.stringify({ eventIdempotencyKey, clientId: profile.client_id, session: input.eventSession, date: eventDate, time: eventTime, location: eventLocation, pay: input.pay, total: eventTotal, addons: eventAddons })),
     ]);
 
     const studioReference = makeReference();
     const eventReference = makeReference();
 
-    const [studioInserted, eventInserted] = await Promise.all([
-      admin.from("bookings").insert({
-        client_id: profile.client_id, client_profile_id: profile.id,
-        idempotency_key: studioIdempotencyKey, request_fingerprint: studioFingerprint,
-        reference: studioReference, service_type: input.studioSession as string,
-        service_id: await resolveServiceId(admin, input.studioSession as string),
-        service_date: studioDate, service_time: studioTime, location: studioLocation,
-        payment_type: input.pay, subtotal_amount_php: studioSubtotal, total_amount_php: studioTotal,
-        payment_status: "pending",
-      }).select("id,client_id,client_profile_id,reference").single<CreatedBooking>(),
-
-      admin.from("bookings").insert({
-        client_id: profile.client_id, client_profile_id: profile.id,
-        idempotency_key: eventIdempotencyKey, request_fingerprint: eventFingerprint,
-        reference: eventReference, service_type: input.eventSession as string,
-        service_id: await resolveServiceId(admin, input.eventSession as string),
-        service_date: eventDate, service_time: eventTime, location: eventLocation,
-        payment_type: input.pay, subtotal_amount_php: eventSubtotal, total_amount_php: eventTotal,
-        payment_status: "pending",
-      }).select("id,client_id,client_profile_id,reference").single<CreatedBooking>(),
-    ]);
-
-    if (studioInserted.error) throw studioInserted.error;
-    if (eventInserted.error) throw eventInserted.error;
-
-    const studioBooking = studioInserted.data;
-    const eventBooking = eventInserted.data;
-
-    // Cross-link the two bookings
-    await Promise.all([
-      admin.from("bookings").update({ linked_booking_id: eventBooking.id }).eq("id", studioBooking.id),
-      admin.from("bookings").update({ linked_booking_id: studioBooking.id }).eq("id", eventBooking.id),
-    ]);
+    const pair = await admin.rpc("create_linked_booking_pair", {
+      requested_studio: { client_id: profile.client_id, client_profile_id: profile.id, idempotency_key: studioIdempotencyKey, request_fingerprint: studioFingerprint, reference: studioReference, service_type: input.studioSession as string, service_id: studioService.id, service_date: studioDate, service_time: studioTime, location: studioLocation, payment_type: input.pay as string, subtotal_amount_php: studioSubtotal, total_amount_php: studioTotal, duration_minutes_snapshot: studioBookingDuration },
+      requested_event: { client_id: profile.client_id, client_profile_id: profile.id, idempotency_key: eventIdempotencyKey, request_fingerprint: eventFingerprint, reference: eventReference, service_type: input.eventSession as string, service_id: eventService.id, service_date: eventDate, service_time: eventTime, location: eventLocation, payment_type: input.pay as string, subtotal_amount_php: eventSubtotal, total_amount_php: eventTotal, duration_minutes_snapshot: eventBookingDuration },
+    });
+    if (pair.error || !pair.data) throw pair.error ?? new Error("Linked booking creation returned no result.");
+    const created = pair.data as { studio_id: string; studio_reference: string; event_id: string; event_reference: string };
+    const studioBooking = { id: created.studio_id };
+    const eventBooking = { id: created.event_id };
+    const savedStudioReference = created.studio_reference;
+    const savedEventReference = created.event_reference;
 
     // Accept terms for both bookings
     await Promise.all([
@@ -237,7 +193,7 @@ export async function POST(request: Request) {
     await sendBookingConfirmation({
       to: email,
       firstName: profile.first_name,
-      reference: studioReference,
+      reference: savedStudioReference,
       service: `Pre-Event Package — ${input.studioSession as string}${studioAddonDesc.length ? ` + ${studioAddonDesc.join(", ")}` : ""} (pre-event shoot) & ${input.eventSession as string}${eventAddonDesc.length ? ` + ${eventAddonDesc.join(", ")}` : ""} (event)`,
       date: studioDate,
       time: studioTime,
@@ -251,8 +207,9 @@ export async function POST(request: Request) {
       bookingId: studioBooking.id,
     });
 
-    return NextResponse.json({ studioReference, eventReference, requestSaved: true });
+    return NextResponse.json({ studioReference: savedStudioReference, eventReference: savedEventReference, requestSaved: true });
   } catch (error) {
+    if (isBookingSlotConflict(error)) return NextResponse.json({ error: "One of these dates and times is no longer available. Please select different slots." }, { status: 409 });
     console.error("Package booking error:", error);
     return NextResponse.json({ error: "Unable to save your booking. Please try again." }, { status: 500 });
   }

@@ -34,6 +34,17 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
 
+  unit_tests:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: "npm" }
+      - run: npm ci
+      - run: npm test
+
   audit:
     name: Audit
     runs-on: ubuntu-latest
@@ -233,8 +244,8 @@ jobs:
   migrate_production:
     name: Migrate production DB
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    needs: [build, validate_migrations]
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: [build, validate_migrations, unit_tests]
     environment:
       name: production
       url: https://kahelstudio.com
@@ -246,9 +257,14 @@ jobs:
         with: { node-version: 22, cache: "npm" }
       - run: npm ci
       - run: |
+          if [[ "$SUPABASE_PROJECT_REF" != "dblmhfsctrhyxxulvvqi" ]]; then
+            echo "Refusing to migrate an unexpected production Supabase project."
+            exit 1
+          fi
           npx supabase link \
             --project-ref "$SUPABASE_PROJECT_REF" \
             --password "$SUPABASE_DB_PASSWORD"
+          npx supabase db push --linked --include-all --dry-run --password "$SUPABASE_DB_PASSWORD"
           npx supabase db push --linked --include-all --password "$SUPABASE_DB_PASSWORD"
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -258,7 +274,7 @@ jobs:
   deploy_production:
     name: Deploy to production
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     needs: [migrate_production]
     environment:
       name: production
@@ -289,11 +305,11 @@ jobs:
           SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
           WANGLER_SECRETS: ${{ secrets.PRODUCTION_CLOUDFLARE_WORKER_SECRETS }}
-      - run: npx wrangler deploy --env production --keep-vars
+      - run: npx wrangler secret bulk /tmp/wrangler-secrets.env --env production
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      - run: npx wrangler secret bulk /tmp/wrangler-secrets.env --env production
+      - run: npx wrangler deploy --env production --keep-vars
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -301,7 +317,7 @@ jobs:
   verify_production:
     name: Verify production
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     needs: [deploy_production]
     environment:
       name: production

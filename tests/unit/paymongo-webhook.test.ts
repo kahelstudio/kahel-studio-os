@@ -9,10 +9,14 @@ const mocks = vi.hoisted(() => ({
   updateEq: vi.fn(),
   updateCheckoutEq: vi.fn(),
   after: vi.fn(),
+  getPaymentReceipt: vi.fn(),
+  sendPaymentReceipt: vi.fn(),
   pending: [] as Array<() => void | Promise<void>>,
 }));
 
 vi.mock("@/lib/server/supabase-admin", () => ({ getSupabaseAdmin: mocks.getAdmin }));
+vi.mock("@/lib/server/payments-data", () => ({ getPaymentReceipt: mocks.getPaymentReceipt }));
+vi.mock("@/lib/server/payment-receipt-email", () => ({ sendPaymentReceipt: mocks.sendPaymentReceipt }));
 vi.mock("next/server", async (importOriginal) => ({
   ...await importOriginal<typeof import("next/server")>(),
   after: mocks.after,
@@ -55,6 +59,7 @@ function event(options: {
   reference?: string;
   eventId?: string;
   includeAmount?: boolean;
+  method?: string;
 } = {}) {
   const now = Math.floor(Date.now() / 1000);
   const amount = options.amount ?? 150000;
@@ -66,7 +71,7 @@ function event(options: {
     data: { id: options.checkoutId ?? "cs_test", attributes: {
       ...checkoutAmount,
       description: "Mini Session photography booking",
-      payment_method_used: "gcash",
+      payment_method_used: options.method ?? "gcash",
       reference_number: options.reference ?? "KS-2026-TEST",
       metadata: options.metadata ?? { payment_id: paymentId },
       paid_at: now,
@@ -159,19 +164,16 @@ describe("PayMongo webhook", () => {
       requested_payload: expect.objectContaining({ amount: 150000, currency: "PHP", reference: "KS-2026-TEST" }),
     }));
     expect(mocks.from).not.toHaveBeenCalled();
-    const args = mocks.rpc.mock.calls[0][1];
+    const args = mocks.rpc.mock.calls.find(([name]) => name === "confirm_paymongo_payment")?.[1];
     expect(args.requested_payload).not.toHaveProperty("metadata");
     expect(args.requested_payload).not.toHaveProperty("raw");
   });
 
-  it("acknowledges before starting database processing", async () => {
+  it("persists before acknowledging delivery", async () => {
     const response = await POST(await signedRequest(event()));
 
     expect(response.status).toBe(200);
-    expect(mocks.rpc).not.toHaveBeenCalled();
-
-    await flushAfter();
-    expect(mocks.rpc).toHaveBeenCalledOnce();
+    expect(mocks.rpc).toHaveBeenCalledTimes(3);
   });
 
   it("delegates duplicate paid events atomically to the confirmation RPC", async () => {
@@ -180,7 +182,7 @@ describe("PayMongo webhook", () => {
 
     expect((await deliver(body)).status).toBe(200);
     expect((await deliver(body)).status).toBe(200);
-    expect(mocks.rpc).toHaveBeenCalledTimes(2);
+    expect(mocks.rpc).toHaveBeenCalledTimes(6);
     expect(mocks.from).not.toHaveBeenCalled();
   });
 
@@ -190,10 +192,31 @@ describe("PayMongo webhook", () => {
     expect(mocks.rpc).toHaveBeenCalledWith("fail_or_expire_provider_payment", expect.objectContaining({ requested_event_type: type, requested_metadata_payment_id: paymentId }));
   });
 
-  it("acknowledges ledger persistence failures so PayMongo does not disable the webhook", async () => {
+  it("records BillEase as the verified payment method", async () => {
+    const response = await deliver(event({ method: "billease" }));
+    expect(response.status).toBe(200);
+    expect(mocks.rpc).toHaveBeenCalledWith("confirm_paymongo_payment", expect.objectContaining({ requested_payment_method_detail: "billease" }));
+  });
+
+  it("queues the ledger receipt after a BillEase payment is confirmed", async () => {
+    mocks.rpc.mockResolvedValue({ data: { id: paymentId, booking_id: "booking-test", status: "paid" }, error: null });
+    mocks.getPaymentReceipt.mockResolvedValue({
+      receipt: { receipt_number: "OR-1", client_name: "Ana Cruz", booking_reference: "KS-2026-TEST", invoice_reference: null, payment_method: "billease", amount_centavos: 150000, cash_received_centavos: null, change_centavos: null, issued_at: "2026-08-22T00:00:00Z" },
+      lines: [{ description: "Booking payment", quantity: 1, totalCentavos: 150000 }],
+    });
+    mocks.from.mockImplementation((table: string) => table === "bookings"
+      ? { select: () => ({ eq: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data: { client_id: "client-test", client_profile_id: "profile-test" }, error: null }) }) }) }
+      : { select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: vi.fn().mockResolvedValue({ data: { email: "ana@example.com" }, error: null }) }) }) }) });
+
+    expect((await deliver(event({ method: "billease" }))).status).toBe(200);
+    expect(mocks.sendPaymentReceipt).toHaveBeenCalledOnce();
+    expect(mocks.sendPaymentReceipt).toHaveBeenCalledWith(expect.objectContaining({ method: "Buy Now Pay Later", paymentId, source: "system" }));
+  });
+
+  it("returns a retryable response when ledger persistence fails", async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: { message: "database unavailable" } });
     const response = await deliver(event());
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(503);
   });
 
   it("preserves booking-only paid checkout behavior with bound checkout and reference", async () => {
@@ -209,7 +232,7 @@ describe("PayMongo webhook", () => {
     const response = await deliver(body, "li");
 
     expect(response.status).toBe(200);
-    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalledWith("confirm_paymongo_payment", expect.anything());
     expect(mocks.update).toHaveBeenCalledWith(expect.objectContaining({
       paid_amount_php: 150000, payment_status: "paid", paymongo_payment_id: "pay_test",
       paymongo_payment_intent_id: "pi_test", paymongo_payment_method: "gcash", status: "confirmed",
@@ -283,12 +306,12 @@ describe("PayMongo webhook", () => {
     expect(mocks.update).not.toHaveBeenCalled();
   });
 
-  it("acknowledges legacy database errors so PayMongo does not disable the webhook", async () => {
+  it("returns a retryable response for legacy database errors", async () => {
     mocks.maybeSingle.mockResolvedValue({ data: null, error: { message: "database unavailable" } });
-    expect((await deliver(event({ metadata: { booking_id: "booking-test" } }))).status).toBe(200);
+    expect((await deliver(event({ metadata: { booking_id: "booking-test" } }))).status).toBe(503);
 
     mocks.maybeSingle.mockResolvedValue({ data: booking(), error: null });
     mocks.updateCheckoutEq.mockResolvedValue({ error: { message: "update unavailable" } });
-    expect((await deliver(event({ metadata: { booking_id: "booking-test" } }))).status).toBe(200);
+    expect((await deliver(event({ metadata: { booking_id: "booking-test" } }))).status).toBe(503);
   });
 });

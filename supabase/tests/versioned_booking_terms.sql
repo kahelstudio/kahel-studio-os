@@ -50,7 +50,7 @@ insert into public.bookings (
 ) values (
   'f3000000-0000-4000-8000-000000000003', 'f1000000-0000-4000-8000-000000000001', 'f2000000-0000-4000-8000-000000000001',
   'terms-booking-a-post', repeat('c', 64), 'TERMS-A-POST', 'Solo Session', '10000000-0000-4000-8000-000000000001',
-  '2027-01-03', '09:00', 'Studio', 'cash', 120000, 120000
+  '2027-01-04', '09:00', 'Studio', 'cash', 120000, 120000
 );
 select is((select status::text from public.booking_agreement_requirements where booking_id = 'f3000000-0000-4000-8000-000000000003'), 'pending', 'new booking automatically requires the current published version');
 

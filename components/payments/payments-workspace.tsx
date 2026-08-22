@@ -2174,6 +2174,7 @@ function transactionIds(row: Transaction) {
     .join(" · ");
 }
 function label(value: string) {
+  if (value === "billease") return "Buy Now Pay Later";
   return value ? statusLabel(value) : "Unavailable";
 }
 function peso(centavos: number) {

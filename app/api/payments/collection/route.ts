@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { authorizePayments, isUuid, operationalPaymentError, PaymentApiError, readPaymentJson } from "../_shared";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
 import { inventoryQuantityError } from "@/lib/payments";
+import { getPayMongoPaymentCapability, payMongoPhilippinePhone } from "@/lib/server/paymongo-methods";
 
 export const runtime = "nodejs";
 
@@ -25,8 +26,6 @@ type PreparedResult = { payment: PaymentResult; invoice_id: string | null };
 type PreparedLine = { id: string; line_type: string; product_id: string | null; description: string; quantity: number; unit_price_centavos: number; total_centavos: number };
 type PayMongoResponse = { data?: { id?: string; attributes?: { checkout_url?: string; expires_at?: number | string; payment_intent?: { id?: string } | string } }; errors?: Array<{ detail?: string }> };
 
-const safeMethods = new Set(["card", "gcash", "paymaya", "qrph", "billease"]);
-
 function database() {
   return getSupabaseAdmin() as unknown as SupabaseClient<PaymentRpcDatabase>;
 }
@@ -34,11 +33,6 @@ function database() {
 function requiredCentavos(value: unknown, name: string, allowZero = false) {
   if (!Number.isSafeInteger(value) || (allowZero ? Number(value) < 0 : Number(value) <= 0) || Number(value) > 2_147_483_647) throw new PaymentApiError(`${name} must be ${allowZero ? "a non-negative" : "a positive"} integer number of centavos.`);
   return Number(value);
-}
-
-function paymentMethods() {
-  const configured = process.env.PAYMONGO_PAYMENT_METHODS?.split(",").map((item) => item.trim().toLowerCase()).filter((item) => safeMethods.has(item));
-  return configured?.length ? [...new Set(configured)] : ["card", "gcash", "paymaya", "qrph", "billease"];
 }
 
 function paymongoExpiry(value: number | string | undefined) {
@@ -82,7 +76,8 @@ export async function POST(request: Request) {
       cashReceived = requiredCentavos(body.cashReceivedCentavos, "Cash received");
     }
     const secretKey = method === "paymongo" ? process.env.PAYMONGO_SECRET_KEY : null;
-    if (method === "paymongo" && (!secretKey || !/^sk_(test|live)_/.test(secretKey) || (String(process.env.APP_ENV) !== "production" && secretKey.startsWith("sk_live_")))) throw new PaymentApiError("PayMongo checkout is not configured.", 503);
+    const production = String(process.env.APP_ENV) === "production";
+    if (method === "paymongo" && (!secretKey || (production ? !secretKey.startsWith("sk_live_") : !secretKey.startsWith("sk_test_")))) throw new PaymentApiError("PayMongo checkout is not configured.", 503);
     const admin = database();
 
     if (method === "cash") {
@@ -118,6 +113,8 @@ export async function POST(request: Request) {
 
     if (payment.checkout_url && payment.provider_checkout_session_id) return Response.json({ paymentId: payment.id, status: payment.status, checkoutUrl: payment.checkout_url, checkoutSessionId: payment.provider_checkout_session_id, reused: true }, { headers: { "Cache-Control": "private, no-store" } });
     if (payment.status !== "pending") throw new PaymentApiError("This payment request can no longer create a checkout. Use a new request key.", 409);
+    const paymentCapability = getPayMongoPaymentCapability(payment.amount_centavos);
+    if (!paymentCapability.methods.length) throw new PaymentApiError("No online payment methods are configured.", 503);
     const cancelPrepared = async () => {
       const cancelled = await admin.rpc("cancel_unbound_payment", { requested_payment_id: payment.id, requested_actor_id: auth.principal.userId });
       if (cancelled.error) console.error("[payments-api] Failed to cancel unbound payment", { paymentId: payment.id, error: cancelled.error });
@@ -147,13 +144,13 @@ export async function POST(request: Request) {
         method: "POST", signal: controller.signal, cache: "no-store",
         headers: { Authorization: `Basic ${Buffer.from(`${secretKey}:`).toString("base64")}`, "Content-Type": "application/json", "Idempotency-Key": body.idempotencyKey.trim() },
         body: JSON.stringify({ data: { attributes: {
-          billing: { name: clientResult.data.name, email: profileResult.data.email, phone: profileResult.data.mobile ?? undefined },
+          billing: { name: clientResult.data.name, email: profileResult.data.email, phone: payMongoPhilippinePhone(profileResult.data.mobile) },
           cancel_url: `${origin}/payments?checkout=cancelled&paymentId=${encodeURIComponent(payment.id)}`,
           success_url: `${origin}/payments?checkout=success&paymentId=${encodeURIComponent(payment.id)}`,
           description: `Payment for booking ${bookingResult.data.reference}`,
           line_items: lineResult.data.map((line) => ({ amount: line.unit_price_centavos, currency: "PHP", name: line.description, quantity: line.quantity })),
           metadata: { payment_id: payment.id, booking_id: payment.booking_id, invoice_id: prepared.invoice_id ?? "" },
-          payment_method_types: paymentMethods(), reference_number: bookingResult.data.reference,
+          payment_method_types: paymentCapability.methods, reference_number: bookingResult.data.reference,
           send_email_receipt: false, show_description: true, show_line_items: true,
         } } }),
       });

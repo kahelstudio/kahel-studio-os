@@ -49,7 +49,13 @@ TURNSTILE_SECRET=replace-with-the-secret-key
 GOOGLE_AUTH_ENABLED=false
 PAYMONGO_SECRET_KEY=sk_live_replace_me
 PAYMONGO_WEBHOOK_SECRET=whsk_replace_me
+PAYMONGO_PAYMENT_METHODS=card,gcash,paymaya,grab_pay,qrph
+PAYMONGO_BNPL_ENABLED=false
 ```
+
+Only add `billease` and set `PAYMONGO_BNPL_ENABLED=true` after the matching test or live merchant account shows BillEase as Active in PayMongo Settings → Payment Methods. Confirm the merchant-specific fee and settlement timeline in the dashboard before live rollout.
+
+BillEase payments use the existing PayMongo refund flow. PayMongo currently documents a 60-day refund window, full and partial refunds, and up to 24 hours for the refund to reflect. The merchant payout balance must be sufficient; verify current terms in the dashboard before processing a customer request.
 
 Do not include `SUPABASE_URL` or `SUPABASE_PUBLISHABLE_KEY` in this file; CI passes them as environment-specific Worker variables. Do not include `KAHEL_AUTH_DISABLED` or `AUTH_REDIRECT_URL`; `wrangler.jsonc` fixes them for both remote environments. If a secret is removed from the file later, delete the obsolete Worker secret separately with `wrangler secret delete --env <environment> <NAME>`; Wrangler's additive secrets upload intentionally does not delete omitted secrets.
 
@@ -68,9 +74,9 @@ Create a least-privilege Cloudflare API token with the required Workers deployme
 
 ## PayMongo webhook
 
-Use the canonical production endpoint `https://kahelstudio.com/api/paymongo/webhook` and subscribe it to `checkout_session.payment.paid`. Store the signing secret returned for that exact live webhook as `PAYMONGO_WEBHOOK_SECRET`; test, live, and recreated webhooks have different signing secrets.
+Use the canonical production endpoint `https://kahelstudio.com/api/paymongo/webhook` and subscribe it to `checkout_session.payment.paid`, `checkout_session.payment.failed`, and `checkout_session.expired`. Store the signing secret returned for that exact live webhook as `PAYMONGO_WEBHOOK_SECRET`; test, live, and recreated webhooks have different signing secrets.
 
-The endpoint preserves the raw request body for signature verification and immediately returns `200` for every validly signed delivery. Idempotent database processing runs after the response through Next.js `after()`. Malformed, mismatched, and persistence-failed signed events are logged without returning a non-2xx response, preventing PayMongo from disabling the endpoint after repeated delivery failures. Missing configuration and invalid signatures remain non-2xx because those requests cannot be authenticated as PayMongo deliveries.
+The endpoint preserves the raw request body for signature verification and durably records each provider event ID before processing it. Successful and non-retryable signed deliveries return `200`; temporary persistence failures return `503` so PayMongo retries. Missing configuration and invalid signatures remain non-2xx because those requests cannot be authenticated as PayMongo deliveries.
 
 If PayMongo disables the endpoint, retrieve its `hook_...` ID from the PayMongo dashboard and enable it with the live secret API key:
 

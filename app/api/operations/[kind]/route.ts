@@ -5,6 +5,8 @@ import { normalizePhilippinePhone } from "@/lib/operation-rules";
 import { ensureCustomerAccount } from "@/lib/server/customer-auth";
 import { sendBookingTermsReviewRequest } from "@/lib/server/customer-email";
 import { getCurrentBookingTerms } from "@/lib/server/legal-documents";
+import { isBookingSlotConflict } from "@/lib/server/booking-slots";
+import { getBookingAvailability } from "@/lib/server/booking-availability";
 
 export const runtime = "nodejs";
 
@@ -111,7 +113,19 @@ async function createBooking(body: Body, principal: StaffPrincipal) {
   const fingerprintBytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${phone}:${serviceDate}:${serviceTime}:${selectedService.id}:${idempotency}`));
   const fingerprint = [...new Uint8Array(fingerprintBytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
   const booking = await admin.from("bookings").insert({ client_id: profile.client_id, client_profile_id: profile.id, idempotency_key: idempotency, request_fingerprint: fingerprint, reference, service_type: selectedService.name, service_id: selectedService.id, service_date: serviceDate, service_time: serviceTime, location, payment_type: paymentType, currency: "PHP", subtotal_amount_php: subtotalCents, total_amount_php: totalCents, paid_amount_php: 0, refunded_amount_php: 0, status: "inquiry", payment_status: "unpaid", attendance: "expected", kind: "standard" }).select("id,reference").single();
-  if (booking.error || !booking.data) { await cleanupCreatedClient(); return NextResponse.json({ error: "Unable to create the booking." }, { status: 500 }); }
+  if (booking.error || !booking.data) {
+    await cleanupCreatedClient();
+    if (isBookingSlotConflict(booking.error)) {
+      const resourceName = await getBookingAvailability(selectedService.id, serviceDate)
+        .then((current) => current.resource.name)
+        .catch(() => "");
+      const message = resourceName
+        ? `This time is no longer available for ${resourceName}. Choose another slot.`
+        : "This time is no longer available. Choose another slot.";
+      return NextResponse.json({ error: message }, { status: 409 });
+    }
+    return NextResponse.json({ error: "Unable to create the booking." }, { status: 500 });
+  }
   if (promoCodeId && discountCents > 0) {
     await admin.from("promo_code_usages").insert({ promo_code_id: promoCodeId, booking_id: booking.data.id, client_id: profile.client_id, discount_amount: discountCents });
   }

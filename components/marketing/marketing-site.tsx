@@ -231,6 +231,10 @@ const eventAddOns = [
 const peso = (amount: number) => `₱${amount.toLocaleString("en-PH")}`;
 const pad = (number: number) => String(number).padStart(2, "0");
 const formatMobile = (value: string) => [value.slice(0, 3), value.slice(3, 6), value.slice(6, 10)].filter(Boolean).join(" ");
+const formatBookingTime = (time: string) => {
+  const [hour, minute] = time.split(":").map(Number);
+  return `${hour % 12 || 12}:${pad(minute)} ${hour < 12 ? "AM" : "PM"}`;
+};
 const todayIso = () => {
   const date = new Date();
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -728,7 +732,7 @@ function Services({ category, setCategory, goBook }: { category: ServiceCategory
   return (
     <main className={`${styles.page} ${styles.container}`}>
       <Eyebrow>{category === "sessions" ? "Studio sessions · 2026 rate card" : "Events · 2026 rate card"}</Eyebrow>
-      <h1>{category === "sessions" ? "Every session, priced plainly." : "Coverage for your celebrations."}</h1>
+      <h1>{category === "sessions" ? <>Every session,<br />priced plainly.</> : "Coverage for your celebrations."}</h1>
       <p className={styles.lead}>Starting rates in Philippine peso. Every shoot is quoted to your date, location and coverage, no hidden line items.</p>
       <div className={styles.segmented}>
         <button type="button" aria-pressed={category === "sessions"} onClick={() => setCategory("sessions")}>
@@ -1062,6 +1066,29 @@ function HealthSafety() {
 }
 
 type BookingAddon = { name: string; quantity: number };
+type AvailabilitySlot = { startsAt: string; endsAt: string; time: string; available: boolean };
+type BookingAvailability = {
+  serviceId: string;
+  resource: { id: string; code: string; name: string };
+  date: string;
+  timezone: string;
+  durationMinutes: number;
+  prepBufferMinutes: number;
+  cleanupBufferMinutes: number;
+  serverTime: string;
+  refreshAfterSeconds: number;
+  slots: AvailabilitySlot[];
+};
+type BookingHold = {
+  holdId: string;
+  startsAt: string;
+  endsAt: string;
+  expiresAt: string;
+  serverTime: string;
+  receivedAt: number;
+};
+type BnplCapability = { available: boolean; configured: boolean; reason: "disabled" | "below_minimum" | "above_maximum" | null };
+type CheckoutReturn = { kind: "success" | "cancelled"; state: "pending" | "paid" | "failed"; reference: string; bookingId: string };
 type BookingForm = {
   name: string;
   email: string;
@@ -1069,9 +1096,10 @@ type BookingForm = {
   session: string;
   date: string;
   time: string;
+  endTime: string;
   location: string;
   promoCode: string;
-  pay: "" | "deposit" | "full" | "cash";
+  pay: "" | "deposit" | "full" | "bnpl" | "cash";
   addons: BookingAddon[];
 };
 const emptyBooking: BookingForm = {
@@ -1081,6 +1109,7 @@ const emptyBooking: BookingForm = {
   session: "",
   date: "",
   time: "",
+  endTime: "",
   location: "",
   promoCode: "",
   pay: "full",
@@ -1088,7 +1117,7 @@ const emptyBooking: BookingForm = {
 };
 
 
-function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, onTimeChange, bookedDates, bookedTimes, onWaitlist }: { dateValue: string; timeValue: string; durationMinutes: number; onDateChange: (value: string) => void; onTimeChange: (value: string) => void; bookedDates: Set<string>; bookedTimes: Set<string>; onWaitlist: () => void }) {
+function BookingSchedule({ dateValue, timeValue, endTimeValue, eventSelected, eventDurationMinutes, eventMinimumMinutes, eventCoverageMinutes, eventRangeValid, serviceSelected, minimumDate, availability, availabilityStatus, availabilityError, availabilityAnnouncement, disabled, timeAreaRef, onDateChange, onTimeChange, onEventTimeChange, onRefresh, onWaitlist }: { dateValue: string; timeValue: string; endTimeValue: string; eventSelected: boolean; eventDurationMinutes: number; eventMinimumMinutes: number; eventCoverageMinutes: number; eventRangeValid: boolean; serviceSelected: boolean; minimumDate: string; availability: BookingAvailability | null; availabilityStatus: "idle" | "loading" | "refreshing" | "ready" | "error"; availabilityError: string; availabilityAnnouncement: string; disabled: boolean; timeAreaRef: React.RefObject<HTMLElement | null>; onDateChange: (value: string) => void; onTimeChange: (slot: AvailabilitySlot) => void; onEventTimeChange: (field: "time" | "endTime", value: string) => void; onRefresh: () => void; onWaitlist: () => void }) {
   const initial = dateValue ? new Date(`${dateValue}T00:00`) : new Date();
   const [month, setMonth] = useState({
     year: initial.getFullYear(),
@@ -1101,11 +1130,6 @@ function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, 
     const next = new Date(month.year, month.month + amount, 1);
     setMonth({ year: next.getFullYear(), month: next.getMonth() });
   };
-  const studioSession = durationMinutes > 0;
-  const bookingTimeSlots = Array.from({ length: studioSession ? 9 : 24 }, (_, index) => {
-    const totalMinutes = (studioSession ? 8 * 60 : 0) + index * 60;
-    return `${pad(Math.floor(totalMinutes / 60))}:${pad(totalMinutes % 60)}`;
-  }).filter((t) => t !== "12:00");
   const selectedDateLabel = dateValue
     ? new Date(`${dateValue}T00:00`).toLocaleDateString("en-PH", {
         weekday: "long",
@@ -1113,16 +1137,13 @@ function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, 
         day: "numeric",
       })
     : "Select a date";
-  const formatTime = (time: string) =>
-    new Date(`2000-01-01T${time}:00`).toLocaleTimeString("en-PH", {
-      hour: "numeric",
-      minute: "2-digit",
-    });
+  const noSlots = Boolean(availabilityStatus === "ready" && availability?.slots.length && availability.slots.every((slot) => !slot.available));
+  const eventSlot = eventSelected && eventRangeValid ? availability?.slots.find((slot) => slot.time === timeValue) : null;
   return (
     <div className={styles.bookingSchedule}>
       <section className={styles.scheduleCalendar} aria-label="Choose a date">
         <header>
-          <button type="button" onClick={() => step(-1)} aria-label="Previous month">
+          <button type="button" onClick={() => step(-1)} aria-label="Previous month" disabled={disabled}>
             <ChevronLeft />
           </button>
           <strong>
@@ -1131,7 +1152,7 @@ function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, 
               year: "numeric",
             })}
           </strong>
-          <button type="button" onClick={() => step(1)} aria-label="Next month">
+          <button type="button" onClick={() => step(1)} aria-label="Next month" disabled={disabled}>
             <ChevronRight />
           </button>
         </header>
@@ -1144,41 +1165,57 @@ function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, 
           {cells.map((date) => {
             const iso = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
             const outside = date.getMonth() !== month.month;
-            const past = iso < todayIso();
-            const booked = bookedDates.has(iso);
-            const now = new Date();
-            const nowTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-            const allSlotsPast = iso === todayIso() && bookingTimeSlots.every((t) => t <= nowTime);
+            const past = iso < minimumDate;
             return (
-              <button type="button" key={iso} aria-label={`${date.toLocaleDateString("en-PH", { month: "long", day: "numeric" })}${booked ? ", fully booked" : ""}`} aria-pressed={iso === dateValue} disabled={outside || past || booked || allSlotsPast} data-outside={outside} data-booked={booked} onClick={() => onDateChange(iso)}>
+              <button type="button" key={iso} aria-label={date.toLocaleDateString("en-PH", { month: "long", day: "numeric" })} aria-pressed={iso === dateValue} disabled={disabled || outside || past} data-outside={outside} onClick={() => onDateChange(iso)}>
                 {date.getDate()}
               </button>
             );
           })}
         </div>
       </section>
-      <section className={styles.scheduleTimes} aria-label="Choose a time">
+      <section className={styles.scheduleTimes} aria-label="Choose a time" ref={timeAreaRef} tabIndex={-1}>
         <header>
           <h3>{selectedDateLabel}</h3>
-          <p>Time zone: Manila (GMT+08:00)</p>
+          <p>Time zone: {availability?.timezone ?? "Asia/Manila"}</p>
         </header>
-        {durationMinutes < 0 ? (
+        <span className={styles.srOnly} aria-live="polite" aria-atomic="true">{availabilityAnnouncement}</span>
+        {!serviceSelected ? (
           <div className={styles.scheduleEmpty}>Select a session first</div>
         ) : !dateValue ? (
           <div className={styles.scheduleEmpty}>Choose an available date to see times</div>
-        ) : (
-          <div className={styles.timeSlots} role="listbox" aria-label="Available start times">
-            {bookingTimeSlots.map((time) => {
-              const now = new Date();
-              const nowTime = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-              const unavailable = (dateValue === todayIso() && time <= nowTime) || bookedTimes.has(time);
-              return (
-                <button type="button" role="option" aria-selected={timeValue === time} key={time} disabled={unavailable} onClick={() => onTimeChange(time)}>
-                  {formatTime(time)}
-                </button>
-              );
-            })}
+        ) : eventSelected ? (
+          <div className={styles.eventTimePicker}>
+            <div className={styles.eventTimeRange}>
+              <label><span>From</span><input type="time" step="1800" value={timeValue} disabled={disabled} onChange={(event) => onEventTimeChange("time", event.target.value)} /></label>
+              <label><span>To</span><input type="time" step="1800" value={endTimeValue} disabled={disabled} onChange={(event) => onEventTimeChange("endTime", event.target.value)} /></label>
+            </div>
+            <p className={styles.eventTimeHint}>This package includes up to {eventCoverageMinutes / 60} hours of coverage.</p>
+            {timeValue && endTimeValue && !eventRangeValid ? <p className={styles.eventTimeError}>Choose a range between {eventMinimumMinutes / 60} and {eventCoverageMinutes / 60} hours.</p>
+              : !timeValue || !endTimeValue ? <p className={styles.eventTimeStatus}>Enter the event start and end time.</p>
+              : availabilityStatus === "idle" || availabilityStatus === "loading" || availabilityStatus === "refreshing" ? <p className={styles.eventTimeStatus}>Checking the full {Math.round(eventDurationMinutes / 60 * 10) / 10}-hour range...</p>
+              : availabilityStatus === "error" ? <div className={styles.eventTimeError}>{availabilityError || "Availability could not be loaded."} <button type="button" onClick={onRefresh}>Try again</button></div>
+              : eventSlot?.available ? <p className={styles.eventTimeAvailable}>This time range is available.</p>
+              : <p className={styles.eventTimeError}>This time range overlaps another booking. Choose a different range.</p>}
           </div>
+        ) : availabilityStatus === "idle" || availabilityStatus === "loading" ? (
+          <div className={styles.scheduleEmpty}>Loading available times...</div>
+        ) : availabilityStatus === "error" ? (
+          <div className={styles.scheduleEmpty} role="status"><span>{availabilityError || "Availability could not be loaded."}</span><button type="button" onClick={onRefresh}>Try again</button></div>
+        ) : availabilityStatus === "ready" && availability?.slots.length === 0 ? (
+          <div className={styles.scheduleEmpty}>Closed on this date</div>
+        ) : (
+          <>
+            {availabilityStatus === "refreshing" && <p className={styles.scheduleRefresh}>Refreshing availability...</p>}
+            {noSlots && <p className={styles.scheduleNoSlots}>No times are currently available for this date.</p>}
+            <div className={styles.timeSlots} role="listbox" aria-label="Available start times">
+              {availability?.slots.map((slot) => (
+                <button type="button" role="option" aria-label={slot.available ? formatBookingTime(slot.time) : "Unavailable"} aria-selected={slot.available && timeValue === slot.time} key={slot.startsAt} disabled={disabled || !slot.available} onClick={() => onTimeChange(slot)}>
+                  {slot.available ? formatBookingTime(slot.time) : "Unavailable"}
+                </button>
+              ))}
+            </div>
+          </>
         )}
         <p className={styles.waitlist}>
           Can&apos;t find a suitable time?{" "}
@@ -1191,30 +1228,28 @@ function BookingSchedule({ dateValue, timeValue, durationMinutes, onDateChange, 
 
 function Booking({ goHome }: { goHome: () => void }) {
   const [form, setForm] = useState(emptyBooking);
-  const [status, setStatus] = useState<"idle" | "submitting" | "done">("idle");
+  const [status, setStatus] = useState<"idle" | "creating-hold" | "hold-active" | "booking-processing" | "done">("idle");
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [reference, setReference] = useState("");
-  const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set());
+  const [availability, setAvailability] = useState<BookingAvailability | null>(null);
+  const [availabilityStatus, setAvailabilityStatus] = useState<"idle" | "loading" | "refreshing" | "ready" | "error">("idle");
+  const [availabilityError, setAvailabilityError] = useState("");
+  const [availabilityAnnouncement, setAvailabilityAnnouncement] = useState("");
+  const [availabilityRefresh, setAvailabilityRefresh] = useState(0);
+  const [serverDate, setServerDate] = useState("");
+  const [selectedStartsAt, setSelectedStartsAt] = useState("");
+  const [hold, setHold] = useState<BookingHold | null>(null);
+  const [holdRemainingSeconds, setHoldRemainingSeconds] = useState(0);
+  const [submitError, setSubmitError] = useState("");
   const [termsAccepted] = useState(true);
   const [promoCodeInput, setPromoCodeInput] = useState("");
   const [addonQuantities, setAddonQuantities] = useState<Record<string, number>>({});
   const [openSessionCategory, setOpenSessionCategory] = useState<ServiceCategory | null>(null);
   const [bookingTerms, setBookingTerms] = useState<PublishedBookingTerms | null>(null);
+  const [bnpl, setBnpl] = useState<{ amountCentavos: number; capability: BnplCapability } | null>(null);
   const bookingRequestId = useRef<string | null>(null);
-  useEffect(() => {
-    fetch("/api/paymongo/availability")
-      .then((r) =>
-        r.ok
-          ? (r.json() as Promise<{
-              bookedSlots: Array<{ date: string; time: string }>;
-            }>)
-          : null,
-      )
-      .then((data) => {
-        if (data) setBookedSlots(new Set(data.bookedSlots.map((s) => `${s.date}|${s.time}`)));
-      })
-      .catch(() => {});
-  }, []);
+  const bookingOwnerKey = useRef<string | null>(null);
+  const scheduleTimeAreaRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     let active = true;
     fetch("/api/legal/booking-terms", { cache: "no-store" })
@@ -1226,29 +1261,133 @@ function Booking({ goHome }: { goHome: () => void }) {
   const allPackages = [...studioPackages, ...eventPackages];
   const selected = allPackages.find((item) => item.name === form.session);
   const studioSelected = studioPackages.some((item) => item.name === form.session);
-  const sessionDuration = !selected ? -1 : studioSelected ? (selected.per === "30 minutes" ? 30 : 60) : 0;
+  const eventSelected = Boolean(selected && !studioSelected);
+  const baseDurationMinutes = selected?.per === "30 minutes" ? 30 : selected?.per === "1 hour" ? 60 : selected?.per === "half day" ? 240 : selected?.per === "full day" ? 480 : 0;
+  const additionalHours = (addonQuantities["Additional Hour"] ?? 0) + (addonQuantities["Additional hour of coverage"] ?? 0);
+  const eventStartMinutes = /^\d{2}:\d{2}$/.test(form.time) ? Number(form.time.slice(0, 2)) * 60 + Number(form.time.slice(3)) : 0;
+  const eventEndMinutes = /^\d{2}:\d{2}$/.test(form.endTime) ? Number(form.endTime.slice(0, 2)) * 60 + Number(form.endTime.slice(3)) : 0;
+  const eventDurationMinutes = eventSelected && form.time && form.endTime ? eventEndMinutes - eventStartMinutes : 0;
+  const eventCoverageMinutes = baseDurationMinutes + additionalHours * 60;
+  const eventRangeValid = !eventSelected || (eventDurationMinutes >= 30 && eventDurationMinutes <= eventCoverageMinutes);
+  const requestedDurationMinutes = eventSelected ? eventDurationMinutes : eventCoverageMinutes;
+  useEffect(() => {
+    if (!form.session || !form.date || requestedDurationMinutes < 1 || !eventRangeValid) return;
+    let active = true;
+    let controller: AbortController | null = null;
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+    const load = async (initial: boolean) => {
+      controller?.abort();
+      controller = new AbortController();
+      if (refreshTimer) clearTimeout(refreshTimer);
+      setAvailabilityStatus(initial ? "loading" : "refreshing");
+      setAvailabilityError("");
+      if (!initial) setAvailabilityAnnouncement("Refreshing availability.");
+      try {
+        const response = await fetch(`/api/paymongo/availability?service=${encodeURIComponent(form.session)}&date=${encodeURIComponent(form.date)}&duration=${requestedDurationMinutes}`, { cache: "no-store", signal: controller.signal });
+        const result = await response.json() as Partial<BookingAvailability> & { error?: string };
+        if (!response.ok) throw new Error(result.error || "Availability could not be loaded. Please try again.");
+        if (!result.resource || !Array.isArray(result.slots) || typeof result.serverTime !== "string" || typeof result.timezone !== "string") throw new Error("Availability could not be loaded. Please try again.");
+        if (!active) return;
+        const next = result as BookingAvailability;
+        setAvailability(next);
+        setAvailabilityStatus("ready");
+        const dateParts = new Intl.DateTimeFormat("en-CA", { timeZone: next.timezone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(next.serverTime));
+        const part = (type: Intl.DateTimeFormatPartTypes) => dateParts.find((item) => item.type === type)?.value ?? "";
+        setServerDate(`${part("year")}-${part("month")}-${part("day")}`);
+        const availableCount = next.slots.filter((slot) => slot.available).length;
+        setAvailabilityAnnouncement(`Availability updated. ${availableCount} ${availableCount === 1 ? "time" : "times"} available.`);
+        refreshTimer = setTimeout(() => load(false), Math.max(1, next.refreshAfterSeconds || 30) * 1000);
+      } catch (error) {
+        if (!active || (error instanceof DOMException && error.name === "AbortError")) return;
+        const message = error instanceof TypeError ? "Unable to reach availability. Check your connection and try again." : error instanceof Error ? error.message : "Availability could not be loaded. Please try again.";
+        setAvailabilityStatus("error");
+        setAvailabilityError(message);
+        setAvailabilityAnnouncement(message);
+      }
+    };
+    const refreshOnFocus = () => load(false);
+    const refreshWhenVisible = () => { if (document.visibilityState === "visible") load(false); };
+    load(true);
+    window.addEventListener("focus", refreshOnFocus);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    return () => {
+      active = false;
+      controller?.abort();
+      if (refreshTimer) clearTimeout(refreshTimer);
+      window.removeEventListener("focus", refreshOnFocus);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [eventRangeValid, form.session, form.date, requestedDurationMinutes, availabilityRefresh]);
+  useEffect(() => {
+    if (!hold) return;
+    let expired = false;
+    const tick = () => {
+      const elapsed = Date.now() - hold.receivedAt;
+      const remaining = Math.max(0, Math.ceil((Date.parse(hold.expiresAt) - Date.parse(hold.serverTime) - elapsed) / 1000));
+      setHoldRemainingSeconds(remaining);
+      if (remaining > 0 || expired) return;
+      expired = true;
+      setHold(null);
+      setStatus("idle");
+      setSelectedStartsAt("");
+      setForm((current) => ({ ...current, time: "", endTime: "" }));
+      setSubmitError("Your reservation hold expired. Choose an available time again.");
+      setAvailabilityAnnouncement("Your reservation hold expired. Choose an available time again.");
+      setAvailabilityRefresh((current) => current + 1);
+    };
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [hold]);
   const availableAddons = studioSelected ? sessionAddOns : form.session ? eventAddOns : [];
   const selectedAddons = availableAddons.flatMap(([name, , price]) => addonQuantities[name] ? [{ name, quantity: addonQuantities[name], price, total: price * addonQuantities[name] }] : []);
   const addonsTotal = selectedAddons.reduce((sum, addon) => sum + addon.total, 0);
-  const total = selected ? Math.round(applyPromoDiscount(selected.price * 100, form.promoCode) * (form.pay === "deposit" ? 0.5 : 1)) / 100 + addonsTotal : 0;
+  const discountedPackageCentavos = selected ? applyPromoDiscount(selected.price * 100, form.promoCode) : 0;
+  const total = selected ? Math.round(discountedPackageCentavos * (form.pay === "deposit" ? 0.5 : 1)) / 100 + addonsTotal : 0;
+  const bnplAmountCentavos = Math.round(discountedPackageCentavos + addonsTotal * 100);
+  const bnplCapabilityAmountCentavos = bnplAmountCentavos || 10_000;
+  const currentBnpl = selected && bnplAmountCentavos > 0 && bnpl?.amountCentavos === bnplAmountCentavos ? bnpl.capability : null;
+  const showBnpl = Boolean(bnpl?.capability.configured && currentBnpl?.available !== false);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`/api/paymongo/capabilities?amount=${bnplCapabilityAmountCentavos}`, { cache: "no-store", signal: controller.signal })
+      .then(async (response) => response.ok ? (response.json() as Promise<{ bnpl: BnplCapability }>) : null)
+      .then((result) => { if (result) setBnpl({ amountCentavos: bnplCapabilityAmountCentavos, capability: result.bnpl }); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [bnplCapabilityAmountCentavos]);
   const normalizedPromoCode = promoCodeInput.trim().toUpperCase();
   const promoApplied = Boolean(normalizedPromoCode && form.promoCode === normalizedPromoCode);
-  const bookedTimesForDate = new Set([...bookedSlots].filter((s) => s.startsWith(`${form.date}|`)).map((s) => s.split("|")[1]));
-  const bookedTimesByDate = new Map<string, Set<string>>();
-  for (const slot of bookedSlots) {
-    const [date, time] = slot.split("|");
-    if (!bookedTimesByDate.has(date)) bookedTimesByDate.set(date, new Set());
-    bookedTimesByDate.get(date)!.add(time);
-  }
-  const fullyBookedDates = new Set([...bookedTimesByDate.entries()].filter(([, times]) => times.size >= 9).map(([date]) => date));
-  const valid = Boolean(form.name && form.email && form.mobile && form.session && form.date && form.time && form.pay && form.date >= todayIso() && !bookedTimesForDate.has(form.time));
+  const eventSlot = eventSelected && eventRangeValid && availability?.date === form.date ? availability.slots.find((slot) => slot.time === form.time && slot.available) : null;
+  const effectiveStartsAt = eventSelected ? eventSlot?.startsAt ?? "" : selectedStartsAt;
+  const selectedSlotAvailable = availability?.date === form.date && availability.slots.some((slot) => slot.startsAt === effectiveStartsAt && slot.available);
+  const heldSelectedSlot = hold?.startsAt === effectiveStartsAt && holdRemainingSeconds > 0;
+  const valid = Boolean(form.name && form.email && form.mobile && form.session && form.date && form.time && (!eventSelected || (form.endTime && eventRangeValid)) && form.pay && effectiveStartsAt && form.date >= (serverDate || todayIso()) && (availabilityStatus === "ready" || heldSelectedSlot) && (selectedSlotAvailable || heldSelectedSlot));
   const update = <Key extends keyof BookingForm>(key: Key, value: BookingForm[Key]) => {
     if (key === "session") setAddonQuantities({});
+    if (key === "session" || key === "date") {
+      setAvailability(null);
+      setAvailabilityStatus("idle");
+      setAvailabilityError("");
+      setSelectedStartsAt("");
+      setHold(null);
+      setHoldRemainingSeconds(0);
+      setSubmitError("");
+    }
     setForm((current) => ({
       ...current,
       [key]: key === "mobile" ? String(value).replace(/\D/g, "").replace(/^0/, "").slice(0, 10) : value,
-      ...(key === "session" ? { time: "", addons: [] } : key === "date" ? { time: "" } : {}),
+      ...(key === "session" ? { time: "", endTime: "", addons: [] } : key === "date" ? { time: "", endTime: "" } : {}),
     }));
+  };
+  const updateEventTime = (field: "time" | "endTime", value: string) => {
+    setAvailability(null);
+    setAvailabilityStatus("idle");
+    setAvailabilityError("");
+    setSelectedStartsAt("");
+    setHold(null);
+    setHoldRemainingSeconds(0);
+    setSubmitError("");
+    setForm((current) => ({ ...current, [field]: value }));
   };
   const adjustAddon = (name: string, amount: number) => {
     const quantity = Math.min(10, Math.max(0, (addonQuantities[name] ?? 0) + amount));
@@ -1262,16 +1401,53 @@ function Booking({ goHome }: { goHome: () => void }) {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!valid || !selected || !termsAccepted) return;
-    setStatus("submitting");
+    if (!valid || !selected || !effectiveStartsAt || !termsAccepted) return;
+    const requestId = bookingRequestId.current ??= crypto.randomUUID();
+    const ownerKey = bookingOwnerKey.current ??= crypto.randomUUID();
+    setSubmitError("");
+    setStatus("creating-hold");
+    let holdAcquired = false;
+    let activeHoldId = "";
+    const conflict = (message: string) => {
+      if (activeHoldId) void fetch("/api/bookings/holds", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ holdId: activeHoldId, ownerKey }) });
+      setStatus("idle");
+      setHold(null);
+      setHoldRemainingSeconds(0);
+      setSelectedStartsAt("");
+      setForm((current) => ({ ...current, time: "", endTime: "" }));
+      setSubmitError(message);
+      setAvailabilityAnnouncement(message);
+      setAvailabilityRefresh((current) => current + 1);
+      bookingRequestId.current = null;
+      bookingOwnerKey.current = null;
+      requestAnimationFrame(() => scheduleTimeAreaRef.current?.focus({ preventScroll: false }));
+    };
     try {
+      const holdResponse = await fetch("/api/bookings/holds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ service: form.session, startsAt: effectiveStartsAt, durationMinutes: requestedDurationMinutes, ownerKey, idempotencyKey: `${requestId}:hold` }),
+      });
+      const holdResult = await holdResponse.json() as { holdId?: string; startsAt?: string; endsAt?: string; expiresAt?: string; serverTime?: string; error?: string };
+      if (holdResponse.status === 409) {
+        conflict(holdResult.error || "This time is no longer available. Choose another time.");
+        return;
+      }
+      if (!holdResponse.ok || !holdResult.holdId || !holdResult.expiresAt || !holdResult.serverTime || !holdResult.startsAt || !holdResult.endsAt) throw new Error(holdResult.error || "Unable to reserve this time. Refresh availability and try again.");
+      holdAcquired = true;
+      activeHoldId = holdResult.holdId;
+      setHold({ holdId: holdResult.holdId, startsAt: effectiveStartsAt, endsAt: holdResult.endsAt, expiresAt: holdResult.expiresAt, serverTime: holdResult.serverTime, receivedAt: Date.now() });
+      setHoldRemainingSeconds(Math.max(0, Math.ceil((Date.parse(holdResult.expiresAt) - Date.parse(holdResult.serverTime)) / 1000)));
+      setStatus("hold-active");
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      setStatus("booking-processing");
       const response = await fetch("/api/paymongo/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Idempotency-Key": (bookingRequestId.current ??= crypto.randomUUID()),
+          "Idempotency-Key": requestId,
         },
-        body: JSON.stringify({ ...form, mobile: `+63${form.mobile}`, ...(bookingTerms ? { termsAcceptance: { accepted: true, versionId: bookingTerms.id, contentHash: bookingTerms.contentHash } } : {}) }),
+        body: JSON.stringify({ ...form, mobile: `+63${form.mobile}`, startsAt: effectiveStartsAt, holdId: holdResult.holdId, holdOwnerKey: ownerKey, ...(bookingTerms ? { termsAcceptance: { accepted: true, versionId: bookingTerms.id, contentHash: bookingTerms.contentHash } } : {}) }),
       });
       const result = (await response.json()) as {
         checkoutUrl?: string;
@@ -1279,7 +1455,12 @@ function Booking({ goHome }: { goHome: () => void }) {
         requestSaved?: boolean;
         reference?: string;
         error?: string;
+        conflict?: boolean;
       };
+      if (response.status === 409 && result.conflict) {
+        conflict(result.error || "This time is no longer available. Choose another time.");
+        return;
+      }
       if (!response.ok) throw new Error(result.error || "Unable to complete the booking.");
       if (result.confirmed || result.requestSaved) {
         setReference(result.reference ?? "");
@@ -1289,8 +1470,8 @@ function Booking({ goHome }: { goHome: () => void }) {
       if (!result.checkoutUrl) throw new Error(result.error || "Unable to open checkout.");
       window.location.assign(result.checkoutUrl);
     } catch (error) {
-      setStatus("idle");
-      window.alert(error instanceof Error ? error.message : "Unable to open checkout.");
+      setStatus(holdAcquired ? "hold-active" : "idle");
+      setSubmitError(error instanceof Error ? error.message : "Unable to open checkout.");
     }
   };
   const dateLabel = form.date
@@ -1325,6 +1506,13 @@ function Booking({ goHome }: { goHome: () => void }) {
               setForm(emptyBooking);
               setPromoCodeInput("");
               setAddonQuantities({});
+              setAvailability(null);
+              setSelectedStartsAt("");
+              setHold(null);
+              setHoldRemainingSeconds(0);
+              setSubmitError("");
+              bookingRequestId.current = null;
+              bookingOwnerKey.current = null;
               setStatus("idle");
             }}
           >
@@ -1380,7 +1568,12 @@ function Booking({ goHome }: { goHome: () => void }) {
               </fieldset>
               <fieldset className={`${styles.fullField} ${styles.scheduleField}`}>
                 <legend>Preferred date and time</legend>
-                <BookingSchedule dateValue={form.date} timeValue={form.time} durationMinutes={sessionDuration} onDateChange={(value) => update("date", value)} onTimeChange={(value) => update("time", value)} bookedDates={fullyBookedDates} bookedTimes={bookedTimesForDate} onWaitlist={() => setWaitlistOpen(true)} />
+                <BookingSchedule dateValue={form.date} timeValue={form.time} endTimeValue={form.endTime} eventSelected={eventSelected} eventDurationMinutes={eventDurationMinutes} eventMinimumMinutes={baseDurationMinutes} eventCoverageMinutes={eventCoverageMinutes} eventRangeValid={eventRangeValid} serviceSelected={Boolean(selected)} minimumDate={serverDate || todayIso()} availability={availability} availabilityStatus={availabilityStatus} availabilityError={availabilityError} availabilityAnnouncement={availabilityAnnouncement} disabled={status === "creating-hold" || status === "booking-processing"} timeAreaRef={scheduleTimeAreaRef} onDateChange={(value) => update("date", value)} onTimeChange={(slot) => { setSelectedStartsAt(slot.startsAt); setSubmitError(""); update("time", slot.time); }} onEventTimeChange={updateEventTime} onRefresh={() => setAvailabilityRefresh((current) => current + 1)} onWaitlist={() => setWaitlistOpen(true)} />
+                {(status === "creating-hold" || status === "booking-processing" || hold) && (
+                  <p className={styles.bookingFlowStatus}>
+                    {status === "creating-hold" ? "Creating a temporary hold..." : hold ? `Hold active for ${Math.floor(holdRemainingSeconds / 60)}:${pad(holdRemainingSeconds % 60)}.${status === "booking-processing" ? " Booking is processing..." : ""}` : "Booking is processing..."}
+                  </p>
+                )}
               </fieldset>
               {!studioSelected && (
                 <label className={styles.fullField}>
@@ -1410,6 +1603,12 @@ function Booking({ goHome }: { goHome: () => void }) {
                     <strong>50% downpayment</strong>
                     <span>Pay online via digital wallets / credit card</span>
                   </button>
+                  {showBnpl && (
+                    <button type="button" aria-pressed={form.pay === "bnpl"} onClick={() => update("pay", "bnpl")}>
+                      <strong>Buy Now, Pay Later</strong>
+                      <span>Pay in installments through BillEase</span>
+                    </button>
+                  )}
                   <button type="button" aria-pressed={form.pay === "cash"} onClick={() => update("pay", "cash")}>
                     <strong>Cash</strong>
                     <span>Pay at the studio</span>
@@ -1431,7 +1630,7 @@ function Booking({ goHome }: { goHome: () => void }) {
               </p>
               <p>
                 <span>Time</span>
-                <strong>{form.time ? new Date(`2000-01-01T${form.time}:00`).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" }) : "—"}</strong>
+                <strong>{form.time ? `${formatBookingTime(form.time)}${eventSelected && form.endTime ? `–${formatBookingTime(form.endTime)}` : ""}` : "—"}</strong>
               </p>
               <p>
                 <span>Session rate</span>
@@ -1455,10 +1654,11 @@ function Booking({ goHome }: { goHome: () => void }) {
               </p>
             </div>
 
-            <button type="submit" disabled={!valid || status === "submitting"}>
-              {status === "submitting" && <i />} {status === "submitting" ? "Reserving…" : "Reserve this date"}
+            {submitError && <p className={styles.bookingError} role="alert">{submitError}</p>}
+            <button type="submit" disabled={!valid || status === "creating-hold" || status === "booking-processing"}>
+              {(status === "creating-hold" || status === "booking-processing") && <i />} {status === "creating-hold" ? "Creating hold..." : status === "booking-processing" ? "Processing booking..." : status === "hold-active" ? "Try booking again" : "Reserve this date"}
             </button>
-            <small>{form.pay === "cash" ? "No online payment · we'll confirm within 24 hours" : valid ? "No payment taken now · confirmation within 48 hours" : "Pay your way with GCash, Maya, GrabPay, QR Ph, major credit cards, or Buy Now, Pay Later."}</small>
+            <small>{form.pay === "cash" ? "No online payment · we'll confirm within 24 hours" : form.pay === "bnpl" ? "Continue to PayMongo to complete your BillEase application." : "Accepts GCash, credit card, and QR Ph."}</small>
           </aside>
         </form>
     </main>
@@ -1568,6 +1768,7 @@ export function MarketingSite({ initialPage = "home", initialCategory = "session
   const [customer, setCustomer] = useState<CustomerHeaderState>({
     authenticated: false,
   });
+  const [checkoutReturn, setCheckoutReturn] = useState<CheckoutReturn | null>(null);
   const menuTrigger = useRef<HTMLElement | null>(null);
   useEffect(() => {
     let next: Theme;
@@ -1591,6 +1792,32 @@ export function MarketingSite({ initialPage = "home", initialCategory = "session
         if (state) setCustomer(state);
       })
       .catch(() => {});
+  }, []);
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const kind = params.get("checkout");
+    const reference = params.get("reference") ?? "";
+    const bookingId = params.get("booking") ?? "";
+    if ((kind !== "success" && kind !== "cancelled") || !reference || !bookingId) return;
+    let active = true;
+    let attempts = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const initialTimer = setTimeout(() => setCheckoutReturn({ kind, state: "pending", reference, bookingId }), 0);
+    const retry = () => { if (active && attempts < 12) timer = setTimeout(check, 5000); };
+    const check = async () => {
+      attempts += 1;
+      try {
+        const response = await fetch(`/api/paymongo/status?booking=${encodeURIComponent(bookingId)}&reference=${encodeURIComponent(reference)}`, { cache: "no-store" });
+        const result = await response.json() as { state?: "pending" | "paid" | "failed" };
+        if (!active) return;
+        if (!response.ok || !result.state) { retry(); return; }
+        const state = result.state;
+        setCheckoutReturn({ kind, state, reference, bookingId });
+        if (state === "pending") retry();
+      } catch { retry(); }
+    };
+    void check();
+    return () => { active = false; clearTimeout(initialTimer); if (timer) clearTimeout(timer); };
   }, []);
   useEffect(() => {
     const urlToPage = (path: string): Page => {
@@ -1650,6 +1877,13 @@ export function MarketingSite({ initialPage = "home", initialCategory = "session
       <a href="#marketing-main" className={styles.skipLink}>
         Skip to main content
       </a>
+      {checkoutReturn && (
+        <div className={styles.checkoutReturn} role="status" aria-live="polite">
+          <strong>{checkoutReturn.state === "paid" ? "Payment confirmed" : checkoutReturn.state === "failed" ? "Payment not completed" : "Confirming your payment…"}</strong>
+          <span>{checkoutReturn.state === "paid" ? `Booking ${checkoutReturn.reference} is secured.` : checkoutReturn.state === "failed" ? "The payment method wasn’t approved. Return to booking to start a new payment." : checkoutReturn.kind === "cancelled" ? "Checkout was closed without cancelling the payment session. You may return to it or wait for confirmation if payment was completed." : "We’re still confirming your payment. You can safely close this page—we’ll send your confirmation once it is complete."}</span>
+          <button type="button" onClick={() => { window.history.replaceState(null, "", window.location.pathname); setCheckoutReturn(null); }} aria-label="Dismiss payment status">×</button>
+        </div>
+      )}
       <Header
         page={page}
         customer={customer}

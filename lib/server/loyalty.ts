@@ -78,7 +78,7 @@ export async function getLoyaltySummary(clientId: string) {
     termsVersion: String(termsResult.data?.version ?? 1),
     termsEffectiveDate: termsResult.data?.effective_at ?? `${p.launch_date}T00:00:00+08:00`,
     termsUrl: "/portal/loyalty/terms",
-    bookingUrl: "/?view=book",
+    bookingUrl: "/book",
     redeemUrl: "/portal/loyalty/redeem",
   };
 }
@@ -210,17 +210,28 @@ export async function processLoyaltyRewardEmail(outboxId?: string) {
   }
 }
 
-export async function createRewardBooking(input: { clientId: string; profileId: string; rewardId: string; date: string; time: string; location: string; idempotencyKey: string }) {
+export async function createRewardBooking(input: { clientId: string; profileId: string; rewardId: string; startsAt: string; holdId: string; holdOwnerKey: string; location: string; idempotencyKey: string }) {
+  const localParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23",
+  }).formatToParts(new Date(input.startsAt));
+  const part = (type: Intl.DateTimeFormatPartTypes) => localParts.find((item) => item.type === type)?.value;
+  const date = `${part("year")}-${part("month")}-${part("day")}`;
+  const time = `${part("hour")}:${part("minute")}:${part("second")}`;
   const reference = `KS-LOY-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
-  const { data, error } = await getSupabaseAdmin().rpc("loyalty_create_reward_booking", {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(input.holdOwnerKey));
+  const ownerHash = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  const { data, error } = await getSupabaseAdmin().rpc("loyalty_create_reward_booking_with_hold", {
     requested_client_id: input.clientId,
     requested_profile_id: input.profileId,
     requested_reward_id: input.rewardId,
     requested_idempotency_key: input.idempotencyKey,
     requested_reference: reference,
-    requested_date: input.date,
-    requested_time: input.time,
+    requested_date: date,
+    requested_time: time,
     requested_location: input.location,
+    requested_reservation_id: input.holdId,
+    requested_owner_token_hash: ownerHash,
   });
   if (error) throw error;
   return data;
