@@ -3,20 +3,33 @@ import type { MetadataRoute } from "next";
 export default function robots(): MetadataRoute.Robots {
   const isProduction = String(process.env.APP_ENV) === "production";
   if (!isProduction) {
-    return {
-      rules: {
-        userAgent: "*",
-        disallow: "/",
-      },
-    };
+    return { rules: { userAgent: "*", disallow: "/" } };
   }
 
-  const publicRules = { allow: "/", disallow: ["/os/"] };
+  const disallow = [
+    "/os/",
+    "/os",
+    "/login",
+    "/sign-in",
+    "/sign-up",
+    "/forgot-password",
+    "/reset-password",
+    "/set-password",
+    "/auth/",
+    "/portal/",
+    "/portal",
+    "/client-portal/",
+    "/api/",
+    "/book/confirmation/",
+    "/media/",
+    "/images/",
+  ];
+
+  const publicRules = { allow: "/", disallow };
 
   return {
     rules: [
       { userAgent: "*", ...publicRules },
-      // AI search crawlers — explicit allow so tightening the wildcard never accidentally blocks them
       { userAgent: "GPTBot", ...publicRules },
       { userAgent: "ChatGPT-User", ...publicRules },
       { userAgent: "OAI-SearchBot", ...publicRules },

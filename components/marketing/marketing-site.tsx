@@ -1560,11 +1560,11 @@ function Footer({ go }: { go: (page: Page, category?: ServiceCategory) => void }
   );
 }
 
-export function MarketingSite({ initialPage = "home" }: { initialPage?: Page }) {
+export function MarketingSite({ initialPage = "home", initialCategory = "sessions" }: { initialPage?: Page; initialCategory?: ServiceCategory }) {
   const [page, setPage] = useState<Page>(initialPage);
   const [theme, setThemeState] = useState<Theme>("light");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [serviceCategory, setServiceCategory] = useState<ServiceCategory>("sessions");
+  const [serviceCategory, setServiceCategory] = useState<ServiceCategory>(initialCategory);
   const [customer, setCustomer] = useState<CustomerHeaderState>({
     authenticated: false,
   });
@@ -1593,14 +1593,40 @@ export function MarketingSite({ initialPage = "home" }: { initialPage?: Page }) 
       .catch(() => {});
   }, []);
   useEffect(() => {
-    const restorePage = () => setPage(window.location.pathname === "/book" ? "book" : window.location.pathname === "/" ? "home" : initialPage);
+    const urlToPage = (path: string): Page => {
+      if (path === "/work") return "portfolio";
+      if (path === "/studio-sessions") return "services";
+      if (path === "/events") return "services";
+      if (path === "/about") return "about";
+      if (path === "/book") return "book";
+      if (path === "/privacy") return "privacy";
+      if (path === "/terms") return "terms";
+      if (path === "/health-safety") return "health-safety";
+      return "home";
+    };
+    const restorePage = () => {
+      const path = window.location.pathname;
+      if (path === "/events") setServiceCategory("events");
+      else if (path === "/studio-sessions") setServiceCategory("sessions");
+      setPage(urlToPage(path));
+    };
     window.addEventListener("popstate", restorePage);
     return () => window.removeEventListener("popstate", restorePage);
-  }, [initialPage]);
+  }, []);
+  const pageToUrl = (next: Page, category?: ServiceCategory): string => {
+    if (next === "portfolio") return "/work";
+    if (next === "services") return category === "events" ? "/events" : "/studio-sessions";
+    if (next === "about") return "/about";
+    if (next === "book") return "/book";
+    if (next === "privacy") return "/privacy";
+    if (next === "terms") return "/terms";
+    if (next === "health-safety") return "/health-safety";
+    return "/";
+  };
   const go = (next: Page, category?: ServiceCategory) => {
     if (category) setServiceCategory(category);
-    if (next === "book" && window.location.pathname !== "/book") window.history.pushState(null, "", "/book");
-    else if (page === "book" && next !== "book" && window.location.pathname === "/book") window.history.pushState(null, "", "/");
+    const url = pageToUrl(next, category);
+    if (window.location.pathname !== url) window.history.pushState(null, "", url);
     setPage(next);
     setMenuOpen(false);
     document.body.style.overflow = "";
