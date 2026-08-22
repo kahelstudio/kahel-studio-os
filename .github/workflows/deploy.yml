@@ -17,8 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with: { node-version: 22, cache: "npm" }
       - run: npm ci
       - run: npm run lint
@@ -28,8 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with: { node-version: 22, cache: "npm" }
       - run: npm ci
       - run: npm run typecheck
@@ -39,8 +39,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with: { node-version: 22, cache: "npm" }
       - run: npm ci
       - run: npm audit --audit-level=high
@@ -53,13 +53,13 @@ jobs:
     env:
       KAHEL_AUTH_DISABLED: "true"
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with: { node-version: 22, cache: "npm" }
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:visual
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: visual-test-results
@@ -74,14 +74,14 @@ jobs:
     needs: [lint, typecheck]
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with: { node-version: 22, cache: "npm" }
       - run: npm ci
       - run: npm run build
       - run: npm run build:cloudflare
       - run: npm run cf:check
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v4
         with:
           name: build-output
           path: .open-next/
@@ -94,8 +94,8 @@ jobs:
     needs: [lint, typecheck]
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with: { node-version: 22, cache: "npm" }
       - run: npm ci
       - name: Log in to Docker Hub
@@ -145,8 +145,8 @@ jobs:
     concurrency: staging
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with: { node-version: 22, cache: "npm" }
       - run: npm ci
       - run: |
@@ -174,10 +174,10 @@ jobs:
     concurrency: staging
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with: { node-version: 22, cache: "npm" }
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v4
         with:
           name: build-output
           path: .open-next/
@@ -241,8 +241,8 @@ jobs:
     concurrency: production
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with: { node-version: 22, cache: "npm" }
       - run: npm ci
       - run: |
@@ -266,10 +266,10 @@ jobs:
     concurrency: production
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with: { node-version: 22, cache: "npm" }
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v4
         with:
           name: build-output
           path: .open-next/

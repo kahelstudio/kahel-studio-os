@@ -2244,6 +2244,12 @@
   .homeGallery .wideFrame {
     grid-column: span 2;
   }
+  .gallery .wideFrame {
+    grid-column: span 2;
+  }
+  .gallery figure[data-ref="55"] {
+    order: 1;
+  }
   .serviceTiles {
     grid-template-columns: 1fr;
   }
