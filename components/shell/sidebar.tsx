@@ -6,9 +6,11 @@ import { ChevronDown, ChevronRight, FileText } from "lucide-react";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { AppDef } from "@/lib/apps-config";
 import { cn } from "@/lib/utils";
+import { useSystemStatus, statusDotClass } from "@/lib/use-system-status";
 
 export function Sidebar({ app, onNavigate, empty = false, counts = {} }: { app: AppDef; onNavigate?: () => void; empty?: boolean; counts?: Record<string, number> }) {
   const pathname = usePathname();
+  const systemStatus = useSystemStatus();
   const searchParams = useSearchParams();
   const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
     if (typeof window === "undefined") return {};
@@ -104,8 +106,15 @@ export function Sidebar({ app, onNavigate, empty = false, counts = {} }: { app: 
 
       <div className="mt-auto flex items-center gap-1.5 whitespace-nowrap border-t border-[var(--color-border)] px-3 pt-3 text-xs text-[var(--color-text-muted)]">
         Kahel Studio v0.1
-        <span className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-success)]" />
-        System Status
+        <a
+          href={systemStatus?.statusPageUrl ?? "https://uptimerobot.com"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 hover:text-[var(--color-text-secondary)]"
+        >
+          <span className={cn("h-2 w-2 shrink-0 rounded-full", statusDotClass(systemStatus?.status ?? "unknown"))} />
+          {systemStatus?.label ?? "System Status"}
+        </a>
       </div>
     </aside>
   );
