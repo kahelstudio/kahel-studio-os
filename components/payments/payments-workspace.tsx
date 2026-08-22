@@ -290,19 +290,6 @@ export function PaymentsWorkspace({
             PayMongo settlements
           </TabButton>
         </div>
-        <label className="relative mb-3 block w-full md:max-w-sm">
-          <span className="sr-only">Search payments</span>
-          <Search
-            className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--color-text-muted)]"
-            aria-hidden="true"
-          />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            className={`${inputClass} pl-9`}
-            placeholder="Search payments…"
-          />
-        </label>
       </div>
 
       <section
