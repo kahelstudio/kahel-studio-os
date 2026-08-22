@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Kahel Studio OS",
+  title: { absolute: "Kahel Studio OS | Creating Visual Experiences" },
   description: "Internal operations platform for Kahel Studio.",
   robots: { index: false, follow: false },
 };
