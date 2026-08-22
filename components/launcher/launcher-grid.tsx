@@ -222,7 +222,7 @@ export function LauncherGrid() {
       <div className="mt-10 flex flex-col items-start gap-4 border-t border-[var(--color-border)] pb-2 pt-[22px] sm:mt-14 xl:flex-row xl:items-center xl:gap-6">
         <span className="inline-flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
           Kahel Studio v0.1
-          <span className="inline-block h-3.5 w-px bg-[var(--color-border-strong)]" />
+          <span aria-hidden="true">|</span>
           <a
             href={systemStatus?.statusPageUrl ?? "https://uptimerobot.com"}
             target="_blank"
@@ -230,7 +230,7 @@ export function LauncherGrid() {
             className="inline-flex items-center gap-1.5 hover:text-[var(--color-text-secondary)]"
           >
             <span className={cn("h-2 w-2 rounded-full", statusDotClass(systemStatus?.status ?? "unknown"))} />
-            {systemStatus?.label ?? "System Status"}
+            {systemStatus?.status === "operational" ? "Online" : "Offline"}
           </a>
         </span>
         <div className="flex flex-wrap items-center gap-x-[22px] gap-y-3 xl:ml-auto">
