@@ -9,6 +9,7 @@ export const runtime = "nodejs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA256 = /^[0-9a-f]{64}$/;
+const MAX_EXPENSE_DOCUMENT_BYTES = 10 * 1024 * 1024;
 
 function randomToken() {
   const bytes = new Uint8Array(32);
@@ -31,21 +32,25 @@ export async function POST(request: Request) {
   }
   const galleryId = typeof body.galleryId === "string" ? body.galleryId : "";
   const approvalId = typeof body.approvalId === "string" ? body.approvalId : "";
+  const expenseId = typeof body.expenseId === "string" ? body.expenseId : "";
   const filename = typeof body.filename === "string" ? body.filename.trim() : "";
   const contentType = typeof body.contentType === "string" ? body.contentType.toLowerCase() : "";
   const byteSize = typeof body.byteSize === "number" ? body.byteSize : Number.NaN;
   const checksum = typeof body.checksumSha256 === "string" ? body.checksumSha256.toLowerCase() : null;
-  const approvalDocument = Boolean(approvalId) && contentType === "application/pdf";
-  if ((!UUID.test(galleryId) && !UUID.test(approvalId)) || (galleryId && approvalId) || !filename || filename.length > 500 || (!isApprovedImageType(contentType) && !approvalDocument)) {
-    return NextResponse.json({ error: approvalId ? "Choose a valid PDF, JPEG, PNG, or WebP file." : "Choose a valid JPEG, PNG, or WebP image." }, { status: 400 });
+  const documentUpload = Boolean(approvalId || expenseId);
+  const pdfDocument = documentUpload && contentType === "application/pdf";
+  const targetCount = [galleryId, approvalId, expenseId].filter(Boolean).length;
+  if (targetCount !== 1 || (!UUID.test(galleryId) && !UUID.test(approvalId) && !UUID.test(expenseId)) || !filename || filename.length > 500 || (!isApprovedImageType(contentType) && !pdfDocument)) {
+    return NextResponse.json({ error: documentUpload ? "Choose a valid PDF, JPEG, PNG, or WebP file." : "Choose a valid JPEG, PNG, or WebP image." }, { status: 400 });
   }
-  if (!Number.isSafeInteger(byteSize) || byteSize <= 0 || byteSize > MAX_ORIGINAL_BYTES) {
-    return NextResponse.json({ error: "The image size is not allowed." }, { status: 400 });
+  const maximumBytes = expenseId ? MAX_EXPENSE_DOCUMENT_BYTES : MAX_ORIGINAL_BYTES;
+  if (!Number.isSafeInteger(byteSize) || byteSize <= 0 || byteSize > maximumBytes) {
+    return NextResponse.json({ error: expenseId ? "Expense documents must be 10 MB or smaller." : "The image size is not allowed." }, { status: 400 });
   }
   if (checksum && !SHA256.test(checksum)) return NextResponse.json({ error: "Invalid SHA-256 checksum." }, { status: 400 });
 
   const extension = filename.split(".").pop()?.toLowerCase() ?? "";
-  const normalizedExtension = approvalDocument ? "pdf" : extensionForMimeType(contentType as "image/jpeg" | "image/png" | "image/webp");
+  const normalizedExtension = pdfDocument ? "pdf" : extensionForMimeType(contentType as "image/jpeg" | "image/png" | "image/webp");
   const acceptedExtensions = contentType === "image/jpeg" ? ["jpg", "jpeg"] : [normalizedExtension];
   if (!acceptedExtensions.includes(extension)) return NextResponse.json({ error: "The file extension does not match its content type." }, { status: 400 });
 
@@ -53,7 +58,12 @@ export async function POST(request: Request) {
   let clientId: string | null = null;
   let projectId: string | null = null;
   let ownerKey: string;
-  if (approvalId) {
+  if (expenseId) {
+    const expense = await admin.from("expenses").select("id,created_by,status").eq("id", expenseId).maybeSingle();
+    if (expense.error) return NextResponse.json({ error: "Unable to load expense." }, { status: 500 });
+    if (!expense.data || ["voided", "paid"].includes(expense.data.status) || principal.role === "staff" && expense.data.created_by !== principal.userId) return NextResponse.json({ error: "Uploads are unavailable for this expense." }, { status: 403 });
+    ownerKey = `expenses/${expenseId}`;
+  } else if (approvalId) {
     const approval = await admin.from("approval_requests").select("id,requester_id,client_id,project_id,status").eq("id", approvalId).is("archived_at", null).maybeSingle();
     if (approval.error) return NextResponse.json({ error: "Unable to load approval request." }, { status: 500 });
     if (!approval.data || approval.data.status === "withdrawn" || principal.role === "staff" && approval.data.requester_id !== principal.userId) return NextResponse.json({ error: "Uploads are unavailable for this request." }, { status: 403 });

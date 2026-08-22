@@ -340,7 +340,6 @@ declare
   reason_code text;
   points integer;
   target_sequence integer;
-  seq integer;
   inserted_reward_id uuid;
   reward_row public.loyalty_rewards%rowtype;
 begin
@@ -617,7 +616,6 @@ declare
   previous_count integer;
   difference integer;
   target_sequence integer;
-  seq integer;
   inserted_reward_id uuid;
 begin
   if not public.loyalty_is_staff('loyalty') then raise exception 'forbidden' using errcode = '42501'; end if;

@@ -6,11 +6,16 @@ import { POST as forgotPassword } from "@/app/api/customer/password-reset/route"
 import { POST as checkout } from "@/app/api/paymongo/checkout/route";
 
 const jsonRequest = (path: string, body: unknown, headers: Record<string, string> = {}) => new Request(`http://localhost:3000${path}`, { method: "POST", headers: { "Content-Type": "application/json", Origin: "http://localhost:3000", ...headers }, body: JSON.stringify(body) });
+const bookingBody = (fields: Record<string, unknown>) => ({
+  name: "Ana Cruz", email: "ana@example.com", mobile: "09171234567", date: "2026-12-01",
+  startsAt: "2026-12-01T01:00:00.000Z", holdId: "10000000-0000-4000-8000-000000000001",
+  holdOwnerKey: "test-hold-owner-key", pay: "deposit", ...fields,
+});
 
 describe("customer authentication boundaries", () => {
   afterEach(() => {
     process.env.KAHEL_STAFF_EMAILS = "";
-    delete process.env.PAYMONGO_SECRET_KEY;
+    process.env.PAYMONGO_SECRET_KEY = "";
   });
 
   it("normalizes customer identifiers", () => {
@@ -51,29 +56,47 @@ describe("customer authentication boundaries", () => {
 
   it("rejects a booking without a stable idempotency key before persistence", async () => {
     process.env.PAYMONGO_SECRET_KEY = "sk_test_example";
-    const response = await checkout(jsonRequest("/api/paymongo/checkout", { name: "Ana Cruz", email: "ana@example.com", mobile: "09171234567", session: "Solo", date: "2026-12-01", time: "09:00", pay: "deposit" }));
+    const response = await checkout(jsonRequest("/api/paymongo/checkout", bookingBody({ session: "Solo", time: "09:00" })));
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: "Refresh the page and submit the booking again." });
   });
 
   it("keeps studio sessions within opening hours based on their duration", async () => {
     process.env.PAYMONGO_SECRET_KEY = "sk_test_example";
-    const response = await checkout(jsonRequest("/api/paymongo/checkout", { name: "Ana Cruz", email: "ana@example.com", mobile: "09171234567", session: "Solo", date: "2026-12-01", time: "16:30", pay: "deposit" }));
+    const response = await checkout(jsonRequest("/api/paymongo/checkout", bookingBody({ session: "Solo", time: "16:30" })));
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: "Select a studio time between 8:00 AM and 5:00 PM." });
+  });
+
+  it("accepts Buy Now, Pay Later as an online checkout selection", async () => {
+    process.env.PAYMONGO_SECRET_KEY = "sk_test_example";
+    const response = await checkout(jsonRequest("/api/paymongo/checkout", bookingBody({ session: "Solo", time: "16:30", pay: "bnpl" })));
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: "Select a studio time between 8:00 AM and 5:00 PM." });
   });
 
   it("allows a mini session to end at closing time", async () => {
     process.env.PAYMONGO_SECRET_KEY = "sk_test_example";
-    const response = await checkout(jsonRequest("/api/paymongo/checkout", { name: "Ana Cruz", email: "ana@example.com", mobile: "09171234567", session: "Mini Session", date: "2026-12-01", time: "16:30", pay: "deposit" }));
+    const response = await checkout(jsonRequest("/api/paymongo/checkout", bookingBody({ session: "Mini Session", time: "16:30" })));
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: "Refresh the page and submit the booking again." });
   });
 
   it("allows event start times outside studio hours", async () => {
     process.env.PAYMONGO_SECRET_KEY = "sk_test_example";
-    const response = await checkout(jsonRequest("/api/paymongo/checkout", { name: "Ana Cruz", email: "ana@example.com", mobile: "09171234567", session: "Birthday", date: "2026-12-01", time: "23:00", pay: "deposit" }));
+    const response = await checkout(jsonRequest("/api/paymongo/checkout", bookingBody({ session: "Birthday", time: "19:00", endTime: "23:00" })));
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: "Refresh the page and submit the booking again." });
+  });
+
+  it("rejects invalid or excessive event time ranges", async () => {
+    process.env.PAYMONGO_SECRET_KEY = "sk_test_example";
+    const backwards = await checkout(jsonRequest("/api/paymongo/checkout", bookingBody({ session: "Birthday", time: "18:00", endTime: "17:00" })));
+    expect(backwards.status).toBe(400);
+    await expect(backwards.json()).resolves.toEqual({ error: "This package requires at least 4 hours of coverage." });
+
+    const excessive = await checkout(jsonRequest("/api/paymongo/checkout", bookingBody({ session: "Birthday", time: "10:00", endTime: "15:00" })));
+    expect(excessive.status).toBe(400);
+    await expect(excessive.json()).resolves.toEqual({ error: "This package includes up to 4 hours. Add coverage time or choose an earlier end time." });
   });
 });

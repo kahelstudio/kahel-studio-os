@@ -71,7 +71,7 @@ export function FeedbackReportsClient({ reports: serverReports }: { reports: Ser
   const total = reports.length;
 
   return (
-    <div className="min-h-full p-10 pt-8">
+    <div className="app-page min-h-full p-10 pt-8">
       <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">

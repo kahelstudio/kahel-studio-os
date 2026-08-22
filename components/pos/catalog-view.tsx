@@ -57,7 +57,7 @@ export function CatalogView({
   }
 
   return (
-    <div className="p-5 pt-6 sm:p-10 sm:pt-8">
+    <div className="app-page p-5 pt-6 sm:p-10 sm:pt-8">
       <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-display text-[28px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)] sm:text-[32px]">

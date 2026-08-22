@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "./supabase-admin";
 import { nameFromEmail } from "@/lib/staff-name";
 import { sendRecoveryPasswordLink } from "./security-email";
+import { recordSupabaseAuthEmailRequest } from "./transactional-email-service";
 
 const COOKIE_NAME = "kahel_staff_access_token";
 const REFRESH_COOKIE_NAME = "kahel_staff_refresh_token";
@@ -21,7 +22,7 @@ type AuthConfig = {
 
 export function authenticationDisabled() {
   const environment = process.env.APP_ENV as string | undefined;
-  return environment !== "production" && process.env.NODE_ENV !== "production" && process.env.KAHEL_AUTH_DISABLED === "true";
+  return environment !== "production" && process.env.KAHEL_AUTH_DISABLED === "true";
 }
 
 function config(): AuthConfig | null {
@@ -161,6 +162,10 @@ export async function requestPasswordReset(email: string) {
   const primaryUser = users.data.users.find((item) => item.email?.toLowerCase() === normalized && isStaffEmail(item.email, settings));
   if (primaryUser) {
     const { error } = await client(settings).auth.resetPasswordForEmail(normalized, { redirectTo: settings.redirectUrl });
+    if (!error) await recordSupabaseAuthEmailRequest({
+      templateKey: "supabase-auth-password-reset", operationId: crypto.randomUUID(), to: normalized,
+      recipientUserId: primaryUser.id, sourceReference: "staff-primary",
+    });
     return !error;
   }
   const recovery = await admin.from("staff_recovery_emails").select("staff_id").eq("recovery_email", normalized).maybeSingle<{ staff_id: string }>();

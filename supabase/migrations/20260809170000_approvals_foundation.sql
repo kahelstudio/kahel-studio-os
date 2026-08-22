@@ -524,7 +524,7 @@ $$;
 
 create or replace function public.approval_bulk_approve(requested_request_ids uuid[], requested_actor_id uuid, requested_comment text default null)
 returns integer language plpgsql security definer set search_path = '' as $$
-declare request_id uuid; baseline_type text; baseline_step smallint; baseline_role public.staff_role; candidate record; approved_count integer := 0;
+declare baseline_type text; baseline_step smallint; baseline_role public.staff_role; candidate record; approved_count integer := 0;
 begin
   if not (coalesce(array_length(requested_request_ids, 1), 0) between 1 and 50) then raise exception 'Select between 1 and 50 requests.'; end if;
   for candidate in

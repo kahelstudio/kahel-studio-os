@@ -9,6 +9,7 @@ import { BOOKING_STATUS } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
 import { OperationCreateButton } from "@/components/shared/operation-create-button";
 import { EditAccountButton } from "./edit-account-button";
+import { EmailHistory } from "@/components/messages/email-history";
 
 function initials(name: string) {
   return name
@@ -251,6 +252,7 @@ export default async function CrmAccountDetailPage({
         </div>
       </div>
 
+      <div className="mt-5"><EmailHistory title="Communications" context={{ clientId: account.id }} /></div>
       <LoyaltyAdminPanel clientRef={account.id} />
     </div>
   );

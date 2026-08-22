@@ -1,7 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { hasStaffSession, tryRefreshStaffSession, STAFF_SESSION_COOKIE, STAFF_REFRESH_COOKIE, REMEMBER_ME_MAX_AGE, IS_PRODUCTION } from "@/lib/server/staff-auth";
 
-const PUBLIC_PATHS = ["/", "/terms", "/privacy", "/health-safety", "/login", "/reset-password", "/sign-in", "/sign-up", "/forgot-password", "/set-password", "/auth", "/portal", "/media", "/images", "/api/customer", "/api/paymongo", "/api/staff/session", "/api/staff/password-reset", "/api/staff/oauth", "/client-portal"];
+// /api/publish is "public" only so Bearer-authenticated calls reach the route; it verifies the staff JWT itself.
+const PUBLIC_PATHS = ["/", "/book", "/terms", "/booking-terms", "/privacy", "/health-safety", "/offline", "/login", "/reset-password", "/sign-in", "/sign-up", "/forgot-password", "/set-password", "/auth", "/portal", "/media", "/images", "/api/customer", "/api/bookings/holds", "/api/paymongo", "/api/legal/booking-terms", "/api/waitlist", "/api/publish", "/api/staff/session", "/api/staff/password-reset", "/api/staff/oauth", "/client-portal"];
 const CUSTOMER_ACCESS_COOKIE = "kahel_customer_access_token";
 const CUSTOMER_REFRESH_COOKIE = "kahel_customer_refresh_token";
 
@@ -19,7 +20,7 @@ async function checkAuth(request: NextRequest) {
 
 function isPublicPath(pathname: string) {
   if (PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) return true;
-  return pathname === "/api/loyalty/redeem" || /^\/api\/client-portals\/[^/]+\/(access|activity|loyalty)$/.test(pathname);
+  return pathname === "/api/loyalty/redeem" || pathname === "/api/resend/webhook" || pathname === "/api/email/queue/process" || pathname === "/api/email/test" || /^\/api\/client-portals\/[^/]+\/(access|activity|loyalty)$/.test(pathname);
 }
 
 // OpenNext Cloudflare 1.20.2 does not support the Node.js runtime used by Next.js Proxy.
@@ -69,5 +70,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2)$).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest|robots.txt|sitemap.xml|sw.js|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|woff2)$).*)"],
 };

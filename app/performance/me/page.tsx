@@ -13,22 +13,23 @@ export default async function PerformanceMePage() {
   const [reviews, goals] = await Promise.all([getPerformanceReviews(), getPerformanceGoals()]);
 
   return (
-    <div className="max-w-[1100px] p-12 pt-9">
-      <div className="flex items-center gap-4">
+    <div className="max-w-[1100px]">
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6 flex items-center gap-4">
         <div className="flex h-14 w-14 items-center justify-center rounded-card bg-[var(--color-indigo-100)] font-display text-xl font-semibold text-[var(--color-indigo-800)]">
           EB
         </div>
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
             My performance
           </h1>
-          <p className="mt-0.5 text-[15px] text-[var(--color-text-secondary)]">
+          <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
             Eusebio Barrun · Owner · Lead photographer
           </p>
         </div>
         <span className="ml-auto text-xs tracking-[0.04em] text-[var(--color-text-muted)]">H1 2026 · MTD</span>
-      </div>
+      </header>
 
+      <div className="px-4 sm:px-6 pb-12">
       <div className="mt-6 grid grid-cols-4 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
         {KPIS.map((k, i) => (
           <div key={k.label} className="px-6 py-[22px]" style={{ borderLeft: i === 0 ? "none" : "1px solid var(--color-border)" }}>
@@ -87,6 +88,7 @@ export default async function PerformanceMePage() {
           ))}
         </div>
       </div>
+    </div>
     </div>
   );
 }

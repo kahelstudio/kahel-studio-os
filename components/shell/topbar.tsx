@@ -20,7 +20,7 @@ export function Topbar({
   const Icon = app.icon;
 
   return (
-    <header className="flex h-16 shrink-0 items-center gap-1.5 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-3 sm:gap-3 sm:px-5">
+    <header className="flex h-16 shrink-0 items-center gap-1.5 bg-[var(--color-surface)] px-3 sm:gap-3 sm:px-5">
       {onOpenMobileNav && (
         <button
           onClick={onOpenMobileNav}

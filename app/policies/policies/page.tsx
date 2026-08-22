@@ -25,10 +25,10 @@ export default function CompanyPoliciesPage() {
   }
 
   return (
-    <div className="max-w-[900px] p-12 pt-9">
-      <div className="flex items-start justify-between gap-4">
+    <div className="max-w-[900px]">
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
             Company policies
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -41,8 +41,9 @@ export default function CompanyPoliciesPage() {
           </span>
           <span className="text-xs text-[var(--color-text-muted)]">{POLICY_META.eff}</span>
         </div>
-      </div>
+      </header>
 
+      <div className="px-4 sm:px-6 pb-12">
       {acked ? (
         <div className="mt-[22px] flex items-center gap-3 rounded-card border border-[#B7E6CC] bg-[var(--color-success-bg)] px-[18px] py-3.5">
           <CheckCircle2 className="h-4 w-4 shrink-0 text-[var(--color-success-text)]" strokeWidth={1.75} />
@@ -85,6 +86,7 @@ export default function CompanyPoliciesPage() {
           <span className="text-xs text-[var(--color-text-muted)]">Eusebio Barrun · {POLICY_META.ver}</span>
         </div>
       </div>
+    </div>
     </div>
   );
 }

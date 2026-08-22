@@ -20,6 +20,7 @@ export async function GET(request: Request) {
       supabaseSecretKey: Boolean(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY),
       authRedirectUrl: Boolean(process.env.AUTH_REDIRECT_URL),
       turnstileSecret: Boolean(process.env.TURNSTILE_SECRET),
+      paymongoWebhookSecret: Boolean(process.env.PAYMONGO_WEBHOOK_SECRET),
     },
   });
 }

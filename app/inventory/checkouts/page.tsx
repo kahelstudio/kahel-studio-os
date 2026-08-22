@@ -2,12 +2,15 @@ import { TriangleAlert } from "lucide-react";
 
 export default function InventoryCheckoutsPage() {
   return (
-    <div className="max-w-[1000px] p-12 pt-9">
-      <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
+    <div className="max-w-[1000px]">
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6">
+      <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
         Checkouts
       </h1>
       <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">Who has what, and when it clashes</p>
+      </header>
 
+      <div className="px-4 sm:px-6 pb-12">
       <div className="mt-6 flex items-center gap-3 rounded-card border border-[#FADBB0] bg-[var(--color-kahel-50)] px-5 py-4">
         <TriangleAlert className="h-4 w-4 shrink-0 text-[var(--color-kahel-700)]" strokeWidth={1.75} />
         <div className="text-sm">
@@ -20,6 +23,7 @@ export default function InventoryCheckoutsPage() {
           Resolve
         </button>
       </div>
+    </div>
     </div>
   );
 }

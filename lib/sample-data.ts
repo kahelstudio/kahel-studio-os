@@ -246,6 +246,7 @@ export const CRM_DUE_TODAY = [
 
 // ── Bookings ─────────────────────────────────────────────────────────
 export interface BookingRow {
+  id?: string;
   ref: string;
   accountId: string;
   account: string;
@@ -1144,11 +1145,6 @@ export const TASKS_MINE = TASK_ITEMS.map((t) => ({
 }));
 
 // ── Shiftboard ───────────────────────────────────────────────────────
-const SHIFT_LOC: Record<string, { bg: string; c: string; label: string }> = {
-  studio: { bg: "var(--color-teal-100)", c: "var(--color-teal-800)", label: "Studio" },
-  location: { bg: "#FFF4EE", c: "var(--color-attention-text)", label: "On location" },
-};
-
 export interface ShiftEntry {
   id: string;
   d: number;
@@ -1157,42 +1153,6 @@ export interface ShiftEntry {
   role: string;
   time: string;
   loc: "studio" | "location";
-}
-
-export const SHIFT_DEFAULT: ShiftEntry[] = [
-  { id: "s1", d: 0, ini: "MR", who: "Marisol", role: "Studio open", time: "8:00AM – 5:00PM", loc: "studio" },
-  { id: "s2", d: 0, ini: "DC", who: "Danilo", role: "Editing", time: "8:00AM – 5:00PM", loc: "studio" },
-  { id: "s3", d: 1, ini: "EB", who: "Eusebio", role: "Ayala shoot", time: "8:00AM – 2:00PM", loc: "location" },
-  { id: "s4", d: 1, ini: "IS", who: "Ivy", role: "Studio duty", time: "8:00AM – 5:00PM", loc: "studio" },
-  { id: "s5", d: 2, ini: "DC", who: "Danilo", role: "Editing", time: "8:00AM – 5:00PM", loc: "studio" },
-  { id: "s6", d: 2, ini: "JL", who: "Josefa", role: "Retouch", time: "8:00AM – 5:00PM", loc: "studio" },
-  { id: "s7", d: 3, ini: "EB", who: "Eusebio", role: "Deveza prep", time: "8:00AM – 5:00PM", loc: "studio" },
-  { id: "s8", d: 3, ini: "MR", who: "Marisol", role: "Studio open", time: "8:00AM – 5:00PM", loc: "studio" },
-  { id: "s9", d: 4, ini: "IS", who: "Ivy", role: "Headshots", time: "8:00AM – 4:00PM", loc: "location" },
-  { id: "s10", d: 4, ini: "KT", who: "Kevin", role: "Assist", time: "8:00AM – 4:00PM", loc: "location" },
-  { id: "s11", d: 5, ini: "EB", who: "Eusebio", role: "Wedding — Deveza", time: "2:00PM – 12:00AM", loc: "location" },
-  { id: "s12", d: 5, ini: "MR", who: "Marisol", role: "Coordinator", time: "2:00PM – 12:00AM", loc: "location" },
-  { id: "s13", d: 5, ini: "KT", who: "Kevin", role: "Assist", time: "2:00PM – 12:00AM", loc: "location" },
-  { id: "s14", d: 6, ini: "EB", who: "Eusebio", role: "Day off", time: "—", loc: "studio" },
-  { id: "s15", d: 6, ini: "MR", who: "Marisol", role: "Day off", time: "—", loc: "studio" },
-  { id: "s16", d: 6, ini: "DC", who: "Danilo", role: "Day off", time: "—", loc: "studio" },
-  { id: "s17", d: 6, ini: "IS", who: "Ivy", role: "Day off", time: "—", loc: "studio" },
-  { id: "s18", d: 6, ini: "JL", who: "Josefa", role: "Day off", time: "—", loc: "studio" },
-  { id: "s19", d: 6, ini: "KT", who: "Kevin", role: "Day off", time: "—", loc: "studio" },
-];
-
-export const SHIFT_DAY_META: [string, string, boolean][] = [
-  ["Mon", "21", true],
-  ["Tue", "22", false],
-  ["Wed", "23", false],
-  ["Thu", "24", false],
-  ["Fri", "25", false],
-  ["Sat", "26", false],
-  ["Sun", "27", false],
-];
-
-export function shiftLocStyle(loc: "studio" | "location") {
-  return SHIFT_LOC[loc];
 }
 
 // ── Compliance ───────────────────────────────────────────────────────
@@ -2584,14 +2544,7 @@ export const DOCS_SECTIONS: DocSection[] = [
       H("Drag & drop"),
       T("Every shift card is draggable. Pick it up and drop it on another day to reassign. Changes save automatically to your browser so they persist between visits."),
       H("Staff"),
-      STP([
-        "Eusebio — Lead photographer",
-        "Marisol — Studio coordinator",
-        "Danilo — Lead editor",
-        "Ivy — Studio assistant",
-        "Josefa — Retoucher",
-        "Kevin — Production assistant",
-      ]),
+      T("The board lists active Kahel Studio OS accounts. Job titles and initials come from linked active payroll employee records when available."),
       H("Legend"),
       T("Each shift type has its own colour: Studio Shoot (red), Event (purple), Editing / Post (amber), Admin / Office (green), Production Support (teal), Remote Work (blue), and Day Off (grey). The colour also maps to the Production View toggle for quick visual scanning."),
       NT("Days off", "Scheduled days off appear as grey cards. The studio is closed on no day — Sunday rest is rotated."),

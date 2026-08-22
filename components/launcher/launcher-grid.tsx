@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Book, HelpCircle, MessageSquare } from "lucide-react";
 import { ACCENTS, APPS, type AppDef, type LauncherGroup } from "@/lib/apps-config";
 import { cn } from "@/lib/utils";
+import { useSystemStatus, statusDotClass } from "@/lib/use-system-status";
 
 const SECTION_META: Record<LauncherGroup, { title: string; description: string; storageKey: string }> = {
   live: {
@@ -101,25 +102,46 @@ function Section({ group, apps, indexOffset }: { group: LauncherGroup; apps: App
         {ordered.map((app, i) => {
           const accent = ACCENTS[app.accent];
           const Icon = app.icon;
+          const tileNumber = group === "system" ? "SYS" : String(i + 1 + indexOffset).padStart(2, "0");
+          const dragProps = {
+            draggable: true,
+            onDragStart: () => setDragId(app.id),
+            onDragOver: (e: React.DragEvent) => e.preventDefault(),
+            onDrop: () => handleDrop(app.id),
+          };
+          const tileClass = cn(
+            "group flex flex-col gap-3.5 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-left transition-all duration-150",
+            "hover:-translate-y-0.5 hover:border-[var(--tile-accent)] hover:shadow-[0_8px_24px_-12px_rgba(20,20,20,0.18)]"
+          );
+          const tileStyle = { "--tile-accent": accent.base } as React.CSSProperties;
+
+          if (app.id === "booking") {
+            return (
+              <div key={app.id} {...dragProps} className={cn("relative", tileClass)} style={tileStyle}>
+                <Link href={app.href} className="absolute inset-0 rounded-card" aria-label="Booking" />
+                <div className="relative flex items-center justify-between">
+                  <Icon className="h-[26px] w-[26px] text-[var(--color-kahel-500)]" strokeWidth={1.75} />
+                  <span className="text-xs tracking-[0.06em] text-[var(--color-text-muted)]">{tileNumber}</span>
+                </div>
+                <div className="relative">
+                  <div className="font-display text-lg font-semibold text-[var(--color-text-primary)]">{app.name}</div>
+                  <div className="mt-1 text-[13px] leading-[18px] text-[var(--color-text-secondary)]">{app.description}</div>
+                </div>
+              </div>
+            );
+          }
+
           return (
             <Link
               key={app.id}
               href={app.href}
-              draggable
-              onDragStart={() => setDragId(app.id)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => handleDrop(app.id)}
-              className={cn(
-                "group flex flex-col gap-3.5 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-5 text-left transition-all duration-150",
-                "hover:-translate-y-0.5 hover:border-[var(--tile-accent)] hover:shadow-[0_8px_24px_-12px_rgba(20,20,20,0.18)]"
-              )}
-              style={{ "--tile-accent": accent.base } as React.CSSProperties}
+              {...dragProps}
+              className={tileClass}
+              style={tileStyle}
             >
               <div className="flex items-center justify-between">
                 <Icon className="h-[26px] w-[26px] text-[var(--color-kahel-500)]" strokeWidth={1.75} />
-                <span className="text-xs tracking-[0.06em] text-[var(--color-text-muted)]">
-                  {group === "system" ? "SYS" : String(i + 1 + indexOffset).padStart(2, "0")}
-                </span>
+                <span className="text-xs tracking-[0.06em] text-[var(--color-text-muted)]">{tileNumber}</span>
               </div>
               <div>
                 <div className="font-display text-lg font-semibold text-[var(--color-text-primary)]">
@@ -144,6 +166,7 @@ export function LauncherGrid() {
   const [greeting, setGreeting] = useState(timeGreeting);
   const [firstName, setFirstName] = useState("there");
   const [summary, setSummary] = useState<LauncherSummary>({ eventsToday: 0, studioSessionsToday: 0, salesMonthPhp: 0 });
+  const systemStatus = useSystemStatus();
 
   useEffect(() => {
     const timer = window.setInterval(() => setGreeting(timeGreeting()), 60_000);
@@ -199,9 +222,16 @@ export function LauncherGrid() {
       <div className="mt-10 flex flex-col items-start gap-4 border-t border-[var(--color-border)] pb-2 pt-[22px] sm:mt-14 xl:flex-row xl:items-center xl:gap-6">
         <span className="inline-flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
           Kahel Studio v0.1
-          <span className="inline-block h-3.5 w-px bg-[var(--color-border-strong)]" />
-          <span className="h-2 w-2 rounded-full bg-[var(--color-success)]" />
-          System Status
+          <span aria-hidden="true">|</span>
+          <a
+            href={systemStatus?.statusPageUrl ?? "https://uptimerobot.com"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 hover:text-[var(--color-text-secondary)]"
+          >
+            <span className={cn("h-2 w-2 rounded-full", statusDotClass(systemStatus?.status ?? "unknown"))} />
+            {systemStatus?.status === "operational" ? "Online" : "Offline"}
+          </a>
         </span>
         <div className="flex flex-wrap items-center gap-x-[22px] gap-y-3 xl:ml-auto">
           <Link

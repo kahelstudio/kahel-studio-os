@@ -43,10 +43,10 @@ export default async function AttendanceTimesheetsPage() {
   });
 
   return (
-    <div className="p-12 pt-9">
-      <div className="flex items-end justify-between">
+    <div>
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6 flex items-end justify-between">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
             Timesheets
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -54,8 +54,9 @@ export default async function AttendanceTimesheetsPage() {
           </p>
         </div>
         <div className="flex items-center gap-3"><span className="hidden text-xs tracking-[0.04em] text-[var(--color-text-muted)] sm:inline">WEEK OF 21 JUL</span><Link href="/approvals?create=attendance_correction" className="inline-flex h-10 items-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-semibold text-[#FF5300]">Request correction</Link></div>
-      </div>
+      </header>
 
+      <div className="px-4 sm:px-6 pb-12">
       <AttendanceClockCard />
 
       <div className="mt-6 grid grid-cols-3 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
@@ -103,6 +104,7 @@ export default async function AttendanceTimesheetsPage() {
           </div>
         ))}
       </div>
+    </div>
     </div>
   );
 }

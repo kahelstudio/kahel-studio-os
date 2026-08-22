@@ -10,9 +10,20 @@ CUSTOMER_AUTH_CALLBACK_URL=http://localhost:3000/auth/callback
 PUBLIC_SITE_URL=http://localhost:3000
 BOOKING_EMAIL_FROM=bookings@example.com
 BOOKING_EMAIL_REPLY_TO=hello@example.com
+RESEND_API_KEY=re_replace_me
+RESEND_WEBHOOK_SECRET=whsec_replace_me
+EMAIL_QUEUE_SECRET=replace-with-a-long-random-secret
 KAHEL_AUTH_DISABLED=false
 TURNSTILE_SECRET=replace-with-your-private-secret-key
 # Google remains disabled until the Supabase Google provider and callback flow are configured.
 GOOGLE_AUTH_ENABLED=false
 # Server-only PayMongo test secret. Never prefix this variable with NEXT_PUBLIC_.
 PAYMONGO_SECRET_KEY=sk_test_replace_me
+# Add billease only after PayMongo activates it for this environment's merchant account.
+PAYMONGO_PAYMENT_METHODS=card,gcash,paymaya,grab_pay,qrph
+PAYMONGO_BNPL_ENABLED=false
+# Signing secret returned when this exact webhook endpoint is created.
+PAYMONGO_WEBHOOK_SECRET=whsk_replace_me
+# Cloudflare Pages deploy hook for the static kahelstudio.com site. Server-only:
+# held by the Worker and used exclusively by POST /api/publish. Never client-side.
+PAGES_DEPLOY_HOOK=https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/replace_me

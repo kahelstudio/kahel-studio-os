@@ -1,0 +1,3 @@
+-- One-time data cleanup applied directly to production on 2026-08-17.
+-- Deleted test accounts by temporarily disabling the append-only trigger.
+-- No schema changes; this file exists only to reconcile the remote migration history.

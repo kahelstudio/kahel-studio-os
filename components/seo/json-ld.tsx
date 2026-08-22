@@ -6,11 +6,11 @@ export default function JsonLd() {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "LocalBusiness",
+        "@type": "PhotographyBusiness",
         "@id": `${siteUrl}/#business`,
         name: "Kahel Studio",
         description:
-          "Timeless portraits, studio sessions, and event photography in Tabaco City, Albay.",
+          "Professional photography studio in Tabaco City, Albay, Philippines. Specializing in portrait sessions, debut, christening, birthday, and event photography across Bicol and Luzon.",
         image: [
           `${siteUrl}/Solo_Liza%20Burzon%20Bino_9A.jpg`,
           logoUrl,
@@ -39,18 +39,27 @@ export default function JsonLd() {
           opens: "09:00",
           closes: "17:00",
         },
+        potentialAction: {
+          "@type": "ReserveAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: `${siteUrl}/#book`,
+            actionPlatform: [
+              "https://schema.org/DesktopWebPlatform",
+              "https://schema.org/MobileWebPlatform",
+            ],
+          },
+          result: {
+            "@type": "Reservation",
+            name: "Photography Session Booking",
+          },
+        },
         sameAs: [
           "https://www.facebook.com/kahelstudio",
           "https://www.instagram.com/kahelstudio",
           "https://www.tiktok.com/@kahel.studio",
           "https://youtube.com/@kahelstudio",
         ],
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: "5.0",
-          bestRating: "5",
-          reviewCount: "300",
-        },
         foundingDate: "2022",
       },
       {
@@ -58,11 +67,17 @@ export default function JsonLd() {
         "@id": `${siteUrl}/#studio-sessions`,
         name: "Studio Sessions",
         description:
-          "Portraits, branding, group and mini shoots in our Tabaco City studio.",
+          "Professional portrait, solo, duo, group, and mini photo sessions in our photography studio in Tabaco City, Albay. Ideal for individuals, couples, families, and business branding.",
         provider: { "@id": `${siteUrl}/#business` },
         areaServed: {
           "@type": "Place",
           name: "Tabaco City, Albay",
+        },
+        offers: {
+          "@type": "AggregateOffer",
+          priceCurrency: "PHP",
+          lowPrice: "999",
+          highPrice: "3000",
         },
       },
       {
@@ -70,11 +85,17 @@ export default function JsonLd() {
         "@id": `${siteUrl}/#event-photography`,
         name: "Event Photography",
         description:
-          "Debut, christening, birthday and celebration coverage across Luzon.",
+          "Debut, christening, birthday, anniversary, and celebration photography coverage across Bicol, Luzon, and the Philippines.",
         provider: { "@id": `${siteUrl}/#business` },
         areaServed: {
           "@type": "Place",
           name: "Luzon, Philippines",
+        },
+        offers: {
+          "@type": "AggregateOffer",
+          priceCurrency: "PHP",
+          lowPrice: "5000",
+          highPrice: "10000",
         },
       },
       {
@@ -90,7 +111,7 @@ export default function JsonLd() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
     />
   );
 }

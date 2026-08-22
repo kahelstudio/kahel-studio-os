@@ -16,6 +16,7 @@
 
 # next.js
 /.next/
+/.next-playwright/
 /out/
 
 # production
@@ -49,5 +50,7 @@ next-env.d.ts
 /.open-next/
 /.wrangler/
 /supabase/.temp/
+/supabase/.branches/
 
 certificates
+.claude/

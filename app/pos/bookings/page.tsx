@@ -37,21 +37,21 @@ export default function PosBookingsPage() {
   });
 
   return (
-    <div className="min-h-full p-5 sm:p-7 lg:p-10">
-      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--color-border)] pb-6">
+    <div className="app-page min-h-full p-5 sm:p-7 lg:p-10">
+      <div className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">Bookings</h1>
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">Bookings</h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">Select a booking to collect payment or view details</p>
         </div>
-      </div>
 
-      <div className="mt-5 flex flex-wrap gap-1.5">
-        {STATUS_FILTERS.map((f) => (
-          <button key={f.id} onClick={() => setStatusFilter(f.id)} className={cn(
-            "h-8 rounded-control px-3 text-xs font-semibold transition-colors",
-            statusFilter === f.id ? "bg-[var(--color-kahel-500)] text-white" : "bg-[var(--color-surface-muted)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
-          )}>{f.label}</button>
-        ))}
+        <div className="flex items-end gap-6 overflow-x-auto">
+          {STATUS_FILTERS.map((f) => (
+            <button key={f.id} onClick={() => setStatusFilter(f.id)} className={cn(
+              "shrink-0 pb-3 text-sm font-semibold capitalize transition-colors",
+              statusFilter === f.id ? "text-[#FF5300] underline decoration-[#FF5300] decoration-4 underline-offset-[6px]" : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"
+            )}>{f.label}</button>
+          ))}
+        </div>
       </div>
 
       {loading && (

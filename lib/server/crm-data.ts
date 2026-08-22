@@ -145,6 +145,7 @@ export async function getAccounts(): Promise<AccountRow[]> {
     const { data: clients, error } = await admin
       .from("clients")
       .select("id, name, status, account_type, external_ref, created_at, primary_contact_profile_id")
+      .neq("status", "archived")
       .order("created_at", { ascending: false })
       .limit(200);
 
@@ -159,6 +160,10 @@ export async function getAccounts(): Promise<AccountRow[]> {
 
     if (pError) throw pError;
     const profileMap = new Map((profiles ?? []).map((profile: any) => [profile.id, profile]));
+    const clientProfileFallback = new Map<string, any>();
+    for (const profile of profiles ?? []) {
+      if (!clientProfileFallback.has(profile.client_id)) clientProfileFallback.set(profile.client_id, profile);
+    }
 
     const { data: bookings, error: bError } = await admin
       .from("bookings")
@@ -188,7 +193,7 @@ export async function getAccounts(): Promise<AccountRow[]> {
         status: c.status,
         accountType: c.account_type === "corporate" ? "corporate" : "consumer",
         externalRef: c.external_ref,
-        mobile: profileMap.get(c.primary_contact_profile_id)?.mobile ?? null,
+        mobile: (profileMap.get(c.primary_contact_profile_id) ?? clientProfileFallback.get(c.id))?.mobile ?? null,
         totalBookings: bm?.count ?? 0,
         totalSpent: bm?.total ?? 0,
         lastBooking: bm?.lastDate ?? null,

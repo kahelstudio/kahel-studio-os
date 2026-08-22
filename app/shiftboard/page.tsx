@@ -27,14 +27,7 @@ function getMondayIso(): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", year: "numeric", month: "2-digit", day: "2-digit" }).format(monday);
 }
 
-const STAFF = [
-  { name: "Eusebio", initials: "EB", role: "Lead photographer", tint: "#FF5300" },
-  { name: "Marisol", initials: "MR", role: "Studio coordinator", tint: "#00A15C" },
-  { name: "Danilo", initials: "DC", role: "Lead editor", tint: "#4F3DD9" },
-  { name: "Ivy", initials: "IS", role: "Studio assistant", tint: "#00A5AD" },
-  { name: "Josefa", initials: "JL", role: "Retoucher", tint: "#8A6D00" },
-  { name: "Kevin", initials: "KT", role: "Production assistant", tint: "#B33800" },
-] as const;
+const STAFF_TINTS = ["#FF5300", "#00A15C", "#4F3DD9", "#00A5AD", "#8A6D00", "#B33800"] as const;
 
 const LEGEND = [
   { label: "Studio Shoot", color: "#F2383A" },
@@ -57,6 +50,13 @@ type ApiShiftRow = {
   weekStart: string;
 };
 
+type ApiStaffRow = {
+  id: string;
+  displayName: string;
+  initials: string;
+  role: string;
+};
+
 function mapApiShift(s: ApiShiftRow): ShiftEntry {
   return {
     id: s.id,
@@ -71,20 +71,31 @@ function mapApiShift(s: ApiShiftRow): ShiftEntry {
 
 export default function ShiftboardPage() {
   const [shifts, setShifts] = useState<ShiftEntry[]>([]);
+  const [staff, setStaff] = useState<ApiStaffRow[] | null>(null);
   const [dayMeta] = useState<[string, string, boolean][]>(() => getCurrentWeekMeta());
   const [dragId, setDragId] = useState<string | null>(null);
   const [view, setView] = useState<"shift" | "production">("shift");
 
   useEffect(() => {
-    const load = () => fetch(`/api/shifts?weekStart=${getMondayIso()}`)
-      .then((res) => res.json())
+    const loadShifts = () => fetch(`/api/shifts?weekStart=${getMondayIso()}`)
+      .then(async (res) => res.ok ? await res.json() : [])
       .then((data) => {
         const rows = data as ApiShiftRow[];
         setShifts(Array.isArray(rows) ? rows.map(mapApiShift) : []);
       })
       .catch(() => setShifts([]));
-    const created = (event: Event) => { if ((event as CustomEvent<{ kind: string }>).detail.kind === "shift") void load(); };
-    void load(); window.addEventListener("operation-created", created); return () => window.removeEventListener("operation-created", created);
+    const loadStaff = () => fetch("/api/staff")
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Unable to load staff.");
+        return await res.json() as ApiStaffRow[];
+      })
+      .then((data) => setStaff(Array.isArray(data) ? data : []))
+      .catch(() => setStaff([]));
+    const created = (event: Event) => { if ((event as CustomEvent<{ kind: string }>).detail.kind === "shift") void loadShifts(); };
+    void loadShifts();
+    void loadStaff();
+    window.addEventListener("operation-created", created);
+    return () => window.removeEventListener("operation-created", created);
   }, []);
 
   function moveToDay(dayIndex: number) {
@@ -95,10 +106,10 @@ export default function ShiftboardPage() {
   }
 
   return (
-    <div className="min-w-0 p-7 lg:p-10">
-      <div className="flex items-end justify-between gap-4">
+    <div className="app-page min-w-0 p-7 lg:p-10">
+      <div className="flex items-end justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
             Shift Board
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -141,17 +152,21 @@ export default function ShiftboardPage() {
             ))}
           </div>
 
-          {STAFF.map((person) => (
-            <div key={person.name} className="grid grid-cols-[260px_repeat(7,minmax(130px,1fr))] border-b border-[var(--color-border)] last:border-b-0">
+          {staff === null ? (
+            <div className="px-5 py-8 text-sm text-[var(--color-text-secondary)]">Loading staff...</div>
+          ) : staff.length === 0 ? (
+            <div className="px-5 py-8 text-sm text-[var(--color-text-secondary)]">No active staff accounts found.</div>
+          ) : staff.map((person) => (
+            <div key={person.id} className="grid grid-cols-[260px_repeat(7,minmax(130px,1fr))] border-b border-[var(--color-border)] last:border-b-0">
               <div className="flex items-center gap-3 px-5 py-4">
                 <span
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white"
-                  style={{ background: person.tint }}
+                  style={{ background: staffTint(person.id) }}
                 >
                   {person.initials}
                 </span>
                 <div className="min-w-0">
-                  <div className="font-display text-[15px] font-semibold text-[var(--color-text-primary)]">{person.name}</div>
+                  <div className="font-display text-[15px] font-semibold text-[var(--color-text-primary)]">{person.displayName}</div>
                   <div className="mt-0.5 text-xs text-[var(--color-text-secondary)]">{person.role}</div>
                   <div className="mt-1 flex items-center gap-1.5 text-[11px] text-[var(--color-success)]">
                     <span className="h-1.5 w-1.5 rounded-full bg-current" /> Active
@@ -160,7 +175,7 @@ export default function ShiftboardPage() {
               </div>
 
               {dayMeta.map(([day], dayIndex) => {
-                const entries = shifts.filter((shift) => shift.who === person.name && shift.d === dayIndex);
+                const entries = shifts.filter((shift) => staffNamesMatch(shift.who, person.displayName) && shift.d === dayIndex);
                 return (
                   <div
                     key={day}
@@ -249,4 +264,16 @@ function shiftColor(shift: ShiftEntry) {
   if (role.includes("assist") || role.includes("coordinator")) return "#0EA5A8";
   if (shift.loc === "location") return "#8A4BE3";
   return "#F2383A";
+}
+
+function staffTint(id: string): string {
+  let hash = 0;
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) | 0;
+  return STAFF_TINTS[Math.abs(hash) % STAFF_TINTS.length];
+}
+
+function staffNamesMatch(shiftName: string, displayName: string): boolean {
+  const shift = shiftName.trim().toLocaleLowerCase();
+  const display = displayName.trim().toLocaleLowerCase();
+  return shift === display || shift === display.split(/\s+/)[0];
 }

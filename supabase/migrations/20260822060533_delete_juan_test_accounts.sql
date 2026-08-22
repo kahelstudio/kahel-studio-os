@@ -1,0 +1,3 @@
+-- One-time data cleanup applied directly to production on 2026-08-22.
+-- Deleted Juan test accounts. No schema changes; this file exists only
+-- to reconcile the remote migration history.

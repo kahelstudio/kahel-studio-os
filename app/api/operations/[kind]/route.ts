@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { getStaffPrincipal, type StaffPrincipal } from "@/lib/server/staff-auth";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
 import { normalizePhilippinePhone } from "@/lib/operation-rules";
+import { ensureCustomerAccount } from "@/lib/server/customer-auth";
+import { sendBookingTermsReviewRequest } from "@/lib/server/customer-email";
+import { getCurrentBookingTerms } from "@/lib/server/legal-documents";
+import { isBookingSlotConflict } from "@/lib/server/booking-slots";
+import { getBookingAvailability } from "@/lib/server/booking-availability";
 
 export const runtime = "nodejs";
 
@@ -90,15 +95,57 @@ async function createBooking(body: Body, principal: StaffPrincipal) {
   const service = await admin.from("services").select("id,name").eq("active", true).ilike("name", serviceType).maybeSingle();
   const selectedService = service.data;
   if (!selectedService) { await cleanupCreatedClient(); return NextResponse.json({ error: "Choose a configured active booking service." }, { status: 400 }); }
-  const cents = Math.round(total * 100);
+  const promoCode = text(body, "promoCode", 64).toUpperCase().trim();
+  const subtotalCents = Math.round(total * 100);
+  let discountCents = 0;
+  let promoCodeId: string | null = null;
+  if (promoCode) {
+    const validation = await admin.rpc("validate_promo_code", { requested_code: promoCode, requested_client_id: profile.client_id, requested_booking_amount: subtotalCents, requested_service_id: selectedService.id });
+    if (validation.error || !validation.data) { await cleanupCreatedClient(); return NextResponse.json({ error: "Unable to validate the promo code." }, { status: 500 }); }
+    const result = validation.data as { valid: boolean; discount_amount?: number; promo_code_id?: string; error?: string };
+    if (!result.valid) { await cleanupCreatedClient(); return NextResponse.json({ error: result.error ?? "Invalid promo code." }, { status: 400 }); }
+    discountCents = result.discount_amount ?? 0;
+    promoCodeId = result.promo_code_id ?? null;
+  }
+  const totalCents = Math.max(0, subtotalCents - discountCents);
   const reference = random("KS");
   const idempotency = crypto.randomUUID();
   const fingerprintBytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${phone}:${serviceDate}:${serviceTime}:${selectedService.id}:${idempotency}`));
   const fingerprint = [...new Uint8Array(fingerprintBytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-  const booking = await admin.from("bookings").insert({ client_id: profile.client_id, client_profile_id: profile.id, idempotency_key: idempotency, request_fingerprint: fingerprint, reference, service_type: selectedService.name, service_id: selectedService.id, service_date: serviceDate, service_time: serviceTime, location, payment_type: paymentType, currency: "PHP", subtotal_amount_php: cents, total_amount_php: cents, paid_amount_php: 0, refunded_amount_php: 0, status: "inquiry", payment_status: "unpaid", attendance: "expected", kind: "standard" }).select("id,reference").single();
-  if (booking.error || !booking.data) { await cleanupCreatedClient(); return NextResponse.json({ error: "Unable to create the booking." }, { status: 500 }); }
+  const booking = await admin.from("bookings").insert({ client_id: profile.client_id, client_profile_id: profile.id, idempotency_key: idempotency, request_fingerprint: fingerprint, reference, service_type: selectedService.name, service_id: selectedService.id, service_date: serviceDate, service_time: serviceTime, location, payment_type: paymentType, currency: "PHP", subtotal_amount_php: subtotalCents, total_amount_php: totalCents, paid_amount_php: 0, refunded_amount_php: 0, status: "inquiry", payment_status: "unpaid", attendance: "expected", kind: "standard" }).select("id,reference").single();
+  if (booking.error || !booking.data) {
+    await cleanupCreatedClient();
+    if (isBookingSlotConflict(booking.error)) {
+      const resourceName = await getBookingAvailability(selectedService.id, serviceDate)
+        .then((current) => current.resource.name)
+        .catch(() => "");
+      const message = resourceName
+        ? `This time is no longer available for ${resourceName}. Choose another slot.`
+        : "This time is no longer available. Choose another slot.";
+      return NextResponse.json({ error: message }, { status: 409 });
+    }
+    return NextResponse.json({ error: "Unable to create the booking." }, { status: 500 });
+  }
+  if (promoCodeId && discountCents > 0) {
+    await admin.from("promo_code_usages").insert({ promo_code_id: promoCodeId, booking_id: booking.data.id, client_id: profile.client_id, discount_amount: discountCents });
+  }
   await audit(principal, "booking", booking.data.id);
-  return NextResponse.json(booking.data, { status: 201 });
+  let termsEmailDelayed = false;
+  const terms = await getCurrentBookingTerms();
+  if (terms) {
+    const fullProfile = await admin.from("client_profiles").select("id,client_id,user_id,email,normalized_email,first_name,last_name,mobile,status,email_verified_at").eq("id", profile.id).single<{ id: string; client_id: string; user_id: string | null; email: string; normalized_email: string; first_name: string; last_name: string; mobile: string | null; status: "invited" | "active" | "disabled"; email_verified_at: string | null }>();
+    if (!fullProfile.data) termsEmailDelayed = true;
+    else {
+      try { if (!fullProfile.data.user_id) await ensureCustomerAccount(fullProfile.data, "booking"); }
+      catch { termsEmailDelayed = true; }
+      const origin = process.env.PUBLIC_SITE_URL ?? new URL("/", "https://kahelstudio.com").origin;
+      const bookingPath = `/portal/bookings/${booking.data.reference}`;
+      const sent = await sendBookingTermsReviewRequest({ to: fullProfile.data.email, firstName: fullProfile.data.first_name, reference: booking.data.reference, portalUrl: `${origin}/sign-in?next=${encodeURIComponent(bookingPath)}`, termsVersionLabel: terms.versionLabel, termsUrl: `${origin}/booking-terms`, clientId: profile.client_id, profileId: profile.id, bookingId: booking.data.id });
+      if (!sent) termsEmailDelayed = true;
+    }
+  } else termsEmailDelayed = true;
+  if (termsEmailDelayed) await admin.from("staff_audit_log").insert({ actor_id: principal.userId, actor_name: principal.email, event: "Booking saved but terms email delayed", event_type: "documents", entity_type: "booking", entity_id: booking.data.id, metadata: { customer_acceptance_required: true } });
+  return NextResponse.json({ ...booking.data, customerAcceptanceRequired: true, termsEmailDelayed }, { status: 201 });
 }
 
 export async function GET(request: Request, context: { params: Promise<{ kind: string }> }) {

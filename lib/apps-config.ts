@@ -16,6 +16,7 @@ import {
   Search,
   Banknote,
   ListChecks,
+  CalendarDays,
   CalendarRange,
   Bug,
   TrendingUp,
@@ -26,6 +27,7 @@ import {
   Gauge,
   ReceiptText,
   BadgeCheck,
+  Mail,
   type LucideIcon,
 } from "lucide-react";
 
@@ -91,8 +93,17 @@ export const APPS: AppDef[] = [
     launcherGroup: "live",
     nav: [
       { id: "list", label: "Bookings", href: "/booking/list" },
-      { id: "calendar", label: "Calendar", href: "/booking/calendar" },
     ],
+  },
+  {
+    id: "calendar",
+    name: "Calendar",
+    description: "Monthly and weekly booking schedule",
+    accent: "orange",
+    icon: CalendarDays,
+    href: "/calendar",
+    launcherGroup: "live",
+    nav: [],
   },
   {
     id: "crm",
@@ -116,6 +127,7 @@ export const APPS: AppDef[] = [
     href: "/pos/sale",
     launcherGroup: "live",
     nav: [
+      { id: "register", label: "Register", href: "/pos/register" },
       { id: "sale", label: "New sale", href: "/pos/sale" },
       { id: "bookings", label: "Bookings", href: "/pos/bookings" },
       { id: "cat-sessions", label: "Studio Sessions", href: "/pos/cat-sessions" },
@@ -123,6 +135,21 @@ export const APPS: AppDef[] = [
       { id: "cat-rentals", label: "Rentals", href: "/pos/cat-rentals" },
       { id: "cat-retail", label: "Retail", href: "/pos/cat-retail" },
       { id: "cat-addons", label: "Add-ons", href: "/pos/cat-addons" },
+    ],
+  },
+  {
+    id: "messages",
+    name: "Messages",
+    description: "Transactional delivery and email history",
+    accent: "orange",
+    icon: Mail,
+    href: "/messages/transactional",
+    launcherGroup: "live",
+    nav: [
+      { id: "inbox", label: "Inbox", href: "/messages/inbox" },
+      { id: "sent", label: "Sent", href: "/messages/sent" },
+      { id: "transactional", label: "Transactional", href: "/messages/transactional" },
+      { id: "failed", label: "Failed", href: "/messages/failed" },
     ],
   },
   {
@@ -237,6 +264,9 @@ export const APPS: AppDef[] = [
     launcherGroup: "operations",
     nav: [
       { id: "portfolio", label: "Portfolio", href: "/website/portfolio" },
+      { id: "posts", label: "Posts", href: "/website/posts" },
+      { id: "collections", label: "Collections", href: "/website/collections" },
+      { id: "services", label: "Services", href: "/website/services" },
       { id: "pages", label: "Pages", href: "/website/pages" },
     ],
   },
@@ -447,6 +477,7 @@ export const APPS: AppDef[] = [
     nav: [
       { id: "general", label: "General", href: "/settings/general" },
       { id: "emails", label: "Email templates", href: "/settings/emails" },
+      { id: "legal", label: "Legal and policies", href: "/settings/legal/booking-terms" },
       { id: "team", label: "Team & roles", href: "/settings/team" },
       { id: "billing", label: "Billing & BIR", href: "/settings/billing" },
       { id: "payroll", label: "Payroll", href: "/settings/payroll" },

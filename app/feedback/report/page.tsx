@@ -26,7 +26,7 @@ export default function FeedbackReportPage() {
   }
 
   return (
-    <div className="flex justify-center p-12">
+    <div className="app-page flex justify-center p-12">
       <div className="w-[560px]">
         <h1 className="font-display text-[32px] font-semibold tracking-[-0.02em] text-[var(--color-text-primary)]">
           Report a problem
