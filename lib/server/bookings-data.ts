@@ -193,38 +193,42 @@ export async function getCalendarEventsByDate(startDate: string, endDate: string
     const rangeEndDate = new Date(`${endDate}T00:00:00+08:00`);
     rangeEndDate.setUTCDate(rangeEndDate.getUTCDate() + 1);
     const rangeEnd = rangeEndDate.toISOString();
-    const reservationsResult = await admin.from("booking_reservations")
-      .select("booking_id,resource_id,status,expires_at,starts_at,ends_at")
-      .not("booking_id", "is", null)
-      .in("status", ["held", "booked"])
-      .lt("blocked_starts_at", rangeEnd)
-      .gt("blocked_ends_at", rangeStart);
-    if (reservationsResult.error) throw reservationsResult.error;
-    const now = Date.now();
-    const reservations = (reservationsResult.data ?? []).filter((reservation) => reservation.status === "booked" || (reservation.expires_at && Date.parse(reservation.expires_at) > now));
-    const bookingIds = reservations.flatMap((reservation) => reservation.booking_id ? [reservation.booking_id] : []);
-    const [{ data, error }, canonical, resourcesResult] = await Promise.all([bookingIds.length ? admin.from("bookings").select(`
-      id,
-      reference,
-      service_type,
-      service_date,
-      service_time,
-      starts_at,
-      ends_at,
-      resource_id,
-      status,
-      clients:client_id ( name )
-    `).in("id", bookingIds).order("service_date", { ascending: true }).order("service_time", { ascending: true }) : Promise.resolve({ data: [], error: null }), admin.rpc("get_booking_calendar_reservations", {
-      requested_starts_at: rangeStart,
-      requested_ends_at: rangeEnd,
-    }), reservations.length ? admin.from("booking_resources").select("id,name").in("id", [...new Set(reservations.map((reservation) => reservation.resource_id))]) : Promise.resolve({ data: [], error: null })]);
+    const [{ data: bookingsData, error: bookingsError }, canonical] = await Promise.all([
+      admin.from("bookings").select(`
+        id,
+        reference,
+        service_type,
+        service_date,
+        service_time,
+        starts_at,
+        ends_at,
+        resource_id,
+        status,
+        clients:client_id ( name )
+      `)
+        .neq("status", "cancelled")
+        .neq("status", "completed")
+        .lt("starts_at", rangeEnd)
+        .gt("ends_at", rangeStart)
+        .order("service_date", { ascending: true })
+        .order("service_time", { ascending: true }),
+      admin.rpc("get_booking_calendar_reservations", {
+        requested_starts_at: rangeStart,
+        requested_ends_at: rangeEnd,
+      }),
+    ]);
 
-    if (error || canonical.error || resourcesResult.error) throw error ?? canonical.error ?? resourcesResult.error;
-    const resourceNames = new Map((resourcesResult.data ?? []).map((resource) => [resource.id, resource.name]));
-    const bookings = data as unknown as Array<{
+    if (bookingsError || canonical.error) throw bookingsError ?? canonical.error;
+    const bookings = (bookingsData ?? []) as unknown as Array<{
       id: string; reference: string; service_type: string; service_date: string; service_time: string;
       starts_at: string; ends_at: string; resource_id: string; status: string; clients: { name: string } | null;
     }>;
+    const resourceIds = [...new Set(bookings.map((b) => b.resource_id).filter(Boolean))];
+    const resourcesResult = resourceIds.length
+      ? await admin.from("booking_resources").select("id,name").in("id", resourceIds)
+      : { data: [], error: null };
+    if (resourcesResult.error) throw resourcesResult.error;
+    const resourceNames = new Map((resourcesResult.data ?? []).map((resource) => [resource.id, resource.name]));
     const timeFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
     const grouped: Record<string, CalendarEvent[]> = {};
     for (const booking of bookings) {
