@@ -189,7 +189,7 @@ export async function getCalendarEventsByDate(startDate: string, endDate: string
   try {
     const admin = getSupabaseAdmin();
     await admin.rpc("expire_booking_holds", { requested_limit: 500 });
-    const rangeStart = `${startDate}T00:00:00+08:00`;
+    const rangeStart = new Date(`${startDate}T00:00:00+08:00`).toISOString();
     const rangeEndDate = new Date(`${endDate}T00:00:00+08:00`);
     rangeEndDate.setUTCDate(rangeEndDate.getUTCDate() + 1);
     const rangeEnd = rangeEndDate.toISOString();
