@@ -4,7 +4,6 @@ import { Plus } from "lucide-react";
 import { getEquipment } from "@/lib/server/inventory-data";
 import { OperationCreateButton } from "@/components/shared/operation-create-button";
 import { EquipmentRowActions } from "@/components/inventory/equipment-row-actions";
-import Link from "next/link";
 
 const INV_STATUS: Record<string, { bg: string; c: string; label: string }> = {
   available: { bg: "var(--color-success-bg)", c: "var(--color-success-text)", label: "Available" },
@@ -26,7 +25,7 @@ export default async function InventoryEquipmentPage() {
             The register — every body, lens, and light, by serial
           </p>
         </div>
-        <div className="flex gap-2"><Link href="/approvals?create=purchase_equipment" className="flex h-10 shrink-0 items-center rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-semibold text-[#FF5300]">Request purchase</Link><OperationCreateButton kind="equipment" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]"><Plus className="h-4 w-4" /> Add equipment</OperationCreateButton></div>
+        <OperationCreateButton kind="equipment" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]"><Plus className="h-4 w-4" /> Add equipment</OperationCreateButton>
       </header>
 
       <div className="px-4 sm:px-6 pb-12">
