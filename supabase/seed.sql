@@ -170,12 +170,12 @@ insert into public.pos_sale_items (id, sale_id, product_id, description, unit_pr
   ('d6200000-0000-4000-8000-000000000003', 'd6100000-0000-4000-8000-000000000002', 'd6000000-0000-4000-8000-000000000003', 'Linen Story Album 30-page', 6800, 1, 6800)
 on conflict (id) do update set quantity = excluded.quantity, total_price = excluded.total_price;
 
-insert into public.equipment (id, serial, name, category, status, note, location) values
-  ('d7000000-0000-4000-8000-000000000001', 'DEMO-CAM-001', 'Canon EOS R5', 'Camera', 'out', 'Primary event body', 'Checked out'),
-  ('d7000000-0000-4000-8000-000000000002', 'DEMO-LNS-001', 'RF 24-70mm f/2.8L', 'Lens', 'available', 'Recently calibrated', 'Equipment cabinet A'),
-  ('d7000000-0000-4000-8000-000000000003', 'DEMO-LGT-001', 'Profoto B10X Plus', 'Lighting', 'maint', 'Battery inspection due', 'Repair shelf'),
-  ('d7000000-0000-4000-8000-000000000004', 'DEMO-AUD-001', 'Rode Wireless PRO', 'Audio', 'available', null, 'Equipment cabinet B')
-on conflict (id) do update set status = excluded.status, note = excluded.note, location = excluded.location, updated_at = now();
+insert into public.equipment (id, id_tag, serial, name, category, status, note, location) values
+  ('d7000000-0000-4000-8000-000000000001', 'DEMO-CAM-001', 'DEMO-CAM-001', 'Canon EOS R5', 'Camera', 'out', 'Primary event body', 'Checked out'),
+  ('d7000000-0000-4000-8000-000000000002', 'DEMO-LNS-001', 'DEMO-LNS-001', 'RF 24-70mm f/2.8L', 'Lens', 'available', 'Recently calibrated', 'Equipment cabinet A'),
+  ('d7000000-0000-4000-8000-000000000003', 'DEMO-LGT-001', 'DEMO-LGT-001', 'Profoto B10X Plus', 'Lighting', 'maint', 'Battery inspection due', 'Repair shelf'),
+  ('d7000000-0000-4000-8000-000000000004', 'DEMO-AUD-001', 'DEMO-AUD-001', 'Rode Wireless PRO', 'Audio', 'available', null, 'Equipment cabinet B')
+on conflict (id) do update set id_tag = excluded.id_tag, serial = excluded.serial, status = excluded.status, note = excluded.note, location = excluded.location, updated_at = now();
 
 insert into public.equipment_checkouts (id, equipment_id, purpose, checked_out_at, expected_return_at) values
   ('d7100000-0000-4000-8000-000000000001', 'd7000000-0000-4000-8000-000000000001', 'Northstar seasonal campaign', now() - interval '4 hours', now() + interval '7 hours')

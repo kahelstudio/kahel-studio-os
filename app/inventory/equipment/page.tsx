@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { Plus } from "lucide-react";
 import { getEquipment } from "@/lib/server/inventory-data";
 import { OperationCreateButton } from "@/components/shared/operation-create-button";
+import { EquipmentRowActions } from "@/components/inventory/equipment-row-actions";
 import Link from "next/link";
 
 const INV_STATUS: Record<string, { bg: string; c: string; label: string }> = {
@@ -30,12 +31,14 @@ export default async function InventoryEquipmentPage() {
 
       <div className="px-4 sm:px-6 pb-12">
       <div className="mt-[26px] overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="grid h-11 grid-cols-[1.1fr_1.6fr_1fr_1fr_1.4fr] items-center bg-[var(--color-canvas)] px-5 text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
+        <div className="grid h-11 grid-cols-[0.9fr_1.1fr_1.6fr_1fr_1fr_1.4fr_auto] items-center bg-[var(--color-canvas)] px-5 text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
+          <div>ID Tag</div>
           <div>Serial</div>
           <div>Item</div>
           <div>Category</div>
           <div>Status</div>
           <div>Location / note</div>
+          <div>Actions</div>
         </div>
         {equipment.map((e) => {
           const st = INV_STATUS[e.status] ?? INV_STATUS.available;
@@ -44,9 +47,10 @@ export default async function InventoryEquipmentPage() {
           return (
             <div
               key={e.serial}
-              className="grid h-[52px] grid-cols-[1.1fr_1.6fr_1fr_1fr_1.4fr] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
+              className="grid h-[52px] grid-cols-[0.9fr_1.1fr_1.6fr_1fr_1fr_1.4fr_auto] items-center border-b border-[var(--color-border)] px-5 text-sm last:border-b-0 hover:bg-[var(--color-canvas)]"
             >
-              <div className="text-[13px] font-medium text-[var(--color-text-primary)]">{e.serial}</div>
+              <div className="truncate font-mono text-[12px] text-[var(--color-text-secondary)]" title={e.idTag}>{e.idTag}</div>
+              <div className="truncate font-mono text-[13px] font-medium text-[var(--color-text-primary)]" title={e.serial}>{e.serial}</div>
               <div className="font-semibold">{e.name}</div>
               <div className="text-[var(--color-text-secondary)]">{e.category}</div>
               <div>
@@ -59,6 +63,12 @@ export default async function InventoryEquipmentPage() {
               </div>
               <div className="text-[13px]" style={{ color: noteColor }}>
                 {note}
+              </div>
+              <div className="flex justify-start">
+                <EquipmentRowActions
+                  values={{ id: e.id, idTag: e.idTag, serial: e.serial, name: e.name, category: e.category, status: e.status, location: e.location, note: e.note }}
+                  label={`${e.idTag} ${e.name}`}
+                />
               </div>
             </div>
           );
