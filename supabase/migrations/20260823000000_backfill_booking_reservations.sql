@@ -24,9 +24,9 @@ on conflict (booking_id) do nothing;
 -- first so the strongest-status booking wins the slot.
 do $$
 declare
-  b record;
+  rec record;
 begin
-  for b in (
+  for rec in (
     select
       b.id, b.service_id, b.resource_id,
       b.starts_at, b.ends_at,
@@ -53,9 +53,9 @@ begin
         starts_at, ends_at, blocked_starts_at, blocked_ends_at,
         type, status
       ) values (
-        b.id, b.service_id, b.resource_id,
-        b.starts_at, b.ends_at,
-        b.blocked_starts_at, b.blocked_ends_at,
+        rec.id, rec.service_id, rec.resource_id,
+        rec.starts_at, rec.ends_at,
+        rec.blocked_starts_at, rec.blocked_ends_at,
         'booking', 'booked'
       );
     exception when exclusion_violation or unique_violation then
