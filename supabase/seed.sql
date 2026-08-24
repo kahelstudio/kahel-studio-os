@@ -261,4 +261,102 @@ insert into public.payroll_payslips (id, run_id, employee_id, initials, name, ro
   ('d9200000-0000-4000-8000-000000000003', 'd9100000-0000-4000-8000-000000000001', 'd9000000-0000-4000-8000-000000000003', 'IF', 'Inez Flores', 'Photo editor', 17000, 0, 17000, 750, 425, 100, 325, 0, 15400)
 on conflict (id) do update set basic_pay = excluded.basic_pay, overtime_pay = excluded.overtime_pay, gross_pay = excluded.gross_pay, net_pay = excluded.net_pay;
 
+-- Cancelled booking with full deposit refund. Shows the refund flow and payment_status = 'refunded'.
+-- Arielle cancelled 15 days after booking; 50% deposit was returned in full.
+insert into public.bookings (
+  id, client_id, client_profile_id, idempotency_key, request_fingerprint, reference,
+  service_type, service_id, service_date, service_time, location, payment_type,
+  subtotal_amount_php, total_amount_php, paid_amount_php, refunded_amount_php,
+  status, payment_status, completed_at, attendance, created_at
+) values (
+  'd2000000-0000-4000-8000-000000000007',
+  'd0000000-0000-4000-8000-000000000003',
+  'd1000000-0000-4000-8000-000000000004',
+  'demo-booking-007', repeat('7', 64), 'DEMO-BKG-007',
+  'Solo', (select id from public.services where code = 'solo-session'),
+  current_date - 30, '13:00', 'Kahel Studio, Quezon City', 'deposit',
+  650000, 650000, 325000, 325000,
+  'cancelled', 'refunded', null, 'expected', now() - interval '45 days'
+)
+on conflict (id) do update set
+  service_date = excluded.service_date, paid_amount_php = excluded.paid_amount_php,
+  refunded_amount_php = excluded.refunded_amount_php, status = excluded.status,
+  payment_status = excluded.payment_status, updated_at = now();
+
+-- Loyalty program eligibility record for the Santos anniversary booking.
+-- The program launches 2026-09-01; this completed booking predates it, so it is ineligible.
+insert into public.loyalty_booking_eligibility (
+  booking_id, program_id, client_id, state, contribution, reason_code, evaluated_at
+) values (
+  'd2000000-0000-4000-8000-000000000004',
+  '20000000-0000-4000-8000-000000000001',
+  'd0000000-0000-4000-8000-000000000001',
+  'ineligible', 0, 'before_launch', now() - interval '1 day'
+)
+on conflict (booking_id, program_id) do update set
+  state = excluded.state, contribution = excluded.contribution,
+  reason_code = excluded.reason_code, evaluated_at = excluded.evaluated_at;
+
+-- Loyalty point adjustments applied by staff to reflect pre-launch bookings and
+-- correct the opening balance ahead of the September programme start.
+-- Santos: 5 of 8 points (progress visible in the loyalty UI).
+-- Northstar: 8 of 8 points (reward earned, outbox email pending).
+insert into public.loyalty_booking_events (
+  booking_id, program_id, client_id, event_key, event_type, delta, reason_code
+) values
+  (null, '20000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001',
+   'adjustment:demo-santos-opening-balance', 'adjustment', 5, 'staff_correction'),
+  (null, '20000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000002',
+   'adjustment:demo-northstar-opening-balance', 'adjustment', 8, 'staff_correction')
+on conflict (event_key) do nothing;
+
+-- Northstar has reached the threshold and earned their first complimentary session.
+insert into public.loyalty_rewards (
+  id, client_id, program_id, sequence, threshold, service_id, status
+) values (
+  'd0010000-0000-4000-8000-000000000001',
+  'd0000000-0000-4000-8000-000000000002',
+  '20000000-0000-4000-8000-000000000001',
+  1, 8,
+  '10000000-0000-4000-8000-000000000002',
+  'available'
+)
+on conflict (client_id, program_id, sequence) do update set
+  status = excluded.status, updated_at = now();
+
+-- Reward notification pending delivery to Northstar.
+insert into public.loyalty_email_outbox (
+  id, reward_id, client_id, template_key, payload, status
+) values (
+  'd0020000-0000-4000-8000-000000000001',
+  'd0010000-0000-4000-8000-000000000001',
+  'd0000000-0000-4000-8000-000000000002',
+  'loyalty_reward_issued',
+  jsonb_build_object(
+    'reward_id', 'd0010000-0000-4000-8000-000000000001',
+    'sequence', 1,
+    'service_id', '10000000-0000-4000-8000-000000000002'
+  ),
+  'pending'
+)
+on conflict (reward_id) do nothing;
+
+-- Staff follow-up task for the overdue Santos invoice.
+insert into public.tasks (id, title, description, column_status, priority, category, assignee, due_date, linked_ref, sort_order) values
+  ('d8200000-0000-4000-8000-000000000005', 'Follow up on overdue Santos balance',
+   'DEMO-INV-004 is past due by 22 days. Send a payment reminder to Luis Santos before escalating.',
+   'todo', 'High', 'Billing', 'Sofia Lim', current_date, 'DEMO-INV-004', 5)
+on conflict (id) do update set column_status = excluded.column_status, priority = excluded.priority,
+  assignee = excluded.assignee, due_date = excluded.due_date, updated_at = now();
+
+-- Staff message to Santos about the outstanding anniversary invoice balance.
+insert into public.customer_messages (id, client_id, sender_profile_id, project_id, sender, body, read_at, created_at) values
+  ('d5000000-0000-4000-8000-000000000003',
+   'd0000000-0000-4000-8000-000000000001', null,
+   'd3000000-0000-4000-8000-000000000003',
+   'staff',
+   'Hi Luis, a friendly reminder that the remaining balance on your anniversary session (DEMO-INV-004) is now past due. Please reach out if you have any questions.',
+   null, now() - interval '2 days')
+on conflict (id) do update set body = excluded.body, read_at = excluded.read_at;
+
 commit;
