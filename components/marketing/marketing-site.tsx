@@ -9,6 +9,7 @@ import { applyPromoDiscount } from "@/lib/promo-code";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import styles from "./marketing-site.module.css";
+import PaymentMethodSelector, { type PaymentOption } from "./PaymentMethodSelector";
 
 type Page = "home" | "portfolio" | "services" | "about" | "book" | "privacy" | "terms" | "health-safety";
 type ServiceCategory = "sessions" | "events";
@@ -1099,7 +1100,7 @@ type BookingForm = {
   endTime: string;
   location: string;
   promoCode: string;
-  pay: "" | "deposit" | "full" | "bnpl" | "cash";
+  pay: "" | PaymentOption;
   addons: BookingAddon[];
 };
 const emptyBooking: BookingForm = {
@@ -1594,26 +1595,11 @@ function Booking({ goHome }: { goHome: () => void }) {
               )}
               <fieldset className={styles.fullField}>
                 <legend>Payment</legend>
-                <div className={styles.payment}>
-                  <button type="button" aria-pressed={form.pay === "full"} onClick={() => update("pay", "full")}>
-                    <strong>Pay in full</strong>
-                    <span>Pay online via digital wallets / credit card</span>
-                  </button>
-                  <button type="button" aria-pressed={form.pay === "deposit"} onClick={() => update("pay", "deposit")}>
-                    <strong>50% downpayment</strong>
-                    <span>Pay online via digital wallets / credit card</span>
-                  </button>
-                  {showBnpl && (
-                    <button type="button" aria-pressed={form.pay === "bnpl"} onClick={() => update("pay", "bnpl")}>
-                      <strong>Buy Now, Pay Later</strong>
-                      <span>Pay in installments through BillEase</span>
-                    </button>
-                  )}
-                  <button type="button" aria-pressed={form.pay === "cash"} onClick={() => update("pay", "cash")}>
-                    <strong>Cash</strong>
-                    <span>Pay at the studio</span>
-                  </button>
-                </div>
+                <PaymentMethodSelector
+                  value={(form.pay || "full") as PaymentOption}
+                  onChange={(v) => update("pay", v)}
+                  showBnpl={showBnpl}
+                />
               </fieldset>
             </div>
           </div>

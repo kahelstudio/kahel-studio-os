@@ -13,7 +13,7 @@
       "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "kahelstudio-os-dev" }],
       // Emulated locally by miniflare via initOpenNextCloudflareForDev; ID is a reference only.
       "kv_namespaces": [{ "binding": "PUBLISH_KV", "id": "97cfd38879ae44718f21948e918f1289" }],
-      "vars": { "APP_ENV": "development", "MEDIA_INFRASTRUCTURE_ENABLED": "false", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "true", "AUTH_REDIRECT_URL": "http://localhost:3000/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "http://localhost:3000/auth/callback", "PUBLIC_SITE_URL": "http://localhost:3000", "TURNSTILE_SITE_KEY": "1x00000000000000000000AA" }
+      "vars": { "APP_ENV": "development", "MEDIA_INFRASTRUCTURE_ENABLED": "false", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "true", "AUTH_REDIRECT_URL": "http://localhost:3000/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "http://localhost:3000/auth/callback", "PUBLIC_SITE_URL": "http://localhost:3000", "TURNSTILE_SITE_KEY": "1x00000000000000000000AA", "PAYMONGO_PAYMENT_METHODS": "card,gcash,paymaya,grab_pay,qrph,billease", "PAYMONGO_BNPL_ENABLED": "true" }
     },
     "staging": {
       "name": "kahelstudio-os-staging",

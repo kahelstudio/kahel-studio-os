@@ -118,19 +118,19 @@ jobs:
       - name: Pre-pull Supabase images from ECR Public
         run: |
           for img in \
-            postgres:17.6.1.156 \
-            gotrue:v2.194.0 \
+            postgres:17.6.1.159 \
+            gotrue:v2.195.0 \
             kong:2.8.1 \
-            postgres-meta:v0.96.6 \
-            edge-runtime:v1.74.2 \
-            logflare:1.47.1 \
-            realtime:v2.120.3 \
-            storage-api:v1.67.20 \
-            "studio:2026.07.27-sha-cbb076d" \
+            postgres-meta:v0.98.0 \
+            edge-runtime:v1.74.3 \
+            logflare:1.50.2 \
+            realtime:v2.129.0 \
+            storage-api:v1.69.11 \
+            "studio:2026.08.17-sha-0c1da8f" \
             supavisor:2.9.7 \
             mailpit:v1.30.2 \
             "vector:0.53.0-alpine" \
-            postgrest:v14.15 \
+            postgrest:v16.1 \
             migra:3.0.1663481299
           do
             docker pull "public.ecr.aws/supabase/$img" \
