@@ -1139,7 +1139,6 @@ function BookingSchedule({ dateValue, timeValue, endTimeValue, eventSelected, ev
       })
     : "Select a date";
   const noSlots = Boolean(availabilityStatus === "ready" && availability?.slots.length && availability.slots.every((slot) => !slot.available));
-  const eventSlot = eventSelected && eventRangeValid ? availability?.slots.find((slot) => slot.time === timeValue) : null;
   return (
     <div className={styles.bookingSchedule}>
       <section className={styles.scheduleCalendar} aria-label="Choose a date">
@@ -1188,16 +1187,16 @@ function BookingSchedule({ dateValue, timeValue, endTimeValue, eventSelected, ev
         ) : eventSelected ? (
           <div className={styles.eventTimePicker}>
             <div className={styles.eventTimeRange}>
-              <label><span>From</span><input type="time" step="1800" value={timeValue} disabled={disabled} onChange={(event) => onEventTimeChange("time", event.target.value)} /></label>
-              <label><span>To</span><input type="time" step="1800" value={endTimeValue} disabled={disabled} onChange={(event) => onEventTimeChange("endTime", event.target.value)} /></label>
+              <label><span>From</span><input type="time" value={timeValue} disabled={disabled} onChange={(event) => onEventTimeChange("time", event.target.value)} /></label>
+              <label><span>To</span><input type="time" value={endTimeValue} disabled={disabled} onChange={(event) => onEventTimeChange("endTime", event.target.value)} /></label>
             </div>
             <p className={styles.eventTimeHint}>This package includes up to {eventCoverageMinutes / 60} hours of coverage.</p>
             {timeValue && endTimeValue && !eventRangeValid ? <p className={styles.eventTimeError}>Choose a range between {eventMinimumMinutes / 60} and {eventCoverageMinutes / 60} hours.</p>
               : !timeValue || !endTimeValue ? <p className={styles.eventTimeStatus}>Enter the event start and end time.</p>
               : availabilityStatus === "idle" || availabilityStatus === "loading" || availabilityStatus === "refreshing" ? <p className={styles.eventTimeStatus}>Checking the full {Math.round(eventDurationMinutes / 60 * 10) / 10}-hour range...</p>
               : availabilityStatus === "error" ? <div className={styles.eventTimeError}>{availabilityError || "Availability could not be loaded."} <button type="button" onClick={onRefresh}>Try again</button></div>
-              : eventSlot?.available ? <p className={styles.eventTimeAvailable}>This time range is available.</p>
-              : <p className={styles.eventTimeError}>This time range overlaps another booking. Choose a different range.</p>}
+              : !availability?.slots.length ? <p className={styles.eventTimeError}>Not available on this date. Choose a different date or range.</p>
+              : <p className={styles.eventTimeAvailable}>We&apos;ll confirm this exact time is free when you reserve.</p>}
           </div>
         ) : availabilityStatus === "idle" || availabilityStatus === "loading" ? (
           <div className={styles.scheduleEmpty}>Loading available times...</div>
@@ -1358,9 +1357,18 @@ function Booking({ goHome }: { goHome: () => void }) {
   }, [bnplCapabilityAmountCentavos]);
   const normalizedPromoCode = promoCodeInput.trim().toUpperCase();
   const promoApplied = Boolean(normalizedPromoCode && form.promoCode === normalizedPromoCode);
-  const eventSlot = eventSelected && eventRangeValid && availability?.date === form.date ? availability.slots.find((slot) => slot.time === form.time && slot.available) : null;
-  const effectiveStartsAt = eventSelected ? eventSlot?.startsAt ?? "" : selectedStartsAt;
-  const selectedSlotAvailable = availability?.date === form.date && availability.slots.some((slot) => slot.startsAt === effectiveStartsAt && slot.available);
+  // Events aren't limited to the 30-minute preview grid: any anchor slot on the
+  // requested date gives a real, correctly-offset instant to shift by whole
+  // minutes to the exact time typed. The server independently validates the
+  // resulting range for conflicts and business hours when the hold is created.
+  const eventAnchorSlot = eventSelected && availability?.date === form.date ? availability.slots[0] : null;
+  const eventStartsAtFromTime = eventAnchorSlot && /^\d{2}:\d{2}$/.test(form.time)
+    ? new Date(Date.parse(eventAnchorSlot.startsAt) + (eventStartMinutes - (Number(eventAnchorSlot.time.slice(0, 2)) * 60 + Number(eventAnchorSlot.time.slice(3)))) * 60_000).toISOString()
+    : "";
+  const effectiveStartsAt = eventSelected ? eventStartsAtFromTime : selectedStartsAt;
+  const selectedSlotAvailable = eventSelected
+    ? Boolean(effectiveStartsAt) && eventRangeValid
+    : availability?.date === form.date && availability.slots.some((slot) => slot.startsAt === effectiveStartsAt && slot.available);
   const heldSelectedSlot = hold?.startsAt === effectiveStartsAt && holdRemainingSeconds > 0;
   const valid = Boolean(form.name && form.email && form.mobile && form.session && form.date && form.time && (!eventSelected || (form.endTime && eventRangeValid)) && form.pay && effectiveStartsAt && form.date >= (serverDate || todayIso()) && (availabilityStatus === "ready" || heldSelectedSlot) && (selectedSlotAvailable || heldSelectedSlot));
   const update = <Key extends keyof BookingForm>(key: Key, value: BookingForm[Key]) => {
