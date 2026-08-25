@@ -39,11 +39,11 @@ insert into public.bookings (
   subtotal_amount_php, total_amount_php, paid_amount_php, status, payment_status,
   completed_at, attendance, created_at
 ) values
-  ('d2000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', 'd1000000-0000-4000-8000-000000000001', 'demo-booking-001', repeat('1', 64), 'DEMO-BKG-001', 'Solo', (select id from public.services where code = 'solo-session'), current_date, '09:00', 'Kahel Studio, Quezon City', 'deposit', 650000, 650000, 325000, 'confirmed', 'partially_paid', null, 'expected', now() - interval '12 days'),
-  ('d2000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000002', 'd1000000-0000-4000-8000-000000000003', 'demo-booking-002', repeat('2', 64), 'DEMO-BKG-002', 'Group', (select id from public.services where code = 'group-session'), current_date, '14:30', 'Northstar Flagship, Makati', 'full', 1800000, 1800000, 1800000, 'confirmed', 'paid', null, 'expected', now() - interval '20 days'),
-  ('d2000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000003', 'd1000000-0000-4000-8000-000000000004', 'demo-booking-003', repeat('3', 64), 'DEMO-BKG-003', 'Theme', (select id from public.services where code = 'theme-session'), current_date + 5, '11:00', 'Kahel Studio, Quezon City', 'deposit', 950000, 950000, 475000, 'quoted', 'partially_paid', null, 'expected', now() - interval '3 days'),
+  ('d2000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', 'd1000000-0000-4000-8000-000000000001', 'demo-booking-001', repeat('1', 64), 'DEMO-BKG-001', 'Solo', (select id from public.services where code = 'solo-session'), (current_date + 40 + (extract(isodow from current_date + 40) = 7)::int), '09:00', 'Kahel Studio, Quezon City', 'deposit', 650000, 650000, 325000, 'confirmed', 'partially_paid', null, 'expected', now() - interval '12 days'),
+  ('d2000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000002', 'd1000000-0000-4000-8000-000000000003', 'demo-booking-002', repeat('2', 64), 'DEMO-BKG-002', 'Group', (select id from public.services where code = 'group-session'), (current_date + 40 + (extract(isodow from current_date + 40) = 7)::int), '14:30', 'Northstar Flagship, Makati', 'full', 1800000, 1800000, 1800000, 'confirmed', 'paid', null, 'expected', now() - interval '20 days'),
+  ('d2000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000003', 'd1000000-0000-4000-8000-000000000004', 'demo-booking-003', repeat('3', 64), 'DEMO-BKG-003', 'Theme', (select id from public.services where code = 'theme-session'), (current_date + 5 + (extract(isodow from current_date + 5) = 7)::int), '11:00', 'Kahel Studio, Quezon City', 'deposit', 950000, 950000, 475000, 'quoted', 'partially_paid', null, 'expected', now() - interval '3 days'),
   ('d2000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000001', 'd1000000-0000-4000-8000-000000000001', 'demo-booking-004', repeat('4', 64), 'DEMO-BKG-004', 'Anniversary Celebration', (select id from public.services where code = 'anniversary-celebration'), current_date - 16, '16:00', 'The Glass Garden, Pasig', 'full', 2850000, 2850000, 2850000, 'completed', 'paid', (current_date - 16)::timestamp + time '19:00', 'attended', now() - interval '40 days'),
-  ('d2000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000002', 'd1000000-0000-4000-8000-000000000003', 'demo-booking-005', repeat('5', 64), 'DEMO-BKG-005', 'Express', (select id from public.services where code = 'express-session'), current_date - 2, '10:00', 'Kahel Studio, Quezon City', 'full', 450000, 450000, 0, 'progress', 'unpaid', null, 'expected', now() - interval '8 days'),
+  ('d2000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000002', 'd1000000-0000-4000-8000-000000000003', 'demo-booking-005', repeat('5', 64), 'DEMO-BKG-005', 'Express', (select id from public.services where code = 'express-session'), (current_date + 40 + (extract(isodow from current_date + 40) = 7)::int), '10:00', 'Kahel Studio, Quezon City', 'full', 450000, 450000, 0, 'progress', 'unpaid', null, 'expected', now() - interval '8 days'),
   ('d2000000-0000-4000-8000-000000000006', 'd0000000-0000-4000-8000-000000000003', 'd1000000-0000-4000-8000-000000000004', 'demo-booking-006', repeat('6', 64), 'DEMO-BKG-006', 'Birthday', (select id from public.services where code = 'birthday'), current_date + 21, '15:00', 'Blue Leaf Cosmopolitan, Quezon City', 'deposit', 2200000, 2200000, 0, 'inquiry', 'unpaid', null, 'expected', now() - interval '1 day')
 on conflict (id) do update set
   service_date = excluded.service_date, service_time = excluded.service_time, location = excluded.location,
@@ -53,10 +53,10 @@ on conflict (id) do update set
   attendance = excluded.attendance, updated_at = now();
 
 insert into public.projects (id, client_id, booking_id, reference, title, description, status, starts_at, completed_at, created_at) values
-  ('d3000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', 'd2000000-0000-4000-8000-000000000001', 'DEMO-PRJ-001', 'Santos family portraits', 'Warm studio portraits with two wardrobe sets.', 'active', current_date::timestamp + time '09:00', null, now() - interval '12 days'),
-  ('d3000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000002', 'd2000000-0000-4000-8000-000000000002', 'DEMO-PRJ-002', 'Northstar seasonal campaign', 'Product and team imagery for the rainy-season menu.', 'active', current_date::timestamp + time '14:30', null, now() - interval '20 days'),
+  ('d3000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', 'd2000000-0000-4000-8000-000000000001', 'DEMO-PRJ-001', 'Santos family portraits', 'Warm studio portraits with two wardrobe sets.', 'active', ((current_date + 40 + (extract(isodow from current_date + 40) = 7)::int))::timestamp + time '09:00', null, now() - interval '12 days'),
+  ('d3000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000002', 'd2000000-0000-4000-8000-000000000002', 'DEMO-PRJ-002', 'Northstar seasonal campaign', 'Product and team imagery for the rainy-season menu.', 'active', ((current_date + 40 + (extract(isodow from current_date + 40) = 7)::int))::timestamp + time '14:30', null, now() - interval '20 days'),
   ('d3000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000001', 'd2000000-0000-4000-8000-000000000004', 'DEMO-PRJ-003', 'Santos anniversary story', 'Event coverage and a 30-page keepsake album.', 'completed', (current_date - 16)::timestamp + time '16:00', (current_date - 10)::timestamp, now() - interval '40 days'),
-  ('d3000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000003', 'd2000000-0000-4000-8000-000000000003', 'DEMO-PRJ-004', 'Arielle editorial portraits', 'Concept development and mood-board review.', 'planned', (current_date + 5)::timestamp + time '11:00', null, now() - interval '3 days')
+  ('d3000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000003', 'd2000000-0000-4000-8000-000000000003', 'DEMO-PRJ-004', 'Arielle editorial portraits', 'Concept development and mood-board review.', 'planned', ((current_date + 5 + (extract(isodow from current_date + 5) = 7)::int))::timestamp + time '11:00', null, now() - interval '3 days')
 on conflict (id) do update set
   title = excluded.title, description = excluded.description, status = excluded.status,
   starts_at = excluded.starts_at, completed_at = excluded.completed_at, updated_at = now();
@@ -94,6 +94,64 @@ on conflict (id) do update set
   title = excluded.title, description = excluded.description, status = excluded.status,
   expires_at = excluded.expires_at, updated_at = now();
 
+-- Transactional email samples exercise the active Messages workspace without
+-- contacting a provider. They cover normal delivery, pending, and failure states.
+insert into public.email_templates (id, template_key, name, audience, description, active, created_at) values
+  ('e1000000-0000-4000-8000-000000000001', 'booking_confirmation', 'Booking confirmation', 'customer', 'Sent when a studio booking is confirmed.', true, now() - interval '90 days'),
+  ('e1000000-0000-4000-8000-000000000002', 'payment_receipt', 'Payment receipt', 'customer', 'Sent after a customer payment is recorded.', true, now() - interval '90 days'),
+  ('e1000000-0000-4000-8000-000000000003', 'gallery_ready', 'Gallery ready', 'customer', 'Sent when a private client gallery is published.', true, now() - interval '90 days'),
+  ('e1000000-0000-4000-8000-000000000004', 'booking_reminder', 'Booking reminder', 'customer', 'Scheduled reminder before a studio session.', true, now() - interval '90 days')
+on conflict (id) do update set name = excluded.name, description = excluded.description, active = excluded.active, updated_at = now();
+
+insert into public.email_template_versions (
+  id, template_id, version, subject_template, html_template, text_template,
+  variable_schema, contains_secure_content, change_note, published_at, created_at
+) values
+  ('e2000000-0000-4000-8000-000000000001', 'e1000000-0000-4000-8000-000000000001', 1, 'Your Kahel Studio booking is confirmed', '<main><h1>Booking confirmed</h1><p>Hi {{recipientName}}, your session {{bookingReference}} is confirmed.</p></main>', 'Hi {{recipientName}}, your session {{bookingReference}} is confirmed.', '{"recipientName":{"type":"string"},"bookingReference":{"type":"string"}}', false, 'Initial demo booking confirmation', now() - interval '89 days', now() - interval '90 days'),
+  ('e2000000-0000-4000-8000-000000000002', 'e1000000-0000-4000-8000-000000000002', 1, 'Payment received by Kahel Studio', '<main><h1>Payment received</h1><p>We recorded your payment for {{invoiceReference}}. Thank you.</p></main>', 'We recorded your payment for {{invoiceReference}}. Thank you.', '{"invoiceReference":{"type":"string"}}', false, 'Initial demo payment receipt', now() - interval '89 days', now() - interval '90 days'),
+  ('e2000000-0000-4000-8000-000000000003', 'e1000000-0000-4000-8000-000000000003', 1, 'Your anniversary gallery is ready', '<main><h1>Your gallery is ready</h1><p>Your private Santos Anniversary Highlights gallery is now available.</p></main>', 'Your private Santos Anniversary Highlights gallery is now available.', '{}', false, 'Initial demo gallery notice', now() - interval '89 days', now() - interval '90 days'),
+  ('e2000000-0000-4000-8000-000000000004', 'e1000000-0000-4000-8000-000000000004', 1, 'A reminder for your upcoming Kahel Studio session', '<main><h1>Session reminder</h1><p>We look forward to welcoming you to Kahel Studio.</p></main>', 'We look forward to welcoming you to Kahel Studio.', '{}', false, 'Initial demo booking reminder', now() - interval '89 days', now() - interval '90 days')
+on conflict (id) do update set subject_template = excluded.subject_template, html_template = excluded.html_template, text_template = excluded.text_template, variable_schema = excluded.variable_schema, change_note = excluded.change_note, published_at = excluded.published_at;
+
+insert into public.transactional_messages (
+  id, template_version_id, environment, provider, logical_idempotency_key,
+  request_fingerprint, resend_sequence, parent_message_id, status, client_id,
+  recipient_profile_id, recipient_email, recipient_name, recipient_snapshot,
+  sender_email, sender_name, reply_to_email, trigger_key, source, source_reference,
+  booking_id, invoice_id, project_id, gallery_id, render_context,
+  rendered_subject, rendered_html, rendered_text, retry_eligible, max_attempts,
+  attempt_count, next_attempt_at, provider_message_id, last_error_code,
+  last_error_message, queued_at, accepted_at, sent_at, delivered_at, failed_at,
+  created_at, updated_at
+) values
+  ('e3000000-0000-4000-8000-000000000001', 'e2000000-0000-4000-8000-000000000001', 'development', 'resend', 'demo-booking-confirmation-001', repeat('a', 64), 0, null, 'delivered', 'd0000000-0000-4000-8000-000000000001', 'd1000000-0000-4000-8000-000000000001', 'maya.santos@example.com', 'Maya Santos', '{"email":"maya.santos@example.com","name":"Maya Santos"}', 'hello@kahelstudio.example.com', 'Kahel Studio', 'studio@kahelstudio.example.com', 'booking.confirmed', 'system', 'DEMO-BKG-001', 'd2000000-0000-4000-8000-000000000001', 'd4000000-0000-4000-8000-000000000001', 'd3000000-0000-4000-8000-000000000001', null, '{"bookingReference":"DEMO-BKG-001"}', 'Your Kahel Studio booking is confirmed', '<main><h1>Booking confirmed</h1><p>Hi Maya, your session DEMO-BKG-001 is confirmed for today at 9:00 AM.</p></main>', 'Hi Maya, your session DEMO-BKG-001 is confirmed for today at 9:00 AM.', false, 5, 1, now(), 'demo-provider-delivered-001', null, null, now() - interval '3 hours', now() - interval '2 hours 59 minutes', now() - interval '2 hours 58 minutes', now() - interval '2 hours 55 minutes', null, now() - interval '3 hours', now() - interval '2 hours 55 minutes'),
+  ('e3000000-0000-4000-8000-000000000002', 'e2000000-0000-4000-8000-000000000002', 'development', 'resend', 'demo-payment-receipt-001', repeat('b', 64), 0, null, 'sent', 'd0000000-0000-4000-8000-000000000002', 'd1000000-0000-4000-8000-000000000003', 'hello@northstar.example.com', 'Nico Reyes', '{"email":"hello@northstar.example.com","name":"Nico Reyes"}', 'hello@kahelstudio.example.com', 'Kahel Studio', 'billing@kahelstudio.example.com', 'payment.recorded', 'staff', 'DEMO-INV-002', 'd2000000-0000-4000-8000-000000000002', 'd4000000-0000-4000-8000-000000000002', 'd3000000-0000-4000-8000-000000000002', null, '{"invoiceReference":"DEMO-INV-002"}', 'Payment received by Kahel Studio', '<main><h1>Payment received</h1><p>We recorded the full payment for DEMO-INV-002. Thank you.</p></main>', 'We recorded the full payment for DEMO-INV-002. Thank you.', false, 5, 1, now(), 'demo-provider-sent-002', null, null, now() - interval '35 minutes', now() - interval '34 minutes', now() - interval '33 minutes', null, null, now() - interval '35 minutes', now() - interval '33 minutes'),
+  ('e3000000-0000-4000-8000-000000000003', 'e2000000-0000-4000-8000-000000000004', 'development', 'resend', 'demo-booking-reminder-001', repeat('c', 64), 0, null, 'queued', 'd0000000-0000-4000-8000-000000000003', 'd1000000-0000-4000-8000-000000000004', 'arielle.mendoza@example.com', 'Arielle Mendoza', '{"email":"arielle.mendoza@example.com","name":"Arielle Mendoza"}', 'hello@kahelstudio.example.com', 'Kahel Studio', 'studio@kahelstudio.example.com', 'booking.reminder', 'schedule', 'DEMO-BKG-003', 'd2000000-0000-4000-8000-000000000003', 'd4000000-0000-4000-8000-000000000003', 'd3000000-0000-4000-8000-000000000004', null, '{}', 'A reminder for your upcoming Kahel Studio session', '<main><h1>Session reminder</h1><p>Hi Arielle, we look forward to welcoming you next week.</p></main>', 'Hi Arielle, we look forward to welcoming you next week.', true, 5, 0, now() + interval '10 minutes', null, null, null, now() - interval '5 minutes', null, null, null, null, now() - interval '5 minutes', now() - interval '5 minutes'),
+  ('e3000000-0000-4000-8000-000000000004', 'e2000000-0000-4000-8000-000000000003', 'development', 'resend', 'demo-gallery-ready-001', repeat('d', 64), 0, null, 'deferred', 'd0000000-0000-4000-8000-000000000001', 'd1000000-0000-4000-8000-000000000001', 'maya.santos@example.com', 'Maya Santos', '{"email":"maya.santos@example.com","name":"Maya Santos"}', 'hello@kahelstudio.example.com', 'Kahel Studio', 'studio@kahelstudio.example.com', 'gallery.published', 'system', 'demo-santos-anniversary', 'd2000000-0000-4000-8000-000000000004', null, 'd3000000-0000-4000-8000-000000000003', 'd5100000-0000-4000-8000-000000000001', '{}', 'Your anniversary gallery is ready', '<main><h1>Your gallery is ready</h1><p>Your private anniversary highlights are ready to review.</p></main>', 'Your private anniversary highlights are ready to review.', true, 5, 1, now() + interval '20 minutes', 'demo-provider-deferred-004', 'provider_deferred', 'The recipient server asked the provider to try again later.', now() - interval '2 hours', now() - interval '1 hour 59 minutes', null, null, null, now() - interval '2 hours', now() - interval '1 hour'),
+  ('e3000000-0000-4000-8000-000000000005', 'e2000000-0000-4000-8000-000000000002', 'development', 'resend', 'demo-payment-receipt-failed-001', repeat('e', 64), 0, null, 'failed', 'd0000000-0000-4000-8000-000000000001', 'd1000000-0000-4000-8000-000000000002', 'luis.santos@example.com', 'Luis Santos', '{"email":"luis.santos@example.com","name":"Luis Santos"}', 'hello@kahelstudio.example.com', 'Kahel Studio', 'billing@kahelstudio.example.com', 'payment.recorded', 'webhook', 'DEMO-INV-004', 'd2000000-0000-4000-8000-000000000004', 'd4000000-0000-4000-8000-000000000004', 'd3000000-0000-4000-8000-000000000003', null, '{}', 'Payment received by Kahel Studio', '<main><h1>Payment update</h1><p>We recorded a payment against DEMO-INV-004.</p></main>', 'We recorded a payment against DEMO-INV-004.', true, 5, 2, now() + interval '15 minutes', null, 'provider_timeout', 'The email provider did not respond before the request timeout.', now() - interval '50 minutes', null, null, null, now() - interval '45 minutes', now() - interval '50 minutes', now() - interval '45 minutes'),
+  ('e3000000-0000-4000-8000-000000000006', 'e2000000-0000-4000-8000-000000000001', 'development', 'resend', 'demo-booking-confirmation-bounced-001', repeat('f', 64), 0, null, 'bounced', 'd0000000-0000-4000-8000-000000000003', 'd1000000-0000-4000-8000-000000000004', 'arielle.mendoza@example.com', 'Arielle Mendoza', '{"email":"arielle.mendoza@example.com","name":"Arielle Mendoza"}', 'hello@kahelstudio.example.com', 'Kahel Studio', 'studio@kahelstudio.example.com', 'booking.confirmed', 'system', 'DEMO-BKG-006', 'd2000000-0000-4000-8000-000000000006', null, null, null, '{}', 'Your Kahel Studio booking is confirmed', '<main><h1>Booking update</h1><p>Your booking request was received.</p></main>', 'Your booking request was received.', false, 5, 1, now(), 'demo-provider-bounced-006', 'hard_bounce', 'The recipient address was rejected permanently.', now() - interval '2 days', now() - interval '2 days' + interval '1 minute', now() - interval '2 days' + interval '2 minutes', null, now() - interval '2 days' + interval '5 minutes', now() - interval '2 days', now() - interval '2 days' + interval '5 minutes'),
+  ('e3000000-0000-4000-8000-000000000007', 'e2000000-0000-4000-8000-000000000002', 'development', 'resend', 'demo-payment-receipt-failed-001', repeat('1', 64), 1, 'e3000000-0000-4000-8000-000000000005', 'delivered', 'd0000000-0000-4000-8000-000000000001', 'd1000000-0000-4000-8000-000000000002', 'luis.santos@example.com', 'Luis Santos', '{"email":"luis.santos@example.com","name":"Luis Santos"}', 'hello@kahelstudio.example.com', 'Kahel Studio', 'billing@kahelstudio.example.com', 'payment.recorded', 'staff', 'Manual resend after provider timeout', 'd2000000-0000-4000-8000-000000000004', 'd4000000-0000-4000-8000-000000000004', 'd3000000-0000-4000-8000-000000000003', null, '{}', 'Payment received by Kahel Studio', '<main><h1>Payment update</h1><p>We recorded a payment against DEMO-INV-004.</p></main>', 'We recorded a payment against DEMO-INV-004.', false, 5, 1, now(), 'demo-provider-delivered-007', null, null, now() - interval '20 minutes', now() - interval '19 minutes', now() - interval '18 minutes', now() - interval '15 minutes', null, now() - interval '20 minutes', now() - interval '15 minutes')
+on conflict (id) do update set status = excluded.status, attempt_count = excluded.attempt_count, next_attempt_at = excluded.next_attempt_at, provider_message_id = excluded.provider_message_id, last_error_code = excluded.last_error_code, last_error_message = excluded.last_error_message, accepted_at = excluded.accepted_at, sent_at = excluded.sent_at, delivered_at = excluded.delivered_at, failed_at = excluded.failed_at, updated_at = excluded.updated_at;
+
+insert into public.transactional_message_attempts (message_id, attempt_number, provider, worker_id, outcome, provider_message_id, error_code, error_message, retryable, started_at, finished_at, duration_ms, response_metadata, response_metadata_redacted) values
+  ('e3000000-0000-4000-8000-000000000001', 1, 'resend', 'demo-worker', 'provider_accepted', 'demo-provider-delivered-001', null, null, false, now() - interval '3 hours', now() - interval '2 hours 59 minutes', 420, '{"demo":true}', true),
+  ('e3000000-0000-4000-8000-000000000002', 1, 'resend', 'demo-worker', 'provider_accepted', 'demo-provider-sent-002', null, null, false, now() - interval '35 minutes', now() - interval '34 minutes', 380, '{"demo":true}', true),
+  ('e3000000-0000-4000-8000-000000000004', 1, 'resend', 'demo-worker', 'provider_accepted', 'demo-provider-deferred-004', null, null, true, now() - interval '2 hours', now() - interval '1 hour 59 minutes', 610, '{"demo":true}', true),
+  ('e3000000-0000-4000-8000-000000000005', 1, 'resend', 'demo-worker', 'failed', null, 'provider_timeout', 'The provider request timed out.', true, now() - interval '50 minutes', now() - interval '49 minutes', 30000, '{"demo":true}', true),
+  ('e3000000-0000-4000-8000-000000000005', 2, 'resend', 'demo-worker', 'failed', null, 'provider_timeout', 'The second provider request timed out.', true, now() - interval '46 minutes', now() - interval '45 minutes', 30000, '{"demo":true}', true),
+  ('e3000000-0000-4000-8000-000000000006', 1, 'resend', 'demo-worker', 'provider_accepted', 'demo-provider-bounced-006', null, null, false, now() - interval '2 days', now() - interval '2 days' + interval '1 minute', 440, '{"demo":true}', true),
+  ('e3000000-0000-4000-8000-000000000007', 1, 'resend', 'demo-worker', 'provider_accepted', 'demo-provider-delivered-007', null, null, false, now() - interval '20 minutes', now() - interval '19 minutes', 390, '{"demo":true}', true)
+on conflict (message_id, attempt_number) do update set outcome = excluded.outcome, provider_message_id = excluded.provider_message_id, error_code = excluded.error_code, error_message = excluded.error_message, retryable = excluded.retryable, started_at = excluded.started_at, finished_at = excluded.finished_at, duration_ms = excluded.duration_ms;
+
+delete from public.transactional_message_events where provider_event_id like 'demo-event-%';
+insert into public.transactional_message_events (message_id, environment, provider, provider_event_id, provider_message_id, event_type, mapped_status, occurred_at, received_at, payload, payload_redacted) values
+  ('e3000000-0000-4000-8000-000000000001', 'development', 'resend', 'demo-event-sent-001', 'demo-provider-delivered-001', 'email.sent', 'sent', now() - interval '2 hours 58 minutes', now() - interval '2 hours 58 minutes', '{"demo":true}', true),
+  ('e3000000-0000-4000-8000-000000000001', 'development', 'resend', 'demo-event-delivered-001', 'demo-provider-delivered-001', 'email.delivered', 'delivered', now() - interval '2 hours 55 minutes', now() - interval '2 hours 55 minutes', '{"demo":true}', true),
+  ('e3000000-0000-4000-8000-000000000002', 'development', 'resend', 'demo-event-sent-002', 'demo-provider-sent-002', 'email.sent', 'sent', now() - interval '33 minutes', now() - interval '33 minutes', '{"demo":true}', true),
+  ('e3000000-0000-4000-8000-000000000004', 'development', 'resend', 'demo-event-deferred-004', 'demo-provider-deferred-004', 'email.deferred', 'deferred', now() - interval '1 hour', now() - interval '1 hour', '{"demo":true}', true),
+  ('e3000000-0000-4000-8000-000000000006', 'development', 'resend', 'demo-event-bounced-006', 'demo-provider-bounced-006', 'email.bounced', 'bounced', now() - interval '2 days' + interval '5 minutes', now() - interval '2 days' + interval '5 minutes', '{"demo":true}', true),
+  ('e3000000-0000-4000-8000-000000000007', 'development', 'resend', 'demo-event-delivered-007', 'demo-provider-delivered-007', 'email.delivered', 'delivered', now() - interval '15 minutes', now() - interval '15 minutes', '{"demo":true}', true);
+
 insert into public.products (id, sku, name, category, price, stock, swatch) values
   ('d6000000-0000-4000-8000-000000000001', 'DEMO-PRT-8X10', 'Fine Art Print 8x10', 'Prints', 850, 24, '#D9C7A7'),
   ('d6000000-0000-4000-8000-000000000002', 'DEMO-FRM-A4-OAK', 'Oak Gallery Frame A4', 'Frames', 1850, 8, '#A9794F'),
@@ -112,12 +170,12 @@ insert into public.pos_sale_items (id, sale_id, product_id, description, unit_pr
   ('d6200000-0000-4000-8000-000000000003', 'd6100000-0000-4000-8000-000000000002', 'd6000000-0000-4000-8000-000000000003', 'Linen Story Album 30-page', 6800, 1, 6800)
 on conflict (id) do update set quantity = excluded.quantity, total_price = excluded.total_price;
 
-insert into public.equipment (id, serial, name, category, status, note, location) values
-  ('d7000000-0000-4000-8000-000000000001', 'DEMO-CAM-001', 'Canon EOS R5', 'Camera', 'out', 'Primary event body', 'Checked out'),
-  ('d7000000-0000-4000-8000-000000000002', 'DEMO-LNS-001', 'RF 24-70mm f/2.8L', 'Lens', 'available', 'Recently calibrated', 'Equipment cabinet A'),
-  ('d7000000-0000-4000-8000-000000000003', 'DEMO-LGT-001', 'Profoto B10X Plus', 'Lighting', 'maint', 'Battery inspection due', 'Repair shelf'),
-  ('d7000000-0000-4000-8000-000000000004', 'DEMO-AUD-001', 'Rode Wireless PRO', 'Audio', 'available', null, 'Equipment cabinet B')
-on conflict (id) do update set status = excluded.status, note = excluded.note, location = excluded.location, updated_at = now();
+insert into public.equipment (id, id_tag, serial, name, category, status, note, location) values
+  ('d7000000-0000-4000-8000-000000000001', 'DEMO-CAM-001', 'DEMO-CAM-001', 'Canon EOS R5', 'Camera', 'out', 'Primary event body', 'Checked out'),
+  ('d7000000-0000-4000-8000-000000000002', 'DEMO-LNS-001', 'DEMO-LNS-001', 'RF 24-70mm f/2.8L', 'Lens', 'available', 'Recently calibrated', 'Equipment cabinet A'),
+  ('d7000000-0000-4000-8000-000000000003', 'DEMO-LGT-001', 'DEMO-LGT-001', 'Profoto B10X Plus', 'Lighting', 'maint', 'Battery inspection due', 'Repair shelf'),
+  ('d7000000-0000-4000-8000-000000000004', 'DEMO-AUD-001', 'DEMO-AUD-001', 'Rode Wireless PRO', 'Audio', 'available', null, 'Equipment cabinet B')
+on conflict (id) do update set id_tag = excluded.id_tag, serial = excluded.serial, status = excluded.status, note = excluded.note, location = excluded.location, updated_at = now();
 
 insert into public.equipment_checkouts (id, equipment_id, purpose, checked_out_at, expected_return_at) values
   ('d7100000-0000-4000-8000-000000000001', 'd7000000-0000-4000-8000-000000000001', 'Northstar seasonal campaign', now() - interval '4 hours', now() + interval '7 hours')
@@ -202,5 +260,103 @@ insert into public.payroll_payslips (id, run_id, employee_id, initials, name, ro
   ('d9200000-0000-4000-8000-000000000002', 'd9100000-0000-4000-8000-000000000001', 'd9000000-0000-4000-8000-000000000002', 'PC', 'Paolo Cruz', 'Photographer', 19000, 1250, 20250, 850, 475, 100, 925, 0, 17900),
   ('d9200000-0000-4000-8000-000000000003', 'd9100000-0000-4000-8000-000000000001', 'd9000000-0000-4000-8000-000000000003', 'IF', 'Inez Flores', 'Photo editor', 17000, 0, 17000, 750, 425, 100, 325, 0, 15400)
 on conflict (id) do update set basic_pay = excluded.basic_pay, overtime_pay = excluded.overtime_pay, gross_pay = excluded.gross_pay, net_pay = excluded.net_pay;
+
+-- Cancelled booking with full deposit refund. Shows the refund flow and payment_status = 'refunded'.
+-- Arielle cancelled 15 days after booking; 50% deposit was returned in full.
+insert into public.bookings (
+  id, client_id, client_profile_id, idempotency_key, request_fingerprint, reference,
+  service_type, service_id, service_date, service_time, location, payment_type,
+  subtotal_amount_php, total_amount_php, paid_amount_php, refunded_amount_php,
+  status, payment_status, completed_at, attendance, created_at
+) values (
+  'd2000000-0000-4000-8000-000000000007',
+  'd0000000-0000-4000-8000-000000000003',
+  'd1000000-0000-4000-8000-000000000004',
+  'demo-booking-007', repeat('7', 64), 'DEMO-BKG-007',
+  'Solo', (select id from public.services where code = 'solo-session'),
+  current_date - 30, '13:00', 'Kahel Studio, Quezon City', 'deposit',
+  650000, 650000, 325000, 325000,
+  'cancelled', 'refunded', null, 'expected', now() - interval '45 days'
+)
+on conflict (id) do update set
+  service_date = excluded.service_date, paid_amount_php = excluded.paid_amount_php,
+  refunded_amount_php = excluded.refunded_amount_php, status = excluded.status,
+  payment_status = excluded.payment_status, updated_at = now();
+
+-- Loyalty program eligibility record for the Santos anniversary booking.
+-- The program launches 2026-09-01; this completed booking predates it, so it is ineligible.
+insert into public.loyalty_booking_eligibility (
+  booking_id, program_id, client_id, state, contribution, reason_code, evaluated_at
+) values (
+  'd2000000-0000-4000-8000-000000000004',
+  '20000000-0000-4000-8000-000000000001',
+  'd0000000-0000-4000-8000-000000000001',
+  'ineligible', 0, 'before_launch', now() - interval '1 day'
+)
+on conflict (booking_id, program_id) do update set
+  state = excluded.state, contribution = excluded.contribution,
+  reason_code = excluded.reason_code, evaluated_at = excluded.evaluated_at;
+
+-- Loyalty point adjustments applied by staff to reflect pre-launch bookings and
+-- correct the opening balance ahead of the September programme start.
+-- Santos: 5 of 8 points (progress visible in the loyalty UI).
+-- Northstar: 8 of 8 points (reward earned, outbox email pending).
+insert into public.loyalty_booking_events (
+  booking_id, program_id, client_id, event_key, event_type, delta, reason_code
+) values
+  (null, '20000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001',
+   'adjustment:demo-santos-opening-balance', 'adjustment', 5, 'staff_correction'),
+  (null, '20000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000002',
+   'adjustment:demo-northstar-opening-balance', 'adjustment', 8, 'staff_correction')
+on conflict (event_key) do nothing;
+
+-- Northstar has reached the threshold and earned their first complimentary session.
+insert into public.loyalty_rewards (
+  id, client_id, program_id, sequence, threshold, service_id, status
+) values (
+  'd0010000-0000-4000-8000-000000000001',
+  'd0000000-0000-4000-8000-000000000002',
+  '20000000-0000-4000-8000-000000000001',
+  1, 8,
+  '10000000-0000-4000-8000-000000000002',
+  'available'
+)
+on conflict (client_id, program_id, sequence) do update set
+  status = excluded.status, updated_at = now();
+
+-- Reward notification pending delivery to Northstar.
+insert into public.loyalty_email_outbox (
+  id, reward_id, client_id, template_key, payload, status
+) values (
+  'd0020000-0000-4000-8000-000000000001',
+  'd0010000-0000-4000-8000-000000000001',
+  'd0000000-0000-4000-8000-000000000002',
+  'loyalty_reward_issued',
+  jsonb_build_object(
+    'reward_id', 'd0010000-0000-4000-8000-000000000001',
+    'sequence', 1,
+    'service_id', '10000000-0000-4000-8000-000000000002'
+  ),
+  'pending'
+)
+on conflict (reward_id) do nothing;
+
+-- Staff follow-up task for the overdue Santos invoice.
+insert into public.tasks (id, title, description, column_status, priority, category, assignee, due_date, linked_ref, sort_order) values
+  ('d8200000-0000-4000-8000-000000000005', 'Follow up on overdue Santos balance',
+   'DEMO-INV-004 is past due by 22 days. Send a payment reminder to Luis Santos before escalating.',
+   'todo', 'High', 'Billing', 'Sofia Lim', current_date, 'DEMO-INV-004', 5)
+on conflict (id) do update set column_status = excluded.column_status, priority = excluded.priority,
+  assignee = excluded.assignee, due_date = excluded.due_date, updated_at = now();
+
+-- Staff message to Santos about the outstanding anniversary invoice balance.
+insert into public.customer_messages (id, client_id, sender_profile_id, project_id, sender, body, read_at, created_at) values
+  ('d5000000-0000-4000-8000-000000000003',
+   'd0000000-0000-4000-8000-000000000001', null,
+   'd3000000-0000-4000-8000-000000000003',
+   'staff',
+   'Hi Luis, a friendly reminder that the remaining balance on your anniversary session (DEMO-INV-004) is now past due. Please reach out if you have any questions.',
+   null, now() - interval '2 days')
+on conflict (id) do update set body = excluded.body, read_at = excluded.read_at;
 
 commit;

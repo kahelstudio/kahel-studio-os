@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from "./supabase-admin";
 import type { BookingStatusId } from "@/lib/sample-data";
 
 export type RealBookingRow = {
+  id: string;
   ref: string;
   accountId: string;
   account: string;
@@ -65,6 +66,7 @@ function mapBookingRow(row: BookingRow): RealBookingRow {
   const balance = row.subtotal_amount_php - row.paid_amount_php;
   const status = (row.status as BookingStatusId) || "inquiry";
   return {
+    id: row.id,
     ref: row.reference,
     accountId: row.client_id,
     account: row.clients?.name || "Unknown",
@@ -166,7 +168,22 @@ export async function getRealBookingByRef(ref: string): Promise<RealBookingRow |
   }
 }
 
-export type CalendarEvent = { ref: string; title: string; time: string; accent: "ink" | "orange" | "indigo" | "teal" };
+export type EventCategory = "studio" | "event" | "rental" | "holiday" | "power" | "blocked" | "other";
+export type CalendarEvent = { ref: string; title: string; serviceType: string; time: string; startsAt?: string; endsAt?: string; resourceName?: string; reservationKind?: "booking" | "hold" | "blackout"; category: EventCategory; draggable?: boolean };
+
+const STUDIO_TYPES = new Set(["Theme", "Express", "Group", "Duo", "Solo", "Mini Session"]);
+const EVENT_TYPES = new Set(["Baby Shower", "Engagement Party", "Birthday", "Christening", "Debut", "Anniversary Celebration"]);
+
+function toCategory(serviceType: string): EventCategory {
+  if (STUDIO_TYPES.has(serviceType)) return "studio";
+  if (EVENT_TYPES.has(serviceType)) return "event";
+  const lower = serviceType.toLowerCase();
+  if (lower.includes("rental")) return "rental";
+  if (lower.includes("holiday")) return "holiday";
+  if (lower.includes("power")) return "power";
+  if (lower.includes("block")) return "blocked";
+  return "other";
+}
 
 export async function getCalendarEventsByDate(startDate: string, endDate: string): Promise<Record<string, CalendarEvent[]>> {
   try {
@@ -185,18 +202,15 @@ export async function getCalendarEventsByDate(startDate: string, endDate: string
       reference: string; service_type: string; service_date: string; service_time: string;
       status: string; clients: { name: string } | null;
     }>;
-    const accentByStatus: Record<string, CalendarEvent["accent"]> = {
-      confirmed: "orange", inquiry: "ink", quoted: "indigo", progress: "teal",
-      completed: "teal", cancelled: "ink",
-    };
     const grouped: Record<string, CalendarEvent[]> = {};
     for (const booking of bookings) {
       grouped[booking.service_date] ??= [];
       grouped[booking.service_date].push({
         ref: booking.reference,
-        title: `${booking.clients?.name ?? booking.reference}: ${booking.service_type}`,
+        title: booking.clients?.name ?? booking.reference,
+        serviceType: booking.service_type,
         time: booking.service_time.slice(0, 5),
-        accent: accentByStatus[booking.status] ?? "ink",
+        category: toCategory(booking.service_type),
       });
     }
     return grouped;

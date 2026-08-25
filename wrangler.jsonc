@@ -6,18 +6,18 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "observability": { "enabled": true },
-  "send_email": [{ "name": "EMAIL" }],
   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "kahelstudio-os" }],
   "env": {
     "dev": {
       "name": "kahelstudio-os-dev",
       "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "kahelstudio-os-dev" }],
-      "vars": { "APP_ENV": "development", "MEDIA_INFRASTRUCTURE_ENABLED": "false", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "true", "AUTH_REDIRECT_URL": "http://localhost:3000/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "http://localhost:3000/auth/callback", "PUBLIC_SITE_URL": "http://localhost:3000", "TURNSTILE_SITE_KEY": "1x00000000000000000000AA" }
+      // Emulated locally by miniflare via initOpenNextCloudflareForDev; ID is a reference only.
+      "kv_namespaces": [{ "binding": "PUBLISH_KV", "id": "97cfd38879ae44718f21948e918f1289" }],
+      "vars": { "APP_ENV": "development", "MEDIA_INFRASTRUCTURE_ENABLED": "false", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "true", "AUTH_REDIRECT_URL": "http://localhost:3000/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "http://localhost:3000/auth/callback", "PUBLIC_SITE_URL": "http://localhost:3000", "TURNSTILE_SITE_KEY": "1x00000000000000000000AA", "PAYMONGO_PAYMENT_METHODS": "card,gcash,paymaya,grab_pay,qrph,billease", "PAYMONGO_BNPL_ENABLED": "true" }
     },
     "staging": {
       "name": "kahelstudio-os-staging",
       "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "kahelstudio-os-staging" }],
-      "send_email": [{ "name": "EMAIL" }],
       "images": { "binding": "IMAGES" },
       "r2_buckets": [
         { "binding": "PUBLIC_MEDIA", "bucket_name": "kahel-public-media-staging" },
@@ -26,13 +26,13 @@
       "queues": {
         "producers": [{ "binding": "MEDIA_PROCESSING", "queue": "kahel-media-processing-staging" }]
       },
+      "kv_namespaces": [{ "binding": "PUBLISH_KV", "id": "97cfd38879ae44718f21948e918f1289" }],
       "routes": [{ "pattern": "kahel.studio/*", "zone_name": "kahel.studio" }],
-      "vars": { "APP_ENV": "staging", "MEDIA_INFRASTRUCTURE_ENABLED": "true", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "true", "CLIENT_MEDIA_BUCKET_NAME": "kahel-client-media-staging", "AUTH_REDIRECT_URL": "https://kahel.studio/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "https://kahel.studio/auth/callback", "PUBLIC_SITE_URL": "https://kahel.studio", "TURNSTILE_SITE_KEY": "0x4AAAAAAEDc-FdHAx_QAhyZ" }
+      "vars": { "APP_ENV": "staging", "MEDIA_INFRASTRUCTURE_ENABLED": "true", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "true", "CLIENT_MEDIA_BUCKET_NAME": "kahel-client-media-staging", "AUTH_REDIRECT_URL": "https://kahel.studio/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "https://kahel.studio/auth/callback", "PUBLIC_SITE_URL": "https://kahel.studio", "TURNSTILE_SITE_KEY": "0x4AAAAAAEDc-FdHAx_QAhyZ", "PAYMONGO_PAYMENT_METHODS": "card,gcash,paymaya,grab_pay,qrph,billease", "PAYMONGO_BNPL_ENABLED": "true" }
     },
     "production": {
       "name": "kahelstudio-os-production",
       "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "kahelstudio-os-production" }],
-      "send_email": [{ "name": "EMAIL" }],
       "images": { "binding": "IMAGES" },
       "r2_buckets": [
         { "binding": "PUBLIC_MEDIA", "bucket_name": "kahel-public-media-production" },
@@ -41,8 +41,9 @@
       "queues": {
         "producers": [{ "binding": "MEDIA_PROCESSING", "queue": "kahel-media-processing-production" }]
       },
+      "kv_namespaces": [{ "binding": "PUBLISH_KV", "id": "03b4e0ff789f43a68a17d915aaa2b910" }],
       "routes": [{ "pattern": "kahelstudio.com", "custom_domain": true }, { "pattern": "www.kahelstudio.com", "custom_domain": true }],
-      "vars": { "APP_ENV": "production", "MEDIA_INFRASTRUCTURE_ENABLED": "false", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "true", "CLIENT_MEDIA_BUCKET_NAME": "kahel-client-media-production", "AUTH_REDIRECT_URL": "https://kahelstudio.com/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "https://kahelstudio.com/auth/callback", "PUBLIC_SITE_URL": "https://kahelstudio.com", "TURNSTILE_SITE_KEY": "0x4AAAAAAEIUKZYs5BGk7pJs" }
+      "vars": { "APP_ENV": "production", "MEDIA_INFRASTRUCTURE_ENABLED": "false", "KAHEL_AUTH_DISABLED": "false", "GOOGLE_AUTH_ENABLED": "true", "CLIENT_MEDIA_BUCKET_NAME": "kahel-client-media-production", "AUTH_REDIRECT_URL": "https://kahelstudio.com/reset-password", "CUSTOMER_AUTH_CALLBACK_URL": "https://kahelstudio.com/auth/callback", "PUBLIC_SITE_URL": "https://kahelstudio.com", "TURNSTILE_SITE_KEY": "0x4AAAAAAEIUKZYs5BGk7pJs", "PAYMONGO_PAYMENT_METHODS": "card,gcash,paymaya,grab_pay,qrph,billease", "PAYMONGO_BNPL_ENABLED": "true" }
     }
   }
 }

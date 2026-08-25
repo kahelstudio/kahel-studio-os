@@ -54,7 +54,7 @@ export default function PosSalePage() {
 
   return (
     <div className="flex min-h-full flex-col bg-[var(--color-surface-muted)] xl:flex-row">
-      <div className="min-w-0 flex-1 overflow-y-auto p-5 sm:p-6">
+      <div className="app-page min-w-0 flex-1 overflow-y-auto p-5 sm:p-6">
         <div className="mb-[18px] flex flex-wrap items-center gap-3">
           <h1 className="font-display text-2xl font-semibold">Products</h1>
           <div className="flex flex-wrap gap-1.5 sm:ml-2">

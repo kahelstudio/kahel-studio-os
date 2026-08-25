@@ -16,14 +16,17 @@ export default async function AttendanceEngagementsPage() {
   const pendingCount = pendingEmployees.length;
 
   return (
-    <div className="max-w-[1000px] p-12 pt-9">
-      <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
+    <div className="max-w-[1000px]">
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6">
+      <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
         Engagements
       </h1>
       <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
         Active bookings and freelance staff records — copyright assignment required before payout
       </p>
+      </header>
 
+      <div className="px-4 sm:px-6 pb-12">
       {activeBookings.length > 0 && (
         <div className="mt-6 overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
           <div className="grid h-11 grid-cols-[2fr_1.4fr_1fr_1fr] items-center bg-[var(--color-canvas)] px-5 text-[11px] font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
@@ -67,6 +70,7 @@ export default async function AttendanceEngagementsPage() {
           </ActionButton>
         </div>
       )}
+    </div>
     </div>
   );
 }

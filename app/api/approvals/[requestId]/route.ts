@@ -53,6 +53,10 @@ export async function PATCH(request: Request, context: { params: Promise<{ reque
       if (!UUID.test(targetId)) throw new ApprovalApiError("Choose a valid assignee.");
       result = await getSupabaseAdmin().rpc("approval_reassign_step", { requested_request_id: requestId, requested_actor_id: auth.principal.userId, requested_target_id: targetId, requested_comment: comment ?? "", requested_delegate: action === "delegate" });
     } else if (["release", "payment", "balance_return", "reimbursement"].includes(action)) {
+      const existing = await getSupabaseAdmin().from("approval_requests").select("request_type").eq("id", requestId).maybeSingle();
+      if (existing.error) throw existing.error;
+      if (!existing.data) throw new ApprovalApiError("Approval request not found.", 404);
+      if (existing.data.request_type === "client_refund") throw new ApprovalApiError("Client refunds must be fulfilled from Payments.", 409);
       const amount = Number(body.amount);
       const occurredAt = cleanText(body.occurredAt, "Date", 40, true);
       if (!Number.isFinite(amount) || amount <= 0) throw new ApprovalApiError("Enter an amount greater than zero.");

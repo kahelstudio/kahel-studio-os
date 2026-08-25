@@ -13,7 +13,6 @@
         { "binding": "PUBLIC_MEDIA", "bucket_name": "kahel-public-media-staging" },
         { "binding": "CLIENT_MEDIA", "bucket_name": "kahel-client-media-staging" }
       ],
-      "send_email": [{ "name": "EMAIL" }],
       "queues": {
         "consumers": [{
           "queue": "kahel-media-processing-staging",

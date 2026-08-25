@@ -47,6 +47,25 @@ export async function POST(request: Request) {
     const employeeId = optionalUuid(body.employeeId, "Employee");
     let sourceReference = cleanText(body.sourceReference, "Source reference", 100);
     let sourceRecordId = optionalUuid(body.sourceRecordId, "Source record");
+    if (requestType === "client_refund") {
+      if (projectId || employeeId) throw new ApprovalApiError("Client refunds must be linked only to their payment.");
+      const paymentId = cleanText((details as Record<string, unknown>).paymentId, "Payment ID", 36, true);
+      if (!UUID.test(paymentId)) throw new ApprovalApiError("Payment ID is invalid.");
+      const payment = await getSupabaseAdmin().from("payments").select("id,booking_id,client_id,processor,source,payment_method,status,amount_centavos,refunded_amount_centavos,add_on_amount_centavos").eq("id", paymentId).maybeSingle();
+      if (payment.error) throw payment.error;
+      if (!payment.data || payment.data.processor !== "none" || payment.data.source === "legacy_import" || payment.data.payment_method !== "cash" || payment.data.add_on_amount_centavos !== 0 || !["paid", "partially_refunded"].includes(payment.data.status)) throw new ApprovalApiError("Choose a paid, nonlegacy cash balance payment without add-ons.", 409);
+      const requestedCentavos = amountValue === null ? 0 : amountValue * 100;
+      const refundable = payment.data.amount_centavos - payment.data.refunded_amount_centavos;
+      if (!Number.isSafeInteger(requestedCentavos) || requestedCentavos <= 0 || requestedCentavos > refundable) throw new ApprovalApiError("Refund amount must be an exact centavo amount within the refundable balance.");
+      const booking = await getSupabaseAdmin().from("bookings").select("id,reference,client_id").eq("id", payment.data.booking_id).maybeSingle();
+      if (booking.error) throw booking.error;
+      if (!booking.data || booking.data.client_id !== payment.data.client_id) throw new ApprovalApiError("The payment booking could not be verified.", 409);
+      bookingId = payment.data.booking_id;
+      clientId = payment.data.client_id;
+      sourceRecordId = payment.data.id;
+      sourceReference = booking.data.reference;
+      amountValue = requestedCentavos / 100;
+    }
     if (projectId) {
       const project = await getSupabaseAdmin().from("projects").select("id,reference,client_id,booking_id").eq("id", projectId).maybeSingle();
       if (project.error) throw project.error;

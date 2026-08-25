@@ -81,12 +81,14 @@ export default function TasksMinePage() {
 
   return (
     <div className="w-full p-12 pt-9">
-      <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
-        My tasks
-      </h1>
-      <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
-        Everything assigned across the studio, by due date
-      </p>
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 pb-9 pt-[34px] sm:px-6">
+        <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
+          My tasks
+        </h1>
+        <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
+          Everything assigned across the studio, by due date
+        </p>
+      </header>
 
       {tasks.length === 0 && (
         <div className="mt-16 text-center text-sm text-[var(--color-text-muted)]">Loading tasks…</div>

@@ -13,10 +13,10 @@ export default async function WebsitePortfolioPage() {
   const portfolio = await getPortfolioItems();
 
   return (
-    <div className="max-w-[1200px] p-12 pt-9">
-      <div className="flex items-end justify-between">
+    <div className="max-w-[1200px]">
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6 flex items-end justify-between">
         <div>
-          <h1 className="font-display text-[36px] font-semibold tracking-[-0.025em] text-[var(--color-text-primary)]">
+          <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">
             Portfolio
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -26,8 +26,9 @@ export default async function WebsitePortfolioPage() {
         <OperationCreateButton kind="portfolio" className="flex h-10 shrink-0 items-center gap-1.5 rounded-control bg-[var(--color-kahel-500)] px-4 font-display text-sm font-semibold text-white hover:bg-[var(--color-kahel-600)]">
           <Plus className="h-4 w-4" /> Add work
         </OperationCreateButton>
-      </div>
+      </header>
 
+      <div className="px-4 sm:px-6 pb-12">
       <div className="mt-6 grid grid-cols-3 gap-[18px]">
         {portfolio.map((p) => {
           const st = WEB_STATUS[p.status] ?? WEB_STATUS.draft;
@@ -56,6 +57,7 @@ export default async function WebsitePortfolioPage() {
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );

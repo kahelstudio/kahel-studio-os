@@ -190,3 +190,24 @@ export async function getProjectByRef(ref: string): Promise<ProjectDetail | null
     return null;
   }
 }
+
+export async function getProjectExpenses(projectId: string) {
+  try {
+    const admin = getSupabaseAdmin();
+    const allocations = await admin.from("expense_allocations").select("expense_id,amount_centavos").eq("project_id", projectId);
+    if (allocations.error) throw allocations.error;
+    const expenseIds = (allocations.data ?? []).map((allocation) => allocation.expense_id);
+    if (!expenseIds.length) return { total: 0, rows: [] as Array<{ reference: string; vendor: string; category: string; date: string; amount: number }> };
+    const expenses = await admin.from("expenses").select("id,reference,vendor_name_snapshot,category,expense_date,status,duplicate_of").in("id", expenseIds).in("status", ["approved", "scheduled_for_payment", "paid"]).is("duplicate_of", null);
+    if (expenses.error) throw expenses.error;
+    const expenseById = new Map((expenses.data ?? []).map((expense) => [expense.id, expense]));
+    const rows = (allocations.data ?? []).flatMap((allocation) => {
+      const expense = expenseById.get(allocation.expense_id);
+      return expense ? [{ reference: expense.reference, vendor: expense.vendor_name_snapshot, category: expense.category, date: expense.expense_date, amount: allocation.amount_centavos }] : [];
+    });
+    return { total: rows.reduce((sum, row) => sum + row.amount, 0), rows };
+  } catch (error) {
+    console.error("getProjectExpenses: table not available", (error as Error).message);
+    return { total: 0, rows: [] as Array<{ reference: string; vendor: string; category: string; date: string; amount: number }> };
+  }
+}

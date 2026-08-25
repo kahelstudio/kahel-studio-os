@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getStaffPrincipal } from "@/lib/server/staff-auth";
+import { authenticationDisabled, getStaffPrincipal } from "@/lib/server/staff-auth";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
 
 export const runtime = "nodejs";
@@ -33,6 +33,7 @@ async function authenticatedStaff(request: Request) {
 }
 
 export async function GET(request: Request) {
+  if (authenticationDisabled()) return NextResponse.json({ contacts: [] });
   const principal = await authenticatedStaff(request);
   if (!principal) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
 

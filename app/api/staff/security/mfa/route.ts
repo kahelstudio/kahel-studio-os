@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAuthClient } from "@/lib/server/supabase-admin";
-import { IS_PRODUCTION, staffEmailAuthorized, STAFF_REFRESH_COOKIE, STAFF_SESSION_COOKIE } from "@/lib/server/staff-auth";
+import { authenticationDisabled, IS_PRODUCTION, staffEmailAuthorized, STAFF_REFRESH_COOKIE, STAFF_SESSION_COOKIE } from "@/lib/server/staff-auth";
 
 export const runtime = "nodejs";
 const MFA_REMEMBER_COOKIE = "kahel_staff_mfa_remember";
@@ -19,6 +19,7 @@ async function authenticatedClient(request: Request) {
 }
 
 export async function GET(request: Request) {
+  if (authenticationDisabled()) return NextResponse.json({ enabled: false, factorId: null });
   const client = await authenticatedClient(request);
   if (!client) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   const { data, error } = await client.auth.mfa.listFactors();

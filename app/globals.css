@@ -84,6 +84,14 @@
   color-scheme: light;
 }
 
+@media print {
+  @page { margin: 18mm; }
+  body { background: #fff !important; color: #111 !important; }
+  header, nav[aria-label="Client Portal"], nav[aria-label="Client Portal mobile"] { position: static !important; }
+  a { color: #111 !important; text-decoration: none !important; }
+  section { break-inside: avoid; }
+}
+
 :root[data-theme="dark"] {
   --color-kahel-50: #2a1408;
   --color-kahel-100: #3d1c0a;
@@ -264,6 +272,15 @@ textarea {
 
 .app-shell-main > * {
   min-width: 0;
+}
+
+@media (min-width: 1280px) {
+  .app-shell-main > :where(.pt-8, .pt-9),
+  .app-shell-main > .app-page,
+  .app-shell-main > * > .app-page,
+  .app-shell-main > .max-w-\[1400px\] {
+    padding-top: 34px !important;
+  }
 }
 
 @media (max-width: 639px) {

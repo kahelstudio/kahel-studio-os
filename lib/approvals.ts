@@ -59,6 +59,7 @@ export type ApprovalTypeDefinition = {
 };
 
 const reason: ApprovalField = { key: "reason", label: "Reason", type: "textarea", required: true };
+const paymentId: ApprovalField = { key: "paymentId", label: "Payment ID", type: "text", required: true };
 const affectedDate: ApprovalField = { key: "affectedDate", label: "Affected date", type: "date", required: true };
 const projectChangeFields: ApprovalField[] = [
   { key: "requestedChange", label: "Requested change", type: "textarea", required: true },
@@ -142,7 +143,7 @@ export const APPROVAL_TYPES: ApprovalTypeDefinition[] = [
     { key: "priorApprovalReason", label: "Why prior approval was not used", type: "textarea" },
   ], { financial: true, sensitive: true }),
   type("supplier_payment", "Supplier payment", "Finance", "expenses", [reason], { financial: true, sensitive: true }),
-  type("client_refund", "Client refund", "Finance", "finance", [reason], { financial: true, sensitive: true }),
+  type("client_refund", "Client refund", "Finance", "finance", [paymentId, reason], { financial: true, sensitive: true }),
   type("discount", "Discount approval", "Finance", "quotation", [reason], { financial: true, sensitive: true }),
   type("payroll_adjustment", "Payroll adjustment", "People", "payroll", [reason], { financial: true, sensitive: true }),
   type("equipment_repair", "Equipment repair", "Other", "maintenance", [reason], { financial: true }),
@@ -156,7 +157,6 @@ export const APPROVAL_TYPES: ApprovalTypeDefinition[] = [
 export const APPROVAL_TYPE_BY_VALUE = Object.fromEntries(APPROVAL_TYPES.map((item) => [item.value, item])) as Record<string, ApprovalTypeDefinition>;
 
 export const FINANCIAL_REQUEST_TYPES = new Set(APPROVAL_TYPES.filter((item) => item.financial).map((item) => item.value));
-export const SENSITIVE_REQUEST_TYPES = new Set(APPROVAL_TYPES.filter((item) => item.sensitive).map((item) => item.value));
 export const BULK_ELIGIBLE_REQUEST_TYPES = new Set(APPROVAL_TYPES.filter((item) => item.bulkEligible && !item.sensitive).map((item) => item.value));
 
 export function validateApprovalDetails(requestType: string, details: Record<string, unknown>) {

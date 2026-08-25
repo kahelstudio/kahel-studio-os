@@ -268,14 +268,14 @@ function ProjectsPipelineContent({
   }
 
   return (
-    <div className="min-w-0 p-5 pb-14 sm:p-8 lg:p-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="app-page min-w-0">
+      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-text-muted)]">
             <FolderKanban className="h-3.5 w-3.5 text-[var(--color-kahel-500)]" />{" "}
             Project workflow
           </div>
-          <h1 className="mt-2 font-display text-[36px] font-semibold tracking-[-0.025em]">
+          <h1 className="mt-2 font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em]">
             {activePipelineStage?.name ?? "Projects"}
           </h1>
           <p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">
@@ -295,8 +295,9 @@ function ProjectsPipelineContent({
             <Filter className="h-4 w-4" /> Workflow filters
           </button>
         </div>
-      </div>
+      </header>
 
+      <div className="px-4 sm:px-6 pb-9">
       <div className="mt-7">
         <main className="min-w-0">
           <div className="flex justify-end border-b border-[var(--color-border)] pb-4">
@@ -409,6 +410,7 @@ function ProjectsPipelineContent({
           onConfirm={() => moveToPost(pendingMove)}
         />
       )}
+    </div>
     </div>
   );
 }
