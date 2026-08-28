@@ -1,8 +1,15 @@
 import type { NextConfig } from "next";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+import { execSync } from "child_process";
+
+const buildId = execSync("git rev-parse --short HEAD").toString().trim();
 
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
+  env: {
+    NEXT_PUBLIC_BUILD_ID: buildId,
+    NEXT_PUBLIC_APP_ENV: process.env.APP_ENV ?? "local",
+  },
   allowedDevOrigins: ["127.0.0.1"],
   turbopack: { root: process.cwd() },
   async headers() {

@@ -9,21 +9,9 @@ export const APPROVAL_STATUSES = [
   "Withdrawn",
 ] as const;
 
-export const FULFILLMENT_STATUSES = [
-  "Not Released",
-  "Partially Released",
-  "Released",
-  "Awaiting Liquidation",
-  "Liquidation Submitted",
-  "Liquidated",
-  "Awaiting Payment",
-  "Paid",
-] as const;
-
 export const APPROVAL_PRIORITIES = ["Normal", "High", "Urgent"] as const;
 
 export type ApprovalStatus = (typeof APPROVAL_STATUSES)[number];
-export type FulfillmentStatus = (typeof FULFILLMENT_STATUSES)[number];
 export type ApprovalPriority = (typeof APPROVAL_PRIORITIES)[number];
 
 export const APPROVAL_STATUS_LABELS: Record<string, ApprovalStatus> = {

@@ -241,11 +241,31 @@ jobs:
 
   # ── Production ───────────────────────────────────────────
 
+  check_staging_sync:
+    name: Verify staging is up to date
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: [build, validate_migrations, unit_tests]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fail if main has commits not yet in staging
+        run: |
+          git fetch origin staging
+          if ! git merge-base --is-ancestor HEAD origin/staging; then
+            echo "❌ main has commits that have not been deployed to staging."
+            echo "   Merge main into staging (git push origin main:staging) and"
+            echo "   wait for the staging deployment to succeed before promoting to production."
+            exit 1
+          fi
+          echo "✅ staging is up to date with main."
+
   migrate_production:
     name: Migrate production DB
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
-    needs: [build, validate_migrations, unit_tests]
+    needs: [check_staging_sync]
     environment:
       name: production
       url: https://kahelstudio.com

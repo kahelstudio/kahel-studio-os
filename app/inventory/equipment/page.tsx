@@ -29,8 +29,8 @@ export default async function InventoryEquipmentPage() {
       </header>
 
       <div className="px-4 sm:px-6 pb-12">
-      <div className="mt-[26px] overflow-hidden rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="grid h-11 grid-cols-[0.9fr_1.1fr_1.6fr_1fr_1fr_1.4fr_auto] items-center bg-[var(--color-canvas)] px-5 text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
+      <div className="mt-[26px] rounded-card border border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="grid h-11 grid-cols-[0.9fr_1.1fr_1.6fr_1fr_1fr_1.4fr_auto] items-center rounded-t-card bg-[var(--color-canvas)] px-5 text-xs font-semibold uppercase tracking-[0.03em] text-[var(--color-text-secondary)]">
           <div>ID Tag</div>
           <div>Serial</div>
           <div>Item</div>

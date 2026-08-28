@@ -44,6 +44,7 @@
 .menuBook,
 .primaryButton,
 .outlineButton,
+.ghostButton,
 .packageGrid article > button,
 .deposit button,
 .summary > button,
@@ -476,6 +477,25 @@
 .primaryButton:hover {
   border-color: var(--primary-h);
   background: var(--primary-h);
+}
+.ghostButton {
+  display: inline-flex;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 28px;
+  border: 1px solid #fff;
+  background: transparent;
+  color: #fff;
+  font-family: var(--font-inter), Inter, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  transition: 0.18s;
+}
+.ghostButton:hover {
+  border-color: #ff5300;
+  background: #ff5300;
 }
 .hero .outlineButton {
   border-color: rgba(255, 255, 255, 0.28);
@@ -2525,7 +2545,9 @@
   font-weight: 600;
 }
 .headerSignIn:hover {
-  border-color: var(--text3);
+  border-color: #ff5300;
+  background: #ff5300;
+  color: #fff;
 }
 .accountMenu {
   position: relative;
@@ -2611,6 +2633,9 @@
   border-color: rgba(255, 255, 255, 0.35);
   color: #fff;
 }
+.homeHeader .headerSignIn:hover {
+  border-color: #ff5300;
+}
 @media (max-width: 1080px) {
   .headerBook,
   .headerSignIn,
@@ -2668,8 +2693,9 @@
   background: #ff5300;
 }
 .hero .outlineButton:hover {
-  border-color: var(--primary-h);
-  background: var(--primary-h);
+  border-color: #fff;
+  background: #fff;
+  color: #ff5300;
 }
 .fields > label:nth-child(3) {
   position: relative;

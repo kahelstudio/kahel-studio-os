@@ -1,9 +1,3 @@
-export const EXPENSE_STATUSES = ["draft", "submitted", "needs_review", "changes_requested", "approved", "scheduled_for_payment", "paid", "rejected", "voided"] as const;
-export const RECEIPT_STATUSES = ["missing", "attached", "under_review", "verified", "invalid", "not_required"] as const;
-
-export type ExpenseStatus = (typeof EXPENSE_STATUSES)[number];
-export type ReceiptStatus = (typeof RECEIPT_STATUSES)[number];
-
 export function parsePesoToCentavos(value: unknown) {
   const normalized = typeof value === "string" ? value.trim() : String(value ?? "");
   if (!/^\d+(?:\.\d{1,2})?$/.test(normalized)) return null;

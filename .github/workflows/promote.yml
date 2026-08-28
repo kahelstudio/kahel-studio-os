@@ -1,0 +1,59 @@
+name: Promote
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Promote to"
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  promote_to_staging:
+    name: Promote main → staging
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && inputs.target == 'staging'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fast-forward staging to main
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin staging
+          if git merge-base --is-ancestor HEAD origin/staging; then
+            echo "staging is already up to date with main — nothing to do."
+            exit 0
+          fi
+          git push origin HEAD:staging
+          echo "✅ Pushed main → staging. The staging deployment workflow will now run."
+
+  promote_to_production:
+    name: Promote staging → production (via workflow_dispatch on main)
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && inputs.target == 'production'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify staging is in sync before triggering production
+        run: |
+          git fetch origin staging
+          if ! git merge-base --is-ancestor HEAD origin/staging; then
+            echo "❌ main has commits that have not been deployed to staging."
+            echo "   Run this workflow again with target=staging first."
+            exit 1
+          fi
+          echo "✅ staging is in sync. Triggering production deployment."
+      - name: Trigger production deploy
+        run: |
+          gh workflow run deploy.yml --ref main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -266,9 +266,10 @@ function Photo({ alt, src = "/Solo_Liza Burzon Bino_9A.jpg", position = "50% 35%
   );
 }
 
-function ArrowButton({ children, onClick, primary = false }: { children: React.ReactNode; onClick: () => void; primary?: boolean }) {
+function ArrowButton({ children, onClick, primary = false, ghost = false }: { children: React.ReactNode; onClick: () => void; primary?: boolean; ghost?: boolean }) {
+  const cls = ghost ? styles.ghostButton : primary ? styles.primaryButton : styles.outlineButton;
   return (
-    <button type="button" className={primary ? styles.primaryButton : styles.outlineButton} onClick={onClick}>
+    <button type="button" className={cls} onClick={onClick}>
       {children}
       <ArrowRight size={16} />
     </button>
@@ -561,6 +562,7 @@ function Home({ go }: { go: (page: Page, category?: ServiceCategory) => void }) 
             <p>From portraits and celebrations to commercial campaigns, every story is thoughtfully captured and delivered in a private gallery that’s yours to keep.</p>
             <div className={styles.heroActions}>
               <ArrowButton onClick={() => go("book")}>Book your session</ArrowButton>
+              <ArrowButton ghost onClick={() => go("services")}>Check Packages</ArrowButton>
             </div>
             <div className={styles.heroStats}>
               {[

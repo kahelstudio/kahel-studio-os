@@ -72,7 +72,14 @@ export default function LoginPage() {
   useEffect(() => {
     fetch("/api/staff/session")
       .then((response) => response.json())
-      .then((data) => setConfig(data as LoginConfig))
+      .then((data) => {
+        if ((data as { authenticated?: boolean }).authenticated) {
+          const raw = new URLSearchParams(window.location.search).get("next");
+          window.location.href = safeStaffRedirect(raw);
+          return;
+        }
+        setConfig(data as LoginConfig);
+      })
       .catch(() => setError("Authentication is temporarily unavailable."));
   }, []);
 

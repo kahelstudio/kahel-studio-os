@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { hasStaffSession, signInStaff, staffAuthConfigured, STAFF_SESSION_COOKIE, STAFF_REFRESH_COOKIE, REMEMBER_ME_MAX_AGE, IS_PRODUCTION } from "@/lib/server/staff-auth";
+import { authenticationDisabled, hasStaffSession, signInStaff, staffAuthConfigured, STAFF_SESSION_COOKIE, STAFF_REFRESH_COOKIE, REMEMBER_ME_MAX_AGE, IS_PRODUCTION } from "@/lib/server/staff-auth";
 import { turnstileConfigured, turnstileRequired, turnstileSiteKey, verifyTurnstile } from "@/lib/server/turnstile";
 
 export const runtime = "nodejs";
@@ -26,6 +26,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (authenticationDisabled()) return NextResponse.json({ authenticated: true });
   let body: { email?: unknown; password?: unknown; rememberMe?: unknown; "cf-turnstile-response"?: unknown };
   try { body = await request.json() as typeof body; } catch { return NextResponse.json({ error: "Invalid request." }, { status: 400 }); }
   const { email, password, rememberMe, "cf-turnstile-response": turnstileToken } = body;
