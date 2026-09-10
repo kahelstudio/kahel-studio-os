@@ -22,6 +22,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const { hasTrustedOrigin } = await import("@/lib/server/customer-auth");
+  if (!hasTrustedOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   const principal = await adminPrincipal(request);
   if (!principal?.userId) return NextResponse.json({ error: "An authenticated administrative actor is required." }, { status: 403 });
   const rawBody = await request.json().catch(() => null) as Record<string, unknown> | null;

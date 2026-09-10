@@ -3,12 +3,15 @@ import { getRealBookings } from "@/lib/server/bookings-data";
 import { getProjectPipeline } from "@/lib/server/projects-data";
 import { getPayrollEmployees } from "@/lib/server/payroll-data";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
+import { getStaffPrincipal } from "@/lib/server/staff-auth";
 
 function parseCurrency(php: string) {
   return parseInt(php.replace(/[₱,]/g, ""), 10) || 0;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const principal = await getStaffPrincipal(request);
+  if (!principal) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   try {
     const [bookings, pipeline, employees, expenses] = await Promise.all([
       getRealBookings(),

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getStaffPrincipal } from "@/lib/server/staff-auth";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
+import { hasTrustedOrigin } from "@/lib/server/customer-auth";
 
 async function adminPrincipal(request: Request) {
   const principal = await getStaffPrincipal(request);
@@ -35,6 +36,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!hasTrustedOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   const principal = await adminPrincipal(request);
   if (!principal?.userId) return NextResponse.json({ error: "An authenticated administrative actor is required." }, { status: 403 });
   const { id } = await params;
@@ -93,6 +95,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!hasTrustedOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   const principal = await adminPrincipal(request);
   if (!principal?.userId) return NextResponse.json({ error: "An authenticated administrative actor is required." }, { status: 403 });
   const { id } = await params;

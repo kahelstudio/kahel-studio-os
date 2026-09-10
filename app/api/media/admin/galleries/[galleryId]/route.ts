@@ -31,6 +31,10 @@ export async function PATCH(request: Request, { params }: Context) {
       if (typeof body.watermarkEnabled !== "boolean") throw new GalleryApiError("Invalid watermark setting.", 400);
       update.watermark_enabled = body.watermarkEnabled;
     }
+    if (body.galleryType !== undefined) {
+      if (!["selection", "delivery"].includes(body.galleryType as string)) throw new GalleryApiError("Gallery type must be 'selection' or 'delivery'.", 400);
+      update.gallery_type = body.galleryType;
+    }
     const assetOrder = body.assetOrder;
     if (assetOrder !== undefined) {
       if (!Array.isArray(assetOrder) || assetOrder.length > 2000 || assetOrder.some((id) => !isUuid(id)) || new Set(assetOrder).size !== assetOrder.length) throw new GalleryApiError("Invalid asset order.", 400);

@@ -19,6 +19,7 @@ export const runtime = "nodejs";
 type SignInRequest = { email?: unknown; password?: unknown };
 
 export async function GET(request: Request) {
+  if (!hasTrustedOrigin(request)) return NextResponse.json({ authenticated: false }, { status: 403 });
   let identity = await getCustomerIdentityFromRequest(request);
   let refreshed = null;
   if (!identity) {
@@ -46,13 +47,23 @@ export async function POST(request: Request) {
     const { data, error } = await getSupabaseAuthClient().auth.signInWithPassword({ email, password });
     if (error || !data.session || !data.user.email_confirmed_at) {
       await auditCustomerEvent({ action: "sign_in_failed", metadata: { reason: "invalid_credentials" } });
-      return NextResponse.json({ error: "Email or password is incorrect." }, { status: 401 });
+      return NextResponse.json({ error: "We couldn't sign you in with those details. Check your email and password, or use Forgot password to get a new sign-in link." }, { status: 401 });
     }
     const { data: profile } = await getSupabaseAdmin().from("client_profiles").select("id,client_id,status").eq("user_id", data.user.id).maybeSingle<{ id: string; client_id: string; status: string }>();
-    if (!profile || profile.status !== "active") {
+    if (!profile) {
       await getSupabaseAuthClient(data.session.access_token).auth.signOut();
-      await auditCustomerEvent({ action: "portal_access_denied", userId: data.user.id, metadata: { reason: "missing_or_disabled_profile" } });
-      return NextResponse.json({ error: "Email or password is incorrect." }, { status: 401 });
+      await auditCustomerEvent({ action: "portal_access_denied", userId: data.user.id, metadata: { reason: "missing_profile" } });
+      return NextResponse.json({ error: "We couldn't sign you in with those details. Check your email and password, or use Forgot password to get a new sign-in link." }, { status: 401 });
+    }
+    if (profile.status === "invited") {
+      await getSupabaseAuthClient(data.session.access_token).auth.signOut();
+      await auditCustomerEvent({ action: "portal_access_denied", userId: data.user.id, clientId: profile.client_id, profileId: profile.id, metadata: { reason: "account_not_activated" } });
+      return NextResponse.json({ error: "Your Customer Portal access hasn't been activated yet. Check your booking confirmation email for the setup link, or use Forgot password to request a new one.", code: "activation_required" }, { status: 401 });
+    }
+    if (profile.status !== "active") {
+      await getSupabaseAuthClient(data.session.access_token).auth.signOut();
+      await auditCustomerEvent({ action: "portal_access_denied", userId: data.user.id, clientId: profile.client_id, profileId: profile.id, metadata: { reason: "disabled_profile" } });
+      return NextResponse.json({ error: "Your account has been disabled. Contact us for help." }, { status: 401 });
     }
     const response = NextResponse.json({ authenticated: true }, { headers: { "Cache-Control": "no-store" } });
     setCustomerSessionCookies(response, data.session);

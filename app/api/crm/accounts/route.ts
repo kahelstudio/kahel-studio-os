@@ -12,6 +12,8 @@ function clean(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  const { hasTrustedOrigin } = await import("@/lib/server/customer-auth");
+  if (!hasTrustedOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   const principal = await getStaffPrincipal(request);
   if (!principal) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   if (!principal.permissions.includes("bookings.manage")) return NextResponse.json({ error: "Booking management permission is required." }, { status: 403 });

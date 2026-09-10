@@ -251,9 +251,10 @@ export function SetPasswordForm({ enabled }: { enabled: boolean }) {
         setError(response.status === 400 || response.status === 410 ? "This password link is invalid or has expired. Request a new one." : "Unable to update your password right now. Please try again.");
         return;
       }
-      setComplete(true);
       setPassword("");
       setConfirmation("");
+      // Redirect to the intended booking/portal destination after password setup.
+      window.location.href = safePortalNext();
     } catch {
       setError("Unable to update your password right now. Please try again.");
     } finally {

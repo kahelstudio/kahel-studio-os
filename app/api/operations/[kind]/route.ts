@@ -136,11 +136,16 @@ async function createBooking(body: Body, principal: StaffPrincipal) {
     const fullProfile = await admin.from("client_profiles").select("id,client_id,user_id,email,normalized_email,first_name,last_name,mobile,status,email_verified_at").eq("id", profile.id).single<{ id: string; client_id: string; user_id: string | null; email: string; normalized_email: string; first_name: string; last_name: string; mobile: string | null; status: "invited" | "active" | "disabled"; email_verified_at: string | null }>();
     if (!fullProfile.data) termsEmailDelayed = true;
     else {
-      try { if (!fullProfile.data.user_id) await ensureCustomerAccount(fullProfile.data, "booking"); }
-      catch { termsEmailDelayed = true; }
       const origin = process.env.PUBLIC_SITE_URL ?? new URL("/", "https://kahelstudio.com").origin;
       const bookingPath = `/portal/bookings/${booking.data.reference}`;
-      const sent = await sendBookingTermsReviewRequest({ to: fullProfile.data.email, firstName: fullProfile.data.first_name, reference: booking.data.reference, portalUrl: `${origin}/sign-in?next=${encodeURIComponent(bookingPath)}`, termsVersionLabel: terms.versionLabel, termsUrl: `${origin}/booking-terms`, clientId: profile.client_id, profileId: profile.id, bookingId: booking.data.id });
+      let opsActivationUrl: string | undefined;
+      if (!fullProfile.data.user_id || fullProfile.data.status !== "active") {
+        try {
+          const result = await ensureCustomerAccount(fullProfile.data, "booking", { next: bookingPath });
+          opsActivationUrl = result.activationUrl;
+        } catch { termsEmailDelayed = true; }
+      }
+      const sent = await sendBookingTermsReviewRequest({ to: fullProfile.data.email, firstName: fullProfile.data.first_name, reference: booking.data.reference, portalUrl: `${origin}/sign-in?next=${encodeURIComponent(bookingPath)}`, activationUrl: opsActivationUrl, termsVersionLabel: terms.versionLabel, termsUrl: `${origin}/booking-terms`, clientId: profile.client_id, profileId: profile.id, bookingId: booking.data.id });
       if (!sent) termsEmailDelayed = true;
     }
   } else termsEmailDelayed = true;

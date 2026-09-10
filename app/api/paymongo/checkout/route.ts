@@ -189,16 +189,20 @@ export async function POST(request: Request) {
       }
       const cashAcceptance = acceptedTerms ? await acceptTerms(admin, cashBooking.id, acceptedTerms, idempotencyKey, request) : null;
       await auditCustomerEvent({ action: "booking_created", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: cashBooking.id });
-      if (!profile.user_id) {
-        try { await ensureCustomerAccount(profile, "booking"); }
-        catch { await auditCustomerEvent({ action: "invitation_failed", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: cashBooking.id, metadata: { retry_required: true } }); }
-      }
       const origin = process.env.PUBLIC_SITE_URL ?? new URL(request.url).origin;
       const cashAgreementPath = cashAcceptance ? `/portal/agreements/${cashAcceptance.id}` : null;
+      const cashBookingPath = cashAgreementPath ?? `/portal/bookings/${reference}`;
+      let cashActivationUrl: string | undefined;
+      if (!profile.user_id || profile.status !== "active") {
+        try {
+          const result = await ensureCustomerAccount(profile, "booking", { next: cashBookingPath });
+          cashActivationUrl = result.activationUrl;
+        } catch { await auditCustomerEvent({ action: "invitation_failed", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: cashBooking.id, metadata: { retry_required: true } }); }
+      }
       const paymentSummaryCash = promoCodeIdCash
         ? `Cash at studio after authorized staff records and receipts it (Promo: ${discountPercentageCash}% off)`
         : "Cash at studio after authorized staff records and receipts it";
-      await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time: bookingTimeSummary, location: bookingLocation, paymentSummary: paymentSummaryCash, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, ...(currentTerms ? { termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms` } : {}), ...(cashAgreementPath ? { agreementUrl: `${origin}/sign-in?next=${encodeURIComponent(cashAgreementPath)}` } : {}), clientId: profile.client_id, profileId: profile.id, bookingId: cashBooking.id });
+      await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time: bookingTimeSummary, location: bookingLocation, paymentSummary: paymentSummaryCash, portalUrl: `${origin}/sign-in?next=${encodeURIComponent(cashBookingPath)}`, activationUrl: cashActivationUrl, ...(currentTerms ? { termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms` } : {}), clientId: profile.client_id, profileId: profile.id, bookingId: cashBooking.id });
       return NextResponse.json({ reference, requestSaved: true });
     }
 
@@ -311,9 +315,13 @@ export async function POST(request: Request) {
     if (prepared.payment.status !== "pending") return NextResponse.json({ error: "This payment attempt can no longer be used. Please try another payment method." }, { status: 409 });
 
     let invitationDelayed = false;
-    if (!profile.user_id) {
-      try { await ensureCustomerAccount(profile, "booking"); }
-      catch {
+    let onlineActivationUrl: string | undefined;
+    const onlineBookingPath = `/portal/bookings/${booking.reference}`;
+    if (!profile.user_id || profile.status !== "active") {
+      try {
+        const result = await ensureCustomerAccount(profile, "booking", { next: onlineBookingPath });
+        onlineActivationUrl = result.activationUrl;
+      } catch {
         invitationDelayed = true;
         await auditCustomerEvent({ action: "invitation_failed", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: booking.id, metadata: { retry_required: true } });
       }
@@ -377,7 +385,8 @@ export async function POST(request: Request) {
     if (marked.error) throw marked.error;
     const agreementPath = acceptance ? `/portal/agreements/${acceptance.id}` : null;
     const promoText = discountPercentageOnline > 0 ? ` (Promo: ${discountPercentageOnline}% off)` : "";
-    const emailSent = await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference: booking.reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time: bookingTimeSummary, location: bookingLocation, paymentSummary: `${input.pay === "deposit" ? "Deposit and add-ons" : input.pay === "bnpl" ? "BillEase full payment" : "Full payment"}: PHP ${(paymentDue / 100).toLocaleString("en-PH")}${promoText}`, portalUrl: `${origin}/sign-in?next=%2Fportal%2Fbookings`, ...(currentTerms ? { termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms` } : {}), ...(agreementPath ? { agreementUrl: `${origin}/sign-in?next=${encodeURIComponent(agreementPath)}` } : {}), clientId: booking.client_id, profileId: booking.client_profile_id, bookingId: booking.id });
+    const onlinePortalNext = agreementPath ?? onlineBookingPath;
+    const emailSent = await sendBookingConfirmation({ to: email, firstName: profile.first_name, reference: booking.reference, service: `${input.session}${addonDescription.length ? ` + ${addonDescription.join(", ")}` : ""}`, date, time: bookingTimeSummary, location: bookingLocation, paymentSummary: `${input.pay === "deposit" ? "Deposit and add-ons" : input.pay === "bnpl" ? "BillEase full payment" : "Full payment"}: PHP ${(paymentDue / 100).toLocaleString("en-PH")}${promoText}`, portalUrl: `${origin}/sign-in?next=${encodeURIComponent(onlinePortalNext)}`, activationUrl: onlineActivationUrl, ...(currentTerms ? { termsVersionLabel: currentTerms.versionLabel, termsUrl: `${origin}/booking-terms` } : {}), clientId: booking.client_id, profileId: booking.client_profile_id, bookingId: booking.id });
     if (!emailSent) await auditCustomerEvent({ action: "booking_confirmation_delayed", clientId: profile.client_id, profileId: profile.id, entityType: "booking", entityId: booking.id, metadata: { retry_required: true } });
     return NextResponse.json({ checkoutUrl, reference: booking.reference, invitationDelayed, confirmationDelayed: !emailSent });
   } catch (error) {

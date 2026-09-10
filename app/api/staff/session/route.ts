@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { authenticationDisabled, hasStaffSession, signInStaff, staffAuthConfigured, STAFF_SESSION_COOKIE, STAFF_REFRESH_COOKIE, REMEMBER_ME_MAX_AGE, IS_PRODUCTION } from "@/lib/server/staff-auth";
 import { turnstileConfigured, turnstileRequired, turnstileSiteKey, verifyTurnstile } from "@/lib/server/turnstile";
+import { consumeCustomerRateLimit } from "@/lib/server/customer-auth";
 
 export const runtime = "nodejs";
 const MFA_REMEMBER_COOKIE = "kahel_staff_mfa_remember";
 
 export async function GET(request: Request) {
+  try {
+    if (!await consumeCustomerRateLimit(request, "staff_session_probe", "public", 60, "10 minutes")) {
+      return NextResponse.json({ error: "Too many requests." }, { status: 429 });
+    }
+  } catch { /* rate limiter unavailable — allow through */ }
   return NextResponse.json({
     authenticated: await hasStaffSession(request),
     configured: staffAuthConfigured(),
@@ -13,15 +19,6 @@ export async function GET(request: Request) {
     turnstileConfigured: turnstileConfigured(),
     turnstileSiteKey: turnstileSiteKey(),
     googleConfigured: process.env.GOOGLE_AUTH_ENABLED === "true",
-    configurationChecks: {
-      staffEmails: Boolean(process.env.KAHEL_STAFF_EMAILS || process.env.KAHEL_STAFF_EMAIL),
-      supabaseUrl: Boolean(process.env.SUPABASE_URL),
-      supabasePublishableKey: Boolean(process.env.SUPABASE_PUBLISHABLE_KEY),
-      supabaseSecretKey: Boolean(process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY),
-      authRedirectUrl: Boolean(process.env.AUTH_REDIRECT_URL),
-      turnstileSecret: Boolean(process.env.TURNSTILE_SECRET),
-      paymongoWebhookSecret: Boolean(process.env.PAYMONGO_WEBHOOK_SECRET),
-    },
   });
 }
 

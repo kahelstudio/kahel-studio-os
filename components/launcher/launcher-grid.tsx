@@ -222,7 +222,7 @@ export function LauncherGrid() {
       <div className="mt-10 flex flex-col items-start gap-4 border-t border-[var(--color-border)] pb-2 pt-[22px] sm:mt-14 xl:flex-row xl:items-center xl:gap-6">
         <span className="inline-flex items-center gap-2 text-[13px] text-[var(--color-text-muted)]">
           {process.env.NEXT_PUBLIC_APP_ENV !== "production"
-            ? `Kahel Studio v0.1 build ${process.env.NEXT_PUBLIC_BUILD_ID}`
+            ? `Kahel Studio v0.1 | build ${process.env.NEXT_PUBLIC_BUILD_ID}`
             : (
               <>
                 Kahel Studio v0.1

@@ -106,7 +106,7 @@ export function Sidebar({ app, onNavigate, empty = false, counts = {} }: { app: 
 
       <div className="mt-auto flex shrink-0 items-center gap-1.5 whitespace-nowrap border-t border-[var(--color-border)] px-3 pt-3 text-xs text-[var(--color-text-muted)]">
         {process.env.NEXT_PUBLIC_APP_ENV !== "production"
-          ? <span>Kahel Studio v0.1 build {process.env.NEXT_PUBLIC_BUILD_ID}</span>
+          ? <span>Kahel Studio v0.1 | build {process.env.NEXT_PUBLIC_BUILD_ID}</span>
           : (
             <>
               <span>Kahel Studio v0.1</span>

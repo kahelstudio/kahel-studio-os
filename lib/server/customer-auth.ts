@@ -71,7 +71,8 @@ export function isSafePortalPath(value: string | null | undefined) {
 
 export function hasTrustedOrigin(request: Request) {
   const origin = request.headers.get("origin");
-  if (!origin) return !IS_PRODUCTION;
+  const isProduction = IS_PRODUCTION || process.env.APP_ENV === "staging";
+  if (!origin) return !isProduction;
   return origin === new URL(request.url).origin;
 }
 
@@ -226,7 +227,11 @@ export async function auditCustomerEvent(event: {
   if (error) console.error("Customer security audit write failed.");
 }
 
-export async function ensureCustomerAccount(profile: CustomerProfile, source: "signup" | "booking") {
+export async function ensureCustomerAccount(
+  profile: CustomerProfile,
+  source: "signup" | "booking",
+  options?: { next?: string },
+): Promise<{ user: User; activationUrl: string; invited: boolean }> {
   if (isStaffAddress(profile.email)) throw new Error("Staff identities cannot be linked to customer profiles.");
   if (profile.status === "disabled") throw new Error("Disabled customer profiles cannot request account access.");
   const admin = getSupabaseAdmin();
@@ -235,39 +240,53 @@ export async function ensureCustomerAccount(profile: CustomerProfile, source: "s
   let invited = false;
   let createdUser = false;
 
+  // Build the callback URL, forwarding the intended destination so the customer
+  // lands on their booking after setting a password.
+  const callbackBase = customerCallbackUrl();
+  const redirectTo = options?.next
+    ? `${callbackBase}${callbackBase.includes("?") ? "&" : "?"}next=${encodeURIComponent(options.next)}`
+    : callbackBase;
+
   if (!user) user = await findAuthUser(email);
+
+  let activationUrl: string;
+
   if (!user) {
-    const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: customerCallbackUrl(),
-      data: { first_name: profile.first_name, last_name: profile.last_name, account_type: "customer" },
+    // New customer — create auth user and generate invite link without sending
+    // Supabase's own email (we embed the link in our branded booking email).
+    const { data, error } = await admin.auth.admin.generateLink({
+      type: "invite",
+      email,
+      options: { redirectTo, data: { first_name: profile.first_name, last_name: profile.last_name, account_type: "customer" } },
     });
-    if (error || !data.user) throw error ?? new Error("Customer invitation failed.");
+    if (error || !data.user || !data.properties?.action_link) throw error ?? new Error("Customer invitation failed.");
     user = data.user;
+    activationUrl = data.properties.action_link;
     invited = true;
     createdUser = true;
-    await recordSupabaseAuthEmailRequest({
-      templateKey: "supabase-auth-invitation", operationId: user.id, to: email,
-      recipientUserId: user.id, recipientProfileId: profile.id, clientId: profile.client_id, sourceReference: source,
+  } else {
+    // Existing auth user — generate a recovery link so they can set/reset their
+    // password and activate their portal profile. Works even for unconfirmed users
+    // when called via the admin SDK.
+    const { data, error } = await admin.auth.admin.generateLink({
+      type: "recovery",
+      email,
+      options: { redirectTo },
     });
+    if (error || !data.properties?.action_link) throw error ?? new Error("Customer activation link generation failed.");
+    activationUrl = data.properties.action_link;
   }
 
-  const { error: linkError } = await admin.from("client_profiles").update({ user_id: user.id, status: profile.status === "active" ? "active" : "invited" }).eq("id", profile.id);
+  const { error: linkError } = await admin.from("client_profiles")
+    .update({ user_id: user.id, status: profile.status === "active" ? "active" : "invited" })
+    .eq("id", profile.id);
   if (linkError) {
     if (createdUser) await admin.auth.admin.deleteUser(user.id);
     throw linkError;
   }
 
-  if (!invited) {
-    const { error } = await getSupabaseAuthClient().auth.resetPasswordForEmail(email, { redirectTo: customerCallbackUrl() });
-    if (error) throw error;
-    await recordSupabaseAuthEmailRequest({
-      templateKey: "supabase-auth-password-setup", operationId: crypto.randomUUID(), to: email,
-      recipientUserId: user.id, recipientProfileId: profile.id, clientId: profile.client_id, sourceReference: source,
-    });
-  }
-
   await auditCustomerEvent({
-    action: invited ? "invitation_sent" : "password_setup_requested",
+    action: invited ? "invitation_sent" : "activation_link_sent",
     userId: user.id,
     clientId: profile.client_id,
     profileId: profile.id,
@@ -275,7 +294,7 @@ export async function ensureCustomerAccount(profile: CustomerProfile, source: "s
     metadata: { source },
   });
   if (createdUser) await auditCustomerEvent({ action: "account_created", userId: user.id, clientId: profile.client_id, profileId: profile.id, entityId: profile.id, metadata: { source } });
-  return { user, invited };
+  return { user, activationUrl, invited };
 }
 
 export async function activateCustomerProfile(user: User) {

@@ -1,24 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, Mail, RotateCcw, Search, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3, ExternalLink, FlaskConical, Mail, RotateCcw, Search, X } from "lucide-react";
 import type { MessagesResult } from "@/lib/server/messages-data";
 import { canRetryMessage, MESSAGE_STATUSES, sanitizeEmailPreview, type MessageFilters, type TransactionalMessage } from "@/lib/messages";
 
 const dateTime = new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", dateStyle: "medium", timeStyle: "short" });
 const control = "min-h-11 w-full rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm";
 
-export function MessagesWorkspace({ result, filters, failedView, canRetry }: { result: MessagesResult; filters: MessageFilters; failedView: boolean; canRetry: boolean }) {
+export function MessagesWorkspace({ result, filters, failedView, canRetry, canTest }: { result: MessagesResult; filters: MessageFilters; failedView: boolean; canRetry: boolean; canTest?: boolean }) {
   const [selected, setSelected] = useState<TransactionalMessage | null>(null);
   const [checked, setChecked] = useState<string[]>([]);
   const [confirming, setConfirming] = useState(false);
+  const [testing, setTesting] = useState(false);
   const templates = [...new Map(result.templates.map((item) => [item.key, item])).values()];
   const facets = (key: keyof TransactionalMessage) => [...new Set(result.messages.map((item) => String(item[key] ?? "")).filter(Boolean))].sort();
   const eligible = result.messages.filter(canRetryMessage);
   const activeFilters = Object.values(filters).some((value) => value && value !== "all");
   function toggle(id: string) { setChecked((current) => current.includes(id) ? current.filter((item) => item !== id) : current.length < 20 ? [...current, id] : current); }
   return <main className="app-page mx-auto w-full max-w-[1500px] p-4 pb-10 sm:p-6 lg:p-8 xl:p-10">
-    <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6"><div><h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em]">Transactional emails</h1><p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">Monitor delivery, investigate failures, and review transactional email activity. Times shown in Manila.</p></div>{failedView && canRetry && <button type="button" disabled={!checked.length} onClick={() => setConfirming(true)} className="flex min-h-11 items-center gap-2 rounded-control bg-[var(--color-text-primary)] px-4 text-sm font-semibold text-[var(--color-surface)] disabled:cursor-not-allowed disabled:opacity-40"><RotateCcw className="h-4 w-4" />Retry failed{checked.length ? ` (${checked.length})` : ""}</button>}</header>
+    <header className="flex flex-wrap items-end justify-between gap-4 border-b border-[var(--color-border)] bg-[var(--color-surface)] pb-9 pt-[34px] px-4 sm:px-6"><div><h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em]">Transactional emails</h1><p className="mt-1 text-[15px] text-[var(--color-text-secondary)]">Monitor delivery, investigate failures, and review transactional email activity. Times shown in Manila.</p></div><div className="flex items-center gap-2">{canTest && <button type="button" onClick={() => setTesting(true)} className="flex min-h-11 items-center gap-2 rounded-control border border-[var(--color-border)] px-4 text-sm font-semibold"><FlaskConical className="h-4 w-4" />Send test email</button>}{failedView && canRetry && <button type="button" disabled={!checked.length} onClick={() => setConfirming(true)} className="flex min-h-11 items-center gap-2 rounded-control bg-[var(--color-text-primary)] px-4 text-sm font-semibold text-[var(--color-surface)] disabled:cursor-not-allowed disabled:opacity-40"><RotateCcw className="h-4 w-4" />Retry failed{checked.length ? ` (${checked.length})` : ""}</button>}</div></header>
     <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Metric icon={Mail} label="Sent today" value={result.summary.sentToday} /><Metric icon={CheckCircle2} label="Delivered" value={result.summary.delivered} /><Metric icon={Clock3} label="Pending" value={result.summary.pending} /><Metric icon={AlertTriangle} label="Failed" value={result.summary.failed} danger={result.summary.failed > 0} /></div>
     <form method="get" className="mt-5 grid gap-3 rounded-card border border-[var(--color-border)] bg-[var(--color-surface)] p-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
       <label className="relative sm:col-span-2"><span className="sr-only">Search messages</span><Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--color-text-muted)]" /><input name="search" defaultValue={filters.query} placeholder="Client, recipient, subject, reference, provider ID" className={`${control} pl-9`} /></label>
@@ -39,6 +40,7 @@ export function MessagesWorkspace({ result, filters, failedView, canRetry }: { r
     {!result.messages.length ? <Empty available={result.available} filtered={activeFilters} failed={failedView} /> : <MessageList messages={result.messages} failedView={failedView} canRetry={canRetry} checked={checked} toggle={toggle} onSelect={setSelected} />}
     {selected && <MessageDrawer message={selected} onClose={() => setSelected(null)} />}
     {confirming && <RetryDialog messages={result.messages.filter((item) => checked.includes(item.id))} onClose={() => setConfirming(false)} onComplete={() => { setChecked([]); setConfirming(false); window.location.reload(); }} />}
+    {testing && <TestEmailDialog onClose={() => setTesting(false)} />}
   </main>;
 }
 
@@ -71,7 +73,7 @@ function MessageDrawer({ message, onClose }: { message: TransactionalMessage; on
     <dl className="grid gap-3 rounded-card bg-[var(--color-canvas)] p-4 sm:grid-cols-2"><Detail label="Client" value={message.clientName} /><Detail label="Recipient" value={`${message.recipientName ? `${message.recipientName} · ` : ""}${message.recipient}`} /><Detail label="Status" value={label(message.status)} /><Detail label="Provider" value={label(message.provider)} /><Detail label="Provider ID" value={message.providerMessageId} /><Detail label="Environment" value={label(message.environment)} /><Detail label="Trigger" value={message.trigger} /><Detail label="Source" value={`${label(message.source)}${message.sourceReference ? ` · ${message.sourceReference}` : ""}`} /><Detail label="Actor" value={message.actor} /><Detail label="Attempts" value={`${message.attemptCount} of ${message.maxAttempts}`} />{references.map(([key, value]) => value && <Detail key={key} label={key} value={value} />)}<Detail label="Message ID" value={message.id} /></dl>
     <section><h3 className="font-display font-semibold">Timestamps</h3><dl className="mt-3 grid gap-3 sm:grid-cols-2"><Detail label="Created" value={formatDate(message.createdAt)} /><Detail label="Queued" value={formatDate(message.queuedAt)} /><Detail label="Accepted" value={formatDate(message.acceptedAt)} /><Detail label="Sent" value={formatDate(message.sentAt)} /><Detail label="Delivered" value={formatDate(message.deliveredAt)} /><Detail label="Failed" value={formatDate(message.failedAt)} /><Detail label="Cancelled" value={formatDate(message.cancelledAt)} /><Detail label="Latest update" value={formatDate(message.updatedAt)} /><Detail label="Next attempt" value={formatDate(message.nextAttemptAt)} /></dl></section>
     {(message.lastError || message.lastErrorCode) && <section className="rounded-control border border-[var(--color-danger-border)] bg-[var(--color-danger-bg)] p-4"><h3 className="text-sm font-semibold text-[var(--color-danger-text)]">Safe failure detail</h3><p className="mt-1 break-words text-sm text-[var(--color-danger-text)]">{message.lastErrorCode && `${message.lastErrorCode}: `}{message.lastError}</p></section>}
-    <section><div className="flex items-center justify-between gap-3"><h3 className="font-display font-semibold">Content preview</h3>{!previewUnavailable && <div className="flex rounded-control border border-[var(--color-border)] p-0.5">{message.htmlBody && <PreviewButton active={preview === "html"} onClick={() => setPreview("html")}>HTML</PreviewButton>}{message.textBody && <PreviewButton active={preview === "text"} onClick={() => setPreview("text")}>Text</PreviewButton>}</div>}</div>{previewUnavailable ? <p className="mt-3 rounded-control bg-[var(--color-canvas)] p-4 text-sm text-[var(--color-text-secondary)]">Preview unavailable for secure or redacted content.</p> : preview === "html" && message.htmlBody ? <iframe title="Sanitized email preview" sandbox="" srcDoc={sanitizeEmailPreview(message.htmlBody)} className="mt-3 h-80 w-full rounded-control border border-[var(--color-border)] bg-white" /> : <pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap rounded-control border border-[var(--color-border)] bg-[var(--color-canvas)] p-4 text-xs">{message.textBody}</pre>}</section>
+    <section><div className="flex items-center justify-between gap-3"><h3 className="font-display font-semibold">Content preview</h3><div className="flex items-center gap-2">{!previewUnavailable && preview === "html" && message.htmlBody && <button type="button" onClick={() => { const w = window.open(); w?.document.write(sanitizeEmailPreview(message.htmlBody!)); w?.document.close(); }} className="flex items-center gap-1 text-xs text-[var(--color-kahel-700)] hover:underline"><ExternalLink className="h-3 w-3" />Full preview</button>}{!previewUnavailable && <div className="flex rounded-control border border-[var(--color-border)] p-0.5">{message.htmlBody && <PreviewButton active={preview === "html"} onClick={() => setPreview("html")}>HTML</PreviewButton>}{message.textBody && <PreviewButton active={preview === "text"} onClick={() => setPreview("text")}>Text</PreviewButton>}</div>}</div></div>{previewUnavailable ? <p className="mt-3 rounded-control bg-[var(--color-canvas)] p-4 text-sm text-[var(--color-text-secondary)]">Content is secure or redacted — preview not available. Use the test email feature to see the template.</p> : preview === "html" && message.htmlBody ? <iframe title="Sanitized email preview" sandbox="" srcDoc={sanitizeEmailPreview(message.htmlBody)} className="mt-3 h-[480px] w-full rounded-control border border-[var(--color-border)] bg-white" /> : <pre className="mt-3 max-h-96 overflow-auto whitespace-pre-wrap rounded-control border border-[var(--color-border)] bg-[var(--color-canvas)] p-4 text-xs">{message.textBody}</pre>}</section>
     <Timeline message={message} />
     <History title="Resend history" empty="No resends are recorded." rows={message.resendHistory.map((item) => ({ id: item.id, title: `Resend ${item.sequence} · ${label(item.status)}`, date: item.createdAt, detail: [item.actor, item.reason].filter(Boolean).join(" · ") }))} />
     <History title="Audit" empty="No related audit entries are available." rows={message.audit.map((item) => ({ id: item.id, title: item.event, date: item.occurredAt, detail: [item.actor, item.detail].filter(Boolean).join(" · ") }))} />
@@ -83,6 +85,58 @@ function PreviewButton({ active, onClick, children }: { active: boolean; onClick
 function Detail({ label: text, value }: { label: string; value: string | null }) { return <div><dt className="text-xs font-semibold text-[var(--color-text-muted)]">{text}</dt><dd className="mt-1 break-all text-sm">{value ?? "Not recorded"}</dd></div>; }
 function Timeline({ message }: { message: TransactionalMessage }) { const rows = [...message.attempts.map((item) => ({ id: `a-${item.id}`, title: `Attempt ${item.number ?? ""}: ${label(item.status)}`, date: item.finishedAt ?? item.attemptedAt, detail: [item.actor, item.providerMessageId, item.errorCode, item.error].filter(Boolean).join(" · ") })), ...message.events.map((item) => ({ id: `e-${item.id}`, title: `${label(item.type)}${item.status ? ` · ${label(item.status)}` : ""}`, date: item.occurredAt, detail: [item.providerMessageId, item.detail].filter(Boolean).join(" · ") }))].sort((a, b) => b.date.localeCompare(a.date)); return <History title="Status timeline" empty="No attempt or provider event records are available." rows={rows} />; }
 function History({ title, empty, rows }: { title: string; empty: string; rows: { id: string; title: string; date: string; detail: string }[] }) { return <section><h3 className="font-display font-semibold">{title}</h3>{rows.length ? <ol className="mt-3 space-y-3 border-l border-[var(--color-border)] pl-4">{rows.map((row) => <li key={row.id}><p className="text-sm font-semibold">{row.title}</p><p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{formatDate(row.date)}</p>{row.detail && <p className="mt-1 break-words text-xs text-[var(--color-text-secondary)]">{row.detail}</p>}</li>)}</ol> : <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{empty}</p>}</section>; }
+
+const TEST_RECIPIENTS = ["hello@kahel.studio", "joanne.kahelstudio@gmail.com"];
+
+function TestEmailDialog({ onClose }: { onClose: () => void }) {
+  const [recipients, setRecipients] = useState<string[]>(["hello@kahel.studio"]);
+  const [busy, setBusy] = useState(false);
+  const [results, setResults] = useState<Array<{ recipient: string; accepted: boolean; status?: string; errorCode?: string }> | null>(null);
+  const [error, setError] = useState("");
+
+  function toggle(email: string) { setRecipients((current) => current.includes(email) ? current.filter((r) => r !== email) : [...current, email]); }
+
+  async function send(event: React.FormEvent) {
+    event.preventDefault();
+    if (!recipients.length) return;
+    setBusy(true); setError(""); setResults(null);
+    try {
+      const response = await fetch("/api/email/test", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recipients }) });
+      const data = await response.json() as { results?: Array<{ recipient: string; accepted: boolean; status?: string; errorCode?: string }>; error?: string };
+      if (data.error) { setError(data.error); } else { setResults(data.results ?? []); }
+    } catch { setError("Unable to reach the test email endpoint."); }
+    finally { setBusy(false); }
+  }
+
+  return <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="test-email-title" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
+    <form onSubmit={send} className="w-full max-w-md rounded-t-modal bg-[var(--color-surface)] p-5 shadow-[var(--shadow-dialog)] sm:rounded-modal">
+      <div className="flex items-start gap-3">
+        <div className="flex-1"><h2 id="test-email-title" className="font-display text-xl font-semibold">Send test email</h2><p className="mt-1 text-sm text-[var(--color-text-secondary)]">Sends a delivery test through the live Resend pipeline. Use this to verify the email channel is working.</p></div>
+        <button type="button" disabled={busy} onClick={onClose} className="grid min-h-11 min-w-11 place-items-center rounded-control" aria-label="Close"><X className="h-5 w-5" /></button>
+      </div>
+      <fieldset className="mt-5">
+        <legend className="text-sm font-semibold">Recipients</legend>
+        <div className="mt-2 space-y-2">
+          {TEST_RECIPIENTS.map((email) => <label key={email} className="flex cursor-pointer items-center gap-3 rounded-control border border-[var(--color-border)] px-3 py-2.5 text-sm has-[:checked]:border-[var(--color-kahel-500)] has-[:checked]:bg-[var(--color-kahel-50)]">
+            <input type="checkbox" checked={recipients.includes(email)} onChange={() => toggle(email)} className="h-4 w-4 accent-[var(--color-kahel-600)]" />
+            {email}
+          </label>)}
+        </div>
+      </fieldset>
+      {results && <div className="mt-4 space-y-2">
+        {results.map((result) => <div key={result.recipient} className={`rounded-control px-3 py-2.5 text-sm ${result.accepted ? "bg-[var(--color-success-bg)] text-[var(--color-success-text)]" : "bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]"}`}>
+          <span className="font-semibold">{result.accepted ? "✓ Delivered" : "✗ Failed"}</span> — {result.recipient}
+          {result.errorCode && <span className="ml-2 font-mono text-xs">({result.errorCode}{result.status ? ` · ${result.status}` : ""})</span>}
+        </div>)}
+      </div>}
+      {error && <p role="alert" className="mt-4 text-sm text-[var(--color-danger-text)]">{error}</p>}
+      <div className="mt-5 flex justify-end gap-2">
+        <button type="button" disabled={busy} onClick={onClose} className="min-h-11 rounded-control border border-[var(--color-border)] px-4 text-sm font-semibold">Close</button>
+        <button disabled={busy || !recipients.length} className="flex min-h-11 items-center gap-2 rounded-control bg-[var(--color-text-primary)] px-4 text-sm font-semibold text-[var(--color-surface)] disabled:opacity-40"><FlaskConical className="h-4 w-4" />{busy ? "Sending..." : "Send test"}</button>
+      </div>
+    </form>
+  </div>;
+}
 
 function RetryDialog({ messages, onClose, onComplete }: { messages: TransactionalMessage[]; onClose: () => void; onComplete: () => void }) {
   const [reason, setReason] = useState(""), [busy, setBusy] = useState(false), [error, setError] = useState("");

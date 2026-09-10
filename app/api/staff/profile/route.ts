@@ -12,6 +12,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
+  const { hasTrustedOrigin } = await import("@/lib/server/customer-auth");
+  if (!hasTrustedOrigin(request)) return NextResponse.json({ error: "Invalid request origin." }, { status: 403 });
   const principal = await getStaffPrincipal(request);
   if (!principal?.userId) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
 
