@@ -173,7 +173,7 @@ export function sanitizeEmailPreview(html: string) {
     .replace(/\s+(href|src|poster|background)\s*=\s*(["'])([\s\S]*?)\2/gi, (_match, attribute: string, quote: string, value: string) => {
       const normalized = value.trim().replace(/&colon;/gi, ":");
       if (attribute.toLowerCase() === "href") return ` href="#" data-masked-link="true" aria-label="External link blocked in preview"`;
-      return /^(?:data:image\/(?:png|gif|jpe?g|webp);base64,)/i.test(normalized) ? ` ${attribute}=${quote}${normalized}${quote}` : ` data-blocked-${attribute}="remote-resource"`;
+      return /^(?:data:image\/(?:png|gif|jpe?g|webp|svg\+xml);base64,)/i.test(normalized) ? ` ${attribute}=${quote}${normalized}${quote}` : ` data-blocked-${attribute}="remote-resource"`;
     })
     .replace(/url\s*\(\s*(['"]?)(?!data:)[^)]+\1\s*\)/gi, "none");
   const policy = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src 'none'; media-src 'none'; connect-src 'none'; frame-src 'none'; form-action 'none'; base-uri 'none'";
