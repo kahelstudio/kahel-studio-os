@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { EmailTemplateRecord } from "@/lib/server/messages-data";
 import { sanitizeEmailPreview } from "@/lib/messages";
 import { AuthEmailTemplatesPanel } from "@/components/messages/auth-email-templates-panel";
+import { TRANSACTIONAL_EMAILS } from "@/lib/transactional-emails";
+import { generateTransactionalPreviewHtml } from "@/lib/transactional-email-preview";
 
 const field = "mt-1.5 min-h-11 w-full rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-normal";
 
@@ -66,7 +68,20 @@ export function EmailTemplatesWorkspace({ result, canManage }: { result: { avail
                   </div>
                 </div>
                 {selected.fields.length > 0 && <p className="mt-5 text-xs text-[var(--color-text-muted)]">Fields: {selected.fields.join(", ")}</p>}
-                {version ? <div className="mt-5 space-y-4"><div className="rounded-control bg-[var(--color-canvas)] p-4"><p className="text-xs font-semibold text-[var(--color-text-muted)]">Subject</p><p className="mt-1 text-sm font-semibold">{version.subject}</p><p className="mt-2 text-xs text-[var(--color-text-muted)]">{version.changeNote} · {version.secure ? "Secure content" : "Standard content"}</p></div>{version.secure ? <p className="rounded-control bg-[var(--color-canvas)] p-4 text-sm text-[var(--color-text-secondary)]">Preview unavailable for secure templates.</p> : version.htmlBody ? <iframe title="Sanitized template preview" sandbox="" srcDoc={sanitizeEmailPreview(version.htmlBody)} className="h-[520px] w-full rounded-control border border-[var(--color-border)] bg-white" /> : <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded-control bg-[var(--color-canvas)] p-4 text-xs">{version.textBody}</pre>}</div> : <p className="mt-5 text-sm text-[var(--color-text-secondary)]">No database-backed version exists for this catalogue entry.</p>}
+                {(() => {
+                  if (version) {
+                    const versionMeta = <div className="rounded-control bg-[var(--color-canvas)] p-4"><p className="text-xs font-semibold text-[var(--color-text-muted)]">Subject</p><p className="mt-1 text-sm font-semibold">{version.subject}</p><p className="mt-2 text-xs text-[var(--color-text-muted)]">{version.changeNote} · {version.secure ? "Secure content" : "Standard content"}</p></div>;
+                    const preview = version.secure ? <p className="rounded-control bg-[var(--color-canvas)] p-4 text-sm text-[var(--color-text-secondary)]">Preview unavailable for secure templates.</p>
+                      : version.htmlBody ? <iframe title="Sanitized template preview" sandbox="" srcDoc={sanitizeEmailPreview(version.htmlBody)} className="h-[520px] w-full rounded-control border border-[var(--color-border)] bg-white" />
+                      : <pre className="max-h-[520px] overflow-auto whitespace-pre-wrap rounded-control bg-[var(--color-canvas)] p-4 text-xs">{version.textBody}</pre>;
+                    return <div className="mt-5 space-y-4">{versionMeta}{preview}</div>;
+                  }
+                  const catalogueEntry = TRANSACTIONAL_EMAILS.find((t) => t.id === selected.key);
+                  if (catalogueEntry) {
+                    return <iframe key={selected.key} title={`Catalogue preview: ${selected.name}`} sandbox="" srcDoc={sanitizeEmailPreview(generateTransactionalPreviewHtml(catalogueEntry))} className="mt-5 h-[520px] w-full rounded-control border border-[var(--color-border)] bg-white" />;
+                  }
+                  return <p className="mt-5 text-sm text-[var(--color-text-secondary)]">No preview available.</p>;
+                })()}
               </section>
             </div>
           ) : (
