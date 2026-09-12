@@ -35,6 +35,8 @@ export async function POST(request: Request, { params }: Context) {
 
   const { html_template: html, text_template: text, subject_template: subject } = version.data;
   if (!html && !text) return Response.json({ error: "This version has no content to send." }, { status: 400 });
+  const isPlaceholder = (s: string | null) => !s || s.trim().startsWith("[") || s.trim().length < 200;
+  if (isPlaceholder(html) && isPlaceholder(text)) return Response.json({ error: "This version uses a system placeholder. Edit the template content before sending a test." }, { status: 400 });
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey || apiKey === "re_replace_me") return Response.json({ error: "Email sending is not configured (RESEND_API_KEY missing)." }, { status: 503 });

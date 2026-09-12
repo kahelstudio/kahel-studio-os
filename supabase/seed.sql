@@ -359,4 +359,35 @@ insert into public.customer_messages (id, client_id, sender_profile_id, project_
    null, now() - interval '2 days')
 on conflict (id) do update set body = excluded.body, read_at = excluded.read_at;
 
+-- Catalogue transactional email templates (all 23 from TRANSACTIONAL_EMAILS).
+-- These records make the Transactional tab in Settings → Email Templates functional
+-- without the tables appearing empty. Run scripts/seed-email-template-versions.ts
+-- separately to populate draft HTML versions for each.
+insert into public.email_templates (template_key, name, audience, description, active) values
+  ('booking-request-received',     'Booking request received',          'customer',  'A client submits a booking request',                              true),
+  ('booking-terms-review-request', 'Booking terms review request',      'customer',  'A staff-created booking requires direct customer acceptance',      true),
+  ('awaiting-downpayment',         'Awaiting downpayment',              'customer',  'A booking slot is available and needs a deposit',                  true),
+  ('downpayment-received',         'Downpayment received',              'customer',  'A downpayment is verified',                                        true),
+  ('booking-confirmed',            'Booking confirmed',                 'customer',  'A booking is confirmed after payment and agreement verification',   true),
+  ('booking-reminder',             'Booking reminder',                  'customer',  '48 hours before a confirmed session',                              true),
+  ('balance-reminder',             'Balance reminder',                  'customer',  'Before a session with an outstanding balance',                     true),
+  ('reschedule-request',           'Reschedule request received',       'customer',  'A client requests a new session date',                             true),
+  ('reschedule-confirmed',         'Reschedule confirmed',              'customer',  'A new session date is approved',                                   true),
+  ('client-cancellation',          'Client initiated cancellation',     'customer',  'A client cancels their booking',                                   true),
+  ('booking-cancelled',            'Booking cancelled',                 'customer',  'A booking cancellation is recorded',                               true),
+  ('kahel-cancellation',           'Cancellation by Kahel Studio',      'customer',  'Kahel Studio needs to cancel a booking',                           true),
+  ('refund-approved',              'Refund approved',                   'customer',  'A refund request is approved',                                     true),
+  ('waitlist-confirmation',        'Waitlist confirmation',             'customer',  'A requested date is full and the client joins the waitlist',        true),
+  ('waitlist-slot-available',      'Waitlist slot available',           'customer',  'A slot opens for a waitlisted client',                             true),
+  ('thank-you-after-session',      'Thank you after session',           'customer',  'A session is completed',                                           true),
+  ('rebooking-offer',              'Rebooking offer',                   'customer',  'A follow-up campaign after a previous session',                    true),
+  ('internal-new-booking',         'Internal new booking request',      'internal',  'A client submits a booking request',                               true),
+  ('internal-payment-received',    'Internal payment received',         'internal',  'A payment is verified',                                            true),
+  ('internal-reschedule-request',  'Internal reschedule request',       'internal',  'A client requests a new session date',                             true),
+  ('internal-no-show',             'Internal no show alert',            'internal',  'A client is marked as a no show',                                  true),
+  ('internal-new-waitlist-entry',  'Internal new waitlist entry',       'internal',  'A client joins the booking waitlist',                              true)
+on conflict (template_key) do update set
+  name = excluded.name, description = excluded.description,
+  audience = excluded.audience, active = excluded.active, updated_at = now();
+
 commit;

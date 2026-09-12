@@ -91,13 +91,31 @@ function normalizeTemplate(row: Row, versionRows: Row[]): EmailTemplateRecord {
     subject: text(item, "subject_template", "subject") ?? "(No subject)", htmlBody: text(item, "html_template", "html_body", "html"), textBody: text(item, "text_template", "text_body", "plaintext", "text"),
     status: text(item, "published_at") ? "published" : "draft", secure: booleanValue(item, "contains_secure_content"), changeNote: text(item, "change_note") ?? "No change note",
     createdBy: text(item, "created_by"), createdAt: text(item, "created_at", "published_at") ?? new Date(0).toISOString(), publishedAt: text(item, "published_at"),
-  })).sort((a, b) => b.version - a.version);
-  const latestRow = versions.length ? versionRows.find((item) => text(item, "id") === versions[0].id) : null;
-  const schema = latestRow?.variable_schema;
+  })).sort((a, b) => {
+    // Drafts sort before published so the editor default is always the active working copy.
+    const aDraft = !a.publishedAt, bDraft = !b.publishedAt;
+    if (aDraft !== bDraft) return aDraft ? -1 : 1;
+    return b.version - a.version;
+  });
+  // Use the most informative version for field extraction: prefer any version that has a
+  // `fields` array in its variable_schema (the catalogue-seeded format), else fall back to
+  // the Object.keys of the first version's schema (the legacy demo format).
+  const schemaRow = versionRows
+    .filter((item) => text(item, "template_id", "transactional_message_template_id") === id)
+    .find((item) => {
+      const s = item.variable_schema;
+      return s && typeof s === "object" && !Array.isArray(s) && Array.isArray((s as Record<string, unknown>).fields);
+    }) ?? (versions.length ? versionRows.find((item) => text(item, "id") === versions[0].id) : null);
+  const schema = schemaRow?.variable_schema;
+  const fields = schema && typeof schema === "object" && !Array.isArray(schema)
+    ? (Array.isArray((schema as Record<string, unknown>).fields)
+        ? ((schema as Record<string, unknown>).fields as string[])
+        : Object.keys(schema))
+    : [];
   return {
     id, key, name: text(row, "name", "display_name") ?? key, audience: text(row, "audience") ?? "customer", status: row.active === false ? "disabled" : "active",
     currentVersion: versions.find((item) => item.publishedAt)?.version ?? null, versions, catalogue: false, trigger: text(row, "description", "trigger", "trigger_description"),
-    fields: schema && typeof schema === "object" && !Array.isArray(schema) ? Object.keys(schema) : [],
+    fields,
   };
 }
 

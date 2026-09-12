@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AUTH_EMAIL_TEMPLATES, resolveAuthTemplateHtml } from "@/lib/auth-email-templates";
-import { sanitizeEmailPreview } from "@/lib/messages";
+import { prepareEmailForPreview } from "@/lib/email-preview-utils";
 
 const TEST_RECIPIENTS = [
   "eusebio.barrun@gmail.com",
@@ -15,7 +15,7 @@ export function AuthEmailTemplatesPanel({ canManage }: { canManage: boolean }) {
   const [sendOpen, setSendOpen] = useState(false);
 
   const selected = AUTH_EMAIL_TEMPLATES.find((t) => t.key === selectedKey) ?? AUTH_EMAIL_TEMPLATES[0];
-  const previewHtml = sanitizeEmailPreview(resolveAuthTemplateHtml(selected));
+  const previewHtml = prepareEmailForPreview(resolveAuthTemplateHtml(selected));
 
   return (
     <div className="mt-6 grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">

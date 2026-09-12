@@ -17,6 +17,7 @@
     "deploy:production": "APP_ENV=production opennextjs-cloudflare build && opennextjs-cloudflare deploy --env production",
     "cf:typegen": "wrangler types --env staging --env-interface CloudflareEnv && wrangler types --config wrangler.media.jsonc --env staging --env-interface MediaProcessorEnv worker-media-configuration.d.ts",
     "set-staff-password": "node scripts/set-staff-password.mjs",
+    "seed:email-templates": "npx tsx --tsconfig tsconfig.json scripts/seed-email-template-versions.ts",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:status": "supabase status",

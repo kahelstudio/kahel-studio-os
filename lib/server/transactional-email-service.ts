@@ -69,19 +69,27 @@ async function ensureTemplateVersion(templateKey: string) {
     if (inserted.error) throw inserted.error;
     template = inserted;
   }
-  const existing = await admin.from("email_template_versions" as never).select("id").eq("template_id", template.data!.id).eq("version", 1).maybeSingle<{ id: string }>();
+  // Find the most recent published version (any version number — not hardcoded to v1 so that
+  // draft versions created by the template editor coexist without breaking the send path).
+  const existing = await admin.from("email_template_versions" as never).select("id").eq("template_id", template.data!.id).not("published_at", "is", null).order("version", { ascending: false }).limit(1).maybeSingle<{ id: string }>();
   if (existing.error) throw existing.error;
   if (existing.data) return existing.data.id;
+  // No published version exists yet. Find the highest existing version and create the next
+  // one as a published application-renderer stub so the send path can proceed.
+  const latest = await admin.from("email_template_versions" as never).select("version").eq("template_id", template.data!.id).order("version", { ascending: false }).limit(1).maybeSingle<{ version: number }>();
+  if (latest.error) throw latest.error;
+  const nextVersion = (latest.data?.version ?? 0) + 1;
   const publishedAt = new Date().toISOString();
   const inserted = await admin.from("email_template_versions" as never).insert({
-    template_id: template.data!.id, version: 1, subject_template: approved.subject,
+    template_id: template.data!.id, version: nextVersion, subject_template: approved.subject,
     html_template: approved.secure ? "[secure content unavailable]" : "[rendered by approved application renderer]",
     text_template: approved.secure ? "[secure content unavailable]" : "[rendered by approved application renderer]",
     variable_schema: { fields: approved.fields }, contains_secure_content: approved.secure,
     change_note: "Initial approved application renderer contract.", created_at: publishedAt, published_at: publishedAt,
   } as never).select("id").single<{ id: string }>();
   if (inserted.error) {
-    const concurrent = await admin.from("email_template_versions" as never).select("id").eq("template_id", template.data!.id).eq("version", 1).single<{ id: string }>();
+    // Concurrent insert — another request already created a published version, use that.
+    const concurrent = await admin.from("email_template_versions" as never).select("id").eq("template_id", template.data!.id).not("published_at", "is", null).order("version", { ascending: false }).limit(1).single<{ id: string }>();
     if (concurrent.error) throw inserted.error;
     return concurrent.data.id;
   }
