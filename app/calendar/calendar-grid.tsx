@@ -120,7 +120,8 @@ export function CalendarGrid({
     ? cells
     : cells.map(cell => ({ ...cell, events: cell.events.filter(e => e.category === activeFilter) }));
 
-  function handleDragOver(e: React.DragEvent, cellKey: string) {
+  function handleDragOver(e: React.DragEvent, cellKey: string, cellPast: boolean) {
+    if (cellPast || cellKey.startsWith("blank-")) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (dragRef.current && (expanded || cellKey !== dragRef.current.sourceDate)) setDropTarget(cellKey);
@@ -128,10 +129,10 @@ export function CalendarGrid({
 
   function handleDragLeave() { setDropTarget(null); }
 
-  async function handleDrop(e: React.DragEvent, cellKey: string) {
+  async function handleDrop(e: React.DragEvent, cellKey: string, cellPast: boolean) {
     e.preventDefault();
     setDropTarget(null);
-    if (!dragRef.current || (!expanded && cellKey === dragRef.current.sourceDate) || cellKey.startsWith("blank-")) return;
+    if (!dragRef.current || (!expanded && cellKey === dragRef.current.sourceDate) || cellKey.startsWith("blank-") || cellPast) return;
     const time = expanded ? estimateTimeFromY(e.currentTarget as HTMLElement, e.clientY) : dragRef.current.sourceTime;
     const { ref } = dragRef.current;
     dragRef.current = null;
@@ -207,9 +208,9 @@ export function CalendarGrid({
                   key={cell.key}
                   className={`overflow-hidden border-b border-r border-[var(--color-border)] p-2 transition-colors ${isDropTarget ? "ring-2 ring-inset ring-[var(--color-kahel-400)]" : ""}`}
                   style={{ background: bg }}
-                  onDragOver={e => handleDragOver(e, cell.key)}
+                  onDragOver={e => handleDragOver(e, cell.key, cell.past && !cell.today)}
                   onDragLeave={handleDragLeave}
-                  onDrop={e => handleDrop(e, cell.key)}
+                  onDrop={e => handleDrop(e, cell.key, cell.past && !cell.today)}
                 >
                   <div
                     className="mb-1.5 flex items-start justify-between gap-1"
@@ -224,10 +225,13 @@ export function CalendarGrid({
                     </div>
                   </div>
                   <div className={cell.past && !cell.today ? "opacity-60" : ""}>
-                    {visible.map(event => expanded
-                      ? <EventChipExpanded key={`${event.ref}-${event.time}`} event={event} onDragStart={() => { dragRef.current = { ref: event.ref, sourceDate: cell.key, sourceTime: event.time }; }} />
-                      : <EventChip key={`${event.ref}-${event.time}`} event={event} onDragStart={() => { dragRef.current = { ref: event.ref, sourceDate: cell.key, sourceTime: event.time }; }} />
-                    )}
+                    {visible.map(event => {
+                      const isPast = cell.past && !cell.today;
+                      const draggableEvent = isPast ? { ...event, draggable: false as const } : event;
+                      return expanded
+                        ? <EventChipExpanded key={`${event.ref}-${event.time}`} event={draggableEvent} onDragStart={() => { dragRef.current = { ref: event.ref, sourceDate: cell.key, sourceTime: event.time }; }} />
+                        : <EventChip key={`${event.ref}-${event.time}`} event={draggableEvent} onDragStart={() => { dragRef.current = { ref: event.ref, sourceDate: cell.key, sourceTime: event.time }; }} />;
+                    })}
                     {!expanded && cell.events.length > 3 && (
                       <div className="text-[11px] font-medium text-[var(--color-text-muted)]">+{cell.events.length - 3} more</div>
                     )}

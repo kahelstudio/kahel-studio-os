@@ -185,6 +185,9 @@ function toCategory(serviceType: string): EventCategory {
   return "other";
 }
 
+// Statuses that represent an active, reschedulable booking
+const ACTIVE_STATUSES = new Set(["inquiry", "quoted", "confirmed", "progress"]);
+
 export async function getCalendarEventsByDate(startDate: string, endDate: string): Promise<Record<string, CalendarEvent[]>> {
   try {
     const admin = getSupabaseAdmin();
@@ -193,13 +196,18 @@ export async function getCalendarEventsByDate(startDate: string, endDate: string
       service_type,
       service_date,
       service_time,
+      starts_at,
+      ends_at,
       status,
       clients:client_id ( name )
-    `).gte("service_date", startDate).lte("service_date", endDate).order("service_date", { ascending: true }).order("service_time", { ascending: true });
+    `).gte("service_date", startDate).lte("service_date", endDate)
+      .not("status", "in", '("cancelled","completed","no_show")')
+      .order("service_date", { ascending: true }).order("service_time", { ascending: true });
 
     if (error) throw error;
     const bookings = data as unknown as Array<{
       reference: string; service_type: string; service_date: string; service_time: string;
+      starts_at: string | null; ends_at: string | null;
       status: string; clients: { name: string } | null;
     }>;
     const grouped: Record<string, CalendarEvent[]> = {};
@@ -210,7 +218,10 @@ export async function getCalendarEventsByDate(startDate: string, endDate: string
         title: booking.clients?.name ?? booking.reference,
         serviceType: booking.service_type,
         time: booking.service_time.slice(0, 5),
+        startsAt: booking.starts_at ?? undefined,
+        endsAt: booking.ends_at ?? undefined,
         category: toCategory(booking.service_type),
+        draggable: ACTIVE_STATUSES.has(booking.status),
       });
     }
     return grouped;
