@@ -64,6 +64,7 @@ export function EmailTemplatesWorkspace({ result, canManage }: { result: { avail
                   <div><p className="text-xs font-semibold uppercase tracking-[.06em] text-[var(--color-text-muted)]">{selected.audience} · {selected.status}</p><h2 className="mt-1 font-display text-2xl font-semibold">{selected.name}</h2>{selected.trigger && <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{selected.trigger}</p>}</div>
                   <div className="flex flex-wrap items-end gap-2">
                     {canManage && version && !version.secure && !isPlaceholderHtml(version.htmlBody) && <button type="button" onClick={() => setSendTestOpen(true)} className="min-h-11 rounded-control bg-[var(--color-text-primary)] px-4 text-sm font-semibold text-[var(--color-surface)]">Send test</button>}
+                    {canManage && !version && selected.catalogue && TRANSACTIONAL_EMAILS.find((t) => t.id === selected.key) && <button type="button" onClick={() => setSendTestOpen(true)} className="min-h-11 rounded-control bg-[var(--color-text-primary)] px-4 text-sm font-semibold text-[var(--color-surface)]">Send test</button>}
                     {selected.versions.length > 0 && <label className="text-xs font-semibold">Version<select value={version?.id ?? ""} onChange={(event) => { setVersionId(event.target.value); setSendTestOpen(false); }} className={`${field} block w-auto`}>{selected.versions.map((item) => <option key={item.id} value={item.id}>v{item.version} · {item.status}</option>)}</select></label>}
                   </div>
                 </div>
@@ -93,7 +94,8 @@ export function EmailTemplatesWorkspace({ result, canManage }: { result: { avail
       )}
 
       {form && selected && <TemplateDialog mode={form} template={selected} version={version} onClose={() => setForm(null)} />}
-      {sendTestOpen && selected && version && <SendTestDialog templateId={selected.id} version={version} onClose={() => setSendTestOpen(false)} />}
+      {sendTestOpen && selected && version && !isPlaceholderHtml(version.htmlBody) && <SendTestDialog subtitle={`v${version.version} · ${version.subject}`} postUrl={`/api/settings/email-templates/${selected.id}/versions/${version.id}/send-test`} postBody={{}} onClose={() => setSendTestOpen(false)} />}
+      {sendTestOpen && selected && !version && selected.catalogue && <SendTestDialog subtitle={selected.name} postUrl="/api/settings/email-templates/transactional-test" postBody={{ templateKey: selected.key }} onClose={() => setSendTestOpen(false)} />}
     </main>
   );
 }
@@ -112,7 +114,7 @@ function Text({ label, value, onChange, rows, maxLength }: { label: string; valu
 
 const TEST_RECIPIENTS = ["eusebio.barrun@gmail.com", "joanne.kahelstudio@gmail.com", "luiz.kahelstudio@gmail.com"];
 
-function SendTestDialog({ templateId, version, onClose }: { templateId: string; version: EmailTemplateRecord["versions"][number]; onClose: () => void }) {
+function SendTestDialog({ subtitle, postUrl, postBody, onClose }: { subtitle: string; postUrl: string; postBody: Record<string, unknown>; onClose: () => void }) {
   const [checked, setChecked] = useState(new Set([TEST_RECIPIENTS[0]]));
   const [custom, setCustom] = useState(""), [busy, setBusy] = useState(false), [error, setError] = useState(""), [sent, setSent] = useState(false);
   function toggle(email: string) { setChecked((prev) => { const next = new Set(prev); next.has(email) ? next.delete(email) : next.add(email); return next; }); }
@@ -121,7 +123,7 @@ function SendTestDialog({ templateId, version, onClose }: { templateId: string; 
     if (!recipients.length) { setError("Select at least one recipient."); return; }
     setBusy(true); setError("");
     try {
-      const res = await fetch(`/api/settings/email-templates/${templateId}/versions/${version.id}/send-test`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recipients }) });
+      const res = await fetch(postUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...postBody, recipients }) });
       if (!res.ok) { const data = await res.json().catch(() => null) as { error?: string } | null; setError(data?.error ?? "Failed to send."); setBusy(false); return; }
       setSent(true);
     } catch { setError("Network error. Try again."); }
@@ -131,7 +133,7 @@ function SendTestDialog({ templateId, version, onClose }: { templateId: string; 
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="send-test-title" onMouseDown={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
       <div className="w-full max-w-md rounded-t-modal bg-[var(--color-surface)] p-5 shadow-[var(--shadow-dialog)] sm:rounded-modal">
         <div className="flex items-start justify-between gap-4">
-          <div><h2 id="send-test-title" className="font-display text-xl font-semibold">Send test email</h2><p className="mt-1 text-sm text-[var(--color-text-secondary)]">v{version.version} · {version.subject}</p></div>
+          <div><h2 id="send-test-title" className="font-display text-xl font-semibold">Send test email</h2><p className="mt-1 text-sm text-[var(--color-text-secondary)]">{subtitle}</p></div>
           <button type="button" disabled={busy} onClick={onClose} className="min-h-11 rounded-control px-3 text-sm font-semibold">Close</button>
         </div>
         {sent ? (
