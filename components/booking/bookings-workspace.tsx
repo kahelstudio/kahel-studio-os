@@ -1,11 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { CalendarDays, ChevronLeft, ChevronRight, Filter, FolderKanban, Mail, MoreHorizontal, ReceiptText, UserRound } from "lucide-react";
 import type { BookingWorkspaceFilters, BookingWorkspaceRow, BookingWorkspaceSummary } from "@/lib/bookings-workspace";
 import { bookingTypeFor, filteredBookings, formatManilaDate, formatManilaTime, formatPeso, getBookingActionLabel, isToday, manilaIsoDate, paymentBalance, paymentLabel, statusLabel, statusTone, PRIMARY_STATUSES, MORE_STATUSES, bookingTypeOptions, attentionRequired } from "@/lib/bookings-workspace";
 import { cn } from "@/lib/utils";
+
+const SOURCE_LABELS: Record<string, string> = {
+  website: "Website", staff: "Staff", walk_in: "Walk-in",
+  phone: "Phone", messenger: "Messenger", instagram: "Instagram",
+};
+const SOURCE_COLORS: Record<string, string> = {
+  website: "bg-blue-50 text-blue-700 border-blue-200",
+  staff: "bg-[var(--color-canvas)] text-[var(--color-text-secondary)] border-[var(--color-border)]",
+  walk_in: "bg-green-50 text-green-700 border-green-200",
+  phone: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  messenger: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  instagram: "bg-pink-50 text-pink-700 border-pink-200",
+};
+
+function SourceBadge({ source }: { source: string }) {
+  return (
+    <span className={cn("inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide border", SOURCE_COLORS[source] ?? SOURCE_COLORS.staff)}>
+      {SOURCE_LABELS[source] ?? source}
+    </span>
+  );
+}
 
 function formatMobile(mobile: string | null | undefined) {
   if (!mobile) return mobile ?? null;
@@ -28,6 +50,7 @@ const PAYMENT_OPTIONS = ["Deposit required", "Deposit pending", "Paid", "Partial
 const PAGE_SIZE = 10;
 
 export function BookingsWorkspace({ rows, initialFilters, selectedRef, headerAction }: Props) {
+  const router = useRouter();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const query = initialFilters.q;
   const [filters, setFilters] = useState(initialFilters);
@@ -36,6 +59,22 @@ export function BookingsWorkspace({ rows, initialFilters, selectedRef, headerAct
   const [page, setPage] = useState(1);
   const [, startTransition] = useTransition();
   const queryTimer = useRef<number | null>(null);
+
+  // Availability stays current by refreshing on booking events and every 30 s.
+  // Both paths use router.refresh() so the server re-fetches and both the
+  // staff dashboard and website availability update from the same DB state.
+  const refresh = useCallback(() => { startTransition(() => router.refresh()); }, [router]);
+  useEffect(() => {
+    const onBookingCreated = (e: Event) => {
+      if ((e as CustomEvent).detail?.kind === "booking") refresh();
+    };
+    window.addEventListener("operation-created", onBookingCreated);
+    const interval = window.setInterval(refresh, 30_000);
+    return () => {
+      window.removeEventListener("operation-created", onBookingCreated);
+      window.clearInterval(interval);
+    };
+  }, [refresh]);
 
   const visibleRows = useMemo(() => filteredBookings(rows, { ...filters, q: query }), [filters, query, rows]);
   const pageCount = Math.max(1, Math.ceil(visibleRows.length / PAGE_SIZE));
@@ -158,7 +197,10 @@ export function BookingsWorkspace({ rows, initialFilters, selectedRef, headerAct
                         </div>
                       </Td>
                       <Td selected={selectedRow} mono>
-                        <div className="font-medium text-[var(--color-text-primary)]">{row.reference}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-medium text-[var(--color-text-primary)]">{row.reference}</span>
+                          <SourceBadge source={row.bookingSource} />
+                        </div>
                         <div className="text-[11px] text-[var(--color-text-muted)]">{bookingTypeFor(row)} · {row.serviceType}</div>
                       </Td>
                       <Td selected={selectedRow}>
@@ -249,7 +291,7 @@ function BookingDetailsPanel({ row, close }: { row: BookingWorkspaceRow; close: 
         <div className="min-h-0 flex-1 overflow-auto p-5">
           <section className="grid gap-4 sm:grid-cols-2">
             <Detail label="Booking type" value={bookingTypeFor(row)} icon={<CalendarDays className="h-4 w-4" />} />
-            <Detail label="Booking source" value={row.kind === "reward" ? "Reward booking" : row.clientExternalRef ? "Client portal" : "Studio intake"} icon={<UserRound className="h-4 w-4" />} />
+            <Detail label="Booking source" value={<SourceBadge source={row.kind === "reward" ? "staff" : row.bookingSource} />} icon={<UserRound className="h-4 w-4" />} />
             <Detail label="Date" value={formatManilaDate(row.serviceDate)} />
             <Detail label="Time" value={`${formatManilaTime(row.serviceTime)}`} />
             <Detail label="Location" value={row.location} />
@@ -260,6 +302,7 @@ function BookingDetailsPanel({ row, close }: { row: BookingWorkspaceRow; close: 
             <Detail label="Project" value={row.projectReference ?? "Not created"} />
             <Detail label="Invoice" value={row.invoiceReference ?? "Not issued"} />
             <Detail label="Notification state" value={row.paymongoCheckoutSessionId ? "Queued" : "Not sent"} />
+            {row.internalNotes && <Detail label="Internal notes" value={row.internalNotes} icon={<ReceiptText className="h-4 w-4" />} />}
           </section>
 
           <div className="mt-5 grid gap-4">
@@ -326,7 +369,7 @@ function SelectField({ label, value, options, onChange }: { label: string; value
   return <label className="grid gap-1 text-xs font-semibold text-[var(--color-text-secondary)]"><span>{label}</span><select value={value} onChange={(event) => onChange(event.target.value)} className="min-h-11 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm text-[var(--color-text-primary)] outline-none"><option value="">Any</option>{options.filter((option) => option.value !== "").map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
 }
 
-function Detail({ label, value, icon }: { label: string; value: string; icon?: ReactNode }) {
+function Detail({ label, value, icon }: { label: string; value: string | ReactNode; icon?: ReactNode }) {
   return <div className="rounded-control border border-[var(--color-border)] bg-[var(--color-canvas)] p-3"><div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.04em] text-[var(--color-text-secondary)]">{icon}{label}</div><div className="mt-1 text-sm font-medium text-[var(--color-text-primary)]">{value}</div></div>;
 }
 

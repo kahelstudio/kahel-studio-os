@@ -22,6 +22,9 @@ export type BookingWorkspaceRow = {
   createdAt: string;
   updatedAt: string;
   kind: string;
+  bookingSource: string;
+  createdByUserId: string | null;
+  internalNotes: string | null;
   attendance: string;
   projectReference: string | null;
   projectStatus: string | null;

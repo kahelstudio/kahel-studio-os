@@ -22,6 +22,9 @@ type BookingRow = {
   completed_at: string | null;
   attendance: string;
   kind: string;
+  booking_source: string | null;
+  created_by_user_id: string | null;
+  internal_notes: string | null;
   created_at: string;
   updated_at: string;
   paymongo_payment_method: string | null;
@@ -65,6 +68,9 @@ function asRows(rows: BookingRow[], clients: Map<string, ClientRow>, profileByCl
       createdAt: row.created_at,
       updatedAt: row.updated_at,
       kind: row.kind,
+      bookingSource: row.booking_source ?? "staff",
+      createdByUserId: row.created_by_user_id ?? null,
+      internalNotes: row.internal_notes ?? null,
       attendance: row.attendance,
       projectReference: project?.reference ?? null,
       projectStatus: project?.status ?? null,
@@ -85,7 +91,7 @@ function asRows(rows: BookingRow[], clients: Map<string, ClientRow>, profileByCl
 export async function getBookingsWorkspaceRows() {
   const admin = getSupabaseAdmin();
   const [bookingsResult, clientsResult, profilesResult, projectsResult, invoicesResult] = await Promise.all([
-    admin.from("bookings").select("id,reference,client_id,client_profile_id,service_type,service_id,service_date,service_time,location,status,payment_status,subtotal_amount_php,total_amount_php,paid_amount_php,refunded_amount_php,completed_at,attendance,kind,created_at,updated_at,paymongo_payment_method,paymongo_payment_description,paymongo_paid_at,paymongo_available_at,paymongo_checkout_session_id,paymongo_checkout_url").not("kind", "in", '("test","internal")').order("service_date", { ascending: true }).order("service_time", { ascending: true }).limit(500),
+    admin.from("bookings").select("id,reference,client_id,client_profile_id,service_type,service_id,service_date,service_time,location,status,payment_status,subtotal_amount_php,total_amount_php,paid_amount_php,refunded_amount_php,completed_at,attendance,kind,booking_source,created_by_user_id,internal_notes,created_at,updated_at,paymongo_payment_method,paymongo_payment_description,paymongo_paid_at,paymongo_available_at,paymongo_checkout_session_id,paymongo_checkout_url" as string).not("kind", "in", '("test","internal")').order("service_date", { ascending: true }).order("service_time", { ascending: true }).limit(500),
     admin.from("clients").select("id,name,external_ref,status").order("created_at", { ascending: false }).limit(500),
     admin.from("client_profiles").select("client_id,email,mobile").limit(500),
     admin.from("projects").select("booking_id,reference,status").not("booking_id", "is", null).limit(500),
@@ -93,7 +99,7 @@ export async function getBookingsWorkspaceRows() {
   ]);
 
   if (bookingsResult.error) throw bookingsResult.error;
-  const bookingRows = (bookingsResult.data ?? []) as BookingRow[];
+  const bookingRows = (bookingsResult.data ?? []) as unknown as BookingRow[];
   const clients = new Map<string, ClientRow>((clientsResult.data ?? []).map((item: { id: string; name: string; external_ref: string | null }) => [item.id, { id: item.id, name: item.name, external_ref: item.external_ref ?? null, phone: null, email: null }]));
   for (const profile of (profilesResult.data ?? []) as ProfileRow[]) {
     const entry = clients.get(profile.client_id);

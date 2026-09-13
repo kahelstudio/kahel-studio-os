@@ -17,6 +17,10 @@ const bookingOperations = new Set(["booking", "quotation"]);
 type Body = Record<string, unknown>;
 const text = (body: Body, key: string, max = 500) => typeof body[key] === "string" ? body[key].trim().replace(/\s+/g, " ").slice(0, max) : "";
 const optional = (body: Body, key: string, max = 1000) => text(body, key, max) || null;
+const equipmentSerial = (body: Body) => {
+  const serial = text(body, "serial", 64);
+  return !serial || serial.toUpperCase() === "NA" ? null : serial;
+};
 const amount = (body: Body, key: string) => Number(body[key]);
 const date = (body: Body, key: string) => {
   const value = text(body, key);
@@ -55,6 +59,11 @@ async function createBooking(body: Body, principal: StaffPrincipal) {
   const location = text(body, "location", 255);
   const paymentType = text(body, "paymentType", 32);
   const total = amount(body, "total");
+  const validSources = ["staff", "walk_in", "phone", "messenger", "instagram"] as const;
+  type StaffSource = (typeof validSources)[number];
+  const rawSource = text(body, "bookingSource", 32);
+  const bookingSource: StaffSource = (validSources as readonly string[]).includes(rawSource) ? rawSource as StaffSource : "staff";
+  const internalNotes = optional(body, "internalNotes", 2000);
   if (!phone) return bad("Enter a valid client phone number.");
   if (clientName.length < 2 || !/^\S+@\S+\.\S+$/.test(email)) return bad("Enter the client name and a valid email address.");
   if (!serviceType || !serviceDate || !/^\d{2}:[0-5]\d$/.test(serviceTime) || Number(serviceTime.slice(0, 2)) > 23 || !location || !["cash", "gcash", "maya", "bank_transfer", "card"].includes(paymentType)) return bad("Complete the service date, time, location, and valid payment method.");
@@ -112,7 +121,7 @@ async function createBooking(body: Body, principal: StaffPrincipal) {
   const idempotency = crypto.randomUUID();
   const fingerprintBytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${phone}:${serviceDate}:${serviceTime}:${selectedService.id}:${idempotency}`));
   const fingerprint = [...new Uint8Array(fingerprintBytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-  const booking = await admin.from("bookings").insert({ client_id: profile.client_id, client_profile_id: profile.id, idempotency_key: idempotency, request_fingerprint: fingerprint, reference, service_type: selectedService.name, service_id: selectedService.id, service_date: serviceDate, service_time: serviceTime, location, payment_type: paymentType, currency: "PHP", subtotal_amount_php: subtotalCents, total_amount_php: totalCents, paid_amount_php: 0, refunded_amount_php: 0, status: "inquiry", payment_status: "unpaid", attendance: "expected", kind: "standard" }).select("id,reference").single();
+  const booking = await admin.from("bookings").insert({ client_id: profile.client_id, client_profile_id: profile.id, idempotency_key: idempotency, request_fingerprint: fingerprint, reference, service_type: selectedService.name, service_id: selectedService.id, service_date: serviceDate, service_time: serviceTime, location, payment_type: paymentType, currency: "PHP", subtotal_amount_php: subtotalCents, total_amount_php: totalCents, paid_amount_php: 0, refunded_amount_php: 0, status: "inquiry", payment_status: "unpaid", attendance: "expected", kind: "standard", booking_source: bookingSource, created_by_user_id: principal.userId, internal_notes: internalNotes } as never).select("id,reference").single();
   if (booking.error || !booking.data) {
     await cleanupCreatedClient();
     if (isBookingSlotConflict(booking.error)) {
@@ -191,8 +200,8 @@ export async function POST(request: Request, context: { params: Promise<{ kind: 
       result = await admin.from("maintenance_records").insert({ task: text(body, "task"), asset_label: text(body, "assetLabel", 128), maintenance_type: text(body, "maintenanceType"), assignee: text(body, "assignee", 255), next_due: date(body, "nextDue") || null, estimated_cost: Number.isFinite(amount(body, "estimatedCost")) ? amount(body, "estimatedCost") : null, issue: optional(body, "issue"), status: text(body, "status") === "completed" ? "completed" : "reported" }).select("id").single(); break;
     }
     case "equipment": {
-      if (!text(body, "id_tag") || !text(body, "serial") || !text(body, "name") || !text(body, "category") || !["available", "out", "maint"].includes(text(body, "status"))) return bad("Complete the id tag, serial, name, category, and valid status fields.");
-      result = await admin.from("equipment").insert({ id_tag: text(body, "id_tag", 64), serial: text(body, "serial", 64), name: text(body, "name", 255), category: text(body, "category", 64), status: text(body, "status"), location: optional(body, "location", 255), note: optional(body, "note") }).select("id").single(); break;
+      if (!text(body, "name") || !text(body, "category") || !["available", "out", "maint"].includes(text(body, "status"))) return bad("Complete the name, category, and valid status fields.");
+      result = await admin.from("equipment").insert({ serial: equipmentSerial(body), name: text(body, "name", 255), category: text(body, "category", 64), status: text(body, "status"), location: optional(body, "location", 255), note: optional(body, "note") }).select("id").single(); break;
     }
     case "compliance": {
       if (!["requirement", "category", "agency", "frequency", "responsiblePerson"].every((key) => text(body, key))) return bad("Complete all required compliance fields.");
@@ -249,7 +258,7 @@ export async function POST(request: Request, context: { params: Promise<{ kind: 
     }
     default: return NextResponse.json({ error: "Unsupported create operation." }, { status: 404 });
   }
-  if (result.error || !result.data) return NextResponse.json({ error: result.error?.code === "23505" ? "A record with that unique reference already exists." : "Unable to save this record." }, { status: result.error?.code === "23505" ? 409 : 500 });
+  if (result.error || !result.data) return NextResponse.json({ error: result.error?.code === "23505" ? kind === "equipment" ? "That equipment serial already exists." : "A record with that unique reference already exists." : "Unable to save this record." }, { status: result.error?.code === "23505" ? 409 : 500 });
   await audit(principal, kind, result.data.id);
   return NextResponse.json(result.data, { status: 201 });
 }
@@ -277,11 +286,11 @@ export async function PUT(request: Request, context: { params: Promise<{ kind: s
   if (kind !== "equipment") return NextResponse.json({ error: "Unsupported update operation." }, { status: 404 });
   const body = await request.json().catch(() => null) as Body | null;
   if (!body || Array.isArray(body) || typeof body.id !== "string") return bad("Equipment id is required.");
-  const idTag = text(body, "id_tag", 64), serial = text(body, "serial", 64), name = text(body, "name", 255), category = text(body, "category", 64), status = text(body, "status");
-  if (!idTag || !serial || !name || !category || !["available", "out", "maint"].includes(status)) return bad("Complete the id tag, serial, name, category, and valid status fields.");
-  const { error } = await getSupabaseAdmin().from("equipment").update({ id_tag: idTag, serial, name, category, status, location: optional(body, "location", 255), note: optional(body, "note") }).eq("id", body.id);
+  const serial = equipmentSerial(body), name = text(body, "name", 255), category = text(body, "category", 64), status = text(body, "status");
+  if (!name || !category || !["available", "out", "maint"].includes(status)) return bad("Complete the name, category, and valid status fields.");
+  const { error } = await getSupabaseAdmin().from("equipment").update({ serial, name, category, status, location: optional(body, "location", 255), note: optional(body, "note") }).eq("id", body.id);
   if (error) {
-    if (error.code === "23505") return NextResponse.json({ error: "A record with that id tag or serial already exists." }, { status: 409 });
+    if (error.code === "23505") return NextResponse.json({ error: "That equipment serial already exists." }, { status: 409 });
     return NextResponse.json({ error: "Unable to update this equipment." }, { status: 500 });
   }
   await audit(principal, "equipment", body.id);

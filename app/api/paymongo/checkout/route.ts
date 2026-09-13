@@ -77,7 +77,9 @@ function buildBookingInsert(fields: {
     total_amount_php: fields.totalAmount, payment_status: "pending",
     reservation_hold_id: fields.holdId, reservation_owner_token_hash: fields.holdOwnerTokenHash,
     duration_minutes_snapshot: fields.durationMinutes,
-  };
+    booking_source: "website" as string,
+    created_by_user_id: null as string | null,
+  } as never;
 }
 
 export async function POST(request: Request) {
