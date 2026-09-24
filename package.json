@@ -55,6 +55,7 @@
     "supabase": "^2.115.0",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vite": "^8.2.0",
     "vitest": "^4.1.11",
     "wrangler": "^4.131.1"
   }
