@@ -231,7 +231,9 @@ jobs:
             response="$(curl --fail --silent --show-error --max-time 20 "https://kahel.studio/api/staff/session?deployment_check=$attempt")"
             if jq -e '
               .configured == true and
-              (.configurationChecks | all(. == true))
+              .turnstileRequired == true and
+              .turnstileConfigured == true and
+              .googleConfigured == true
             ' <<< "$response" > /dev/null; then
               exit 0
             fi
@@ -350,7 +352,9 @@ jobs:
             response="$(curl --fail --silent --show-error --max-time 20 "https://kahelstudio.com/api/staff/session?deployment_check=$attempt")"
             if jq -e '
               .configured == true and
-              (.configurationChecks | all(. == true))
+              .turnstileRequired == true and
+              .turnstileConfigured == true and
+              .googleConfigured == true
             ' <<< "$response" > /dev/null; then
               exit 0
             fi
