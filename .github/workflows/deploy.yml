@@ -140,7 +140,7 @@ jobs:
       - run: npx supabase start --ignore-health-check
       - run: npx supabase db reset --local
       - run: npx supabase migration list --local
-      - run: npx supabase db lint --local --fail-on error
+      - run: npx supabase db lint --local --schema public --fail-on error
       - run: npx supabase test db --local
 
   # ── Staging ──────────────────────────────────────────────

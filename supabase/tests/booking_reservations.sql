@@ -14,12 +14,23 @@ insert into public.client_profiles (id, client_id, user_id, email, first_name, l
 values ('52200000-0000-4000-8000-000000000001', '52100000-0000-4000-8000-000000000001',
   '52000000-0000-4000-8000-000000000002', 'reservation-customer@kahel.test', 'Reservation', 'Customer');
 
+insert into public.booking_resources (id, code, name, type)
+values
+  ('52500000-0000-4000-8000-000000000001', 'reservation-test-studio-resource', 'Reservation Test Studio Resource', 'space'),
+  ('52500000-0000-4000-8000-000000000002', 'reservation-test-event-resource', 'Reservation Test Event Resource', 'team');
+insert into public.booking_resource_weekly_hours (resource_id, iso_day_of_week, opens_at, closes_at)
+select '52500000-0000-4000-8000-000000000001'::uuid, day_number, time '08:00', time '17:00'
+from generate_series(1, 6) as days(day_number)
+union all
+select '52500000-0000-4000-8000-000000000002'::uuid, day_number, time '00:00', time '23:59:59.999999'
+from generate_series(1, 7) as days(day_number);
+
 insert into public.services (id, code, name, duration_minutes, prep_buffer_minutes,
   cleanup_buffer_minutes, minimum_notice_minutes, maximum_advance_days, default_resource_id)
 values
-  ('52300000-0000-4000-8000-000000000001', 'reservation-test-studio', 'Reservation Test Studio', 60, 0, 0, 0, 3650, '51000000-0000-4000-8000-000000000001'),
-  ('52300000-0000-4000-8000-000000000002', 'reservation-test-buffered', 'Reservation Test Buffered', 60, 15, 15, 0, 3650, '51000000-0000-4000-8000-000000000001'),
-  ('52300000-0000-4000-8000-000000000003', 'reservation-test-event', 'Reservation Test Event', 60, 0, 0, 0, 3650, '51000000-0000-4000-8000-000000000002');
+  ('52300000-0000-4000-8000-000000000001', 'reservation-test-studio', 'Reservation Test Studio', 60, 0, 0, 0, 3650, '52500000-0000-4000-8000-000000000001'),
+  ('52300000-0000-4000-8000-000000000002', 'reservation-test-buffered', 'Reservation Test Buffered', 60, 15, 15, 0, 3650, '52500000-0000-4000-8000-000000000001'),
+  ('52300000-0000-4000-8000-000000000003', 'reservation-test-event', 'Reservation Test Event', 60, 0, 0, 0, 3650, '52500000-0000-4000-8000-000000000002');
 
 select is((select duration_minutes from public.services where code = 'debut'), 480,
   'Debut is explicitly a full-day event service');
@@ -307,7 +318,7 @@ select throws_ok(format($$insert into public.bookings (
 
 insert into public.booking_resource_blackouts (resource_id, starts_at, ends_at, reason)
 values (
-  '51000000-0000-4000-8000-000000000001',
+  '52500000-0000-4000-8000-000000000001',
   ((select test_date + 21 from reservation_test_times) + time '14:00') at time zone 'Asia/Manila',
   ((select test_date + 21 from reservation_test_times) + time '15:00') at time zone 'Asia/Manila',
   'pgTAP blackout'
@@ -354,7 +365,7 @@ select throws_ok(format($$insert into public.bookings (
 
 select lives_ok($$select public.reschedule_booking(
   'RES-SOURCE', (select test_date + 1 from reservation_test_times), time '14:00',
-  '51000000-0000-4000-8000-000000000001', '52000000-0000-4000-8000-000000000001',
+  '52500000-0000-4000-8000-000000000001', '52000000-0000-4000-8000-000000000001',
   'Client requested a later slot'
 )$$, 'service role reschedules through the canonical booking trigger');
 select ok((select service_time = time '14:00' from public.bookings where reference = 'RES-SOURCE'),

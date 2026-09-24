@@ -8,7 +8,7 @@ import { useToast } from "@/components/toast/toast-provider";
 export type EquipmentValues = {
   id: string;
   idTag: string;
-  serial: string;
+  serial: string | null;
   name: string;
   category: string;
   status: string;
@@ -21,6 +21,7 @@ const STATUSES = ["available", "out", "maint"];
 export function EquipmentRowActions({ values, label }: { values: EquipmentValues; label: string }) {
   const router = useRouter();
   const { fireToast } = useToast();
+  const idHelp = `equipment-id-help-${values.id}`;
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -125,11 +126,12 @@ export function EquipmentRowActions({ values, label }: { values: EquipmentValues
           <h2 className="font-display text-lg font-semibold">Edit equipment</h2>
           <label className="grid gap-1.5 text-sm font-semibold">
             <span>ID tag</span>
-            <input name="id_tag" defaultValue={values.idTag} required maxLength={64} className="min-h-11 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 font-normal" />
+            <input value={values.idTag} readOnly aria-describedby={idHelp} className="min-h-11 rounded-control border border-[var(--color-border)] bg-[var(--color-surface-muted)] px-3 font-normal" />
+            <span id={idHelp} className="text-xs font-normal text-[var(--color-text-secondary)]">Assigned automatically</span>
           </label>
           <label className="grid gap-1.5 text-sm font-semibold">
-            <span>Equipment serial</span>
-            <input name="serial" defaultValue={values.serial} required maxLength={64} className="min-h-11 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 font-normal" />
+            <span>Equipment serial <span className="font-normal text-[var(--color-text-secondary)]">(optional)</span></span>
+            <input name="serial" defaultValue={values.serial ?? ""} placeholder="NA if unavailable" maxLength={64} className="min-h-11 rounded-control border border-[var(--color-border)] bg-[var(--color-surface)] px-3 font-normal" />
           </label>
           <label className="grid gap-1.5 text-sm font-semibold">
             <span>Equipment name</span>

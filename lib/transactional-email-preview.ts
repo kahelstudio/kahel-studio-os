@@ -55,7 +55,6 @@ export function generateTransactionalPreviewHtml(template: TransactionalEmailTem
         </td></tr>
         <tr><td style="padding:24px 48px 36px;border-top:1px solid #E4E2DC;">
           <p style="margin:0;font-size:12px;line-height:1.6;color:#A8A69E;">&copy; 2026 Kahel Studio. All rights reserved.</p>
-          <p style="margin:4px 0 0;font-size:12px;color:#A8A69E;">This is not an official receipt.</p>
         </td></tr>
       </table>
     </td></tr>
@@ -79,6 +78,6 @@ export function generateTransactionalPlainText(template: TransactionalEmailTempl
   if (fields.length > 0) {
     lines.push("", "---", "Template variables: " + fields.map((f) => `{{ ${f} }}`).join(", "));
   }
-  lines.push("", "---", "© 2026 Kahel Studio. All rights reserved.", "This is not an official receipt.");
+  lines.push("", "---", "© 2026 Kahel Studio. All rights reserved.");
   return lines.join("\n");
 }

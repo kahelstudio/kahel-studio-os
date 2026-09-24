@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { bookingCounts, bookingSummary, filteredBookings, formatManilaTime, getBookingActionLabel, normalizeLifecycle, paymentLabel, type BookingWorkspaceRow } from "@/lib/bookings-workspace";
 
 const rows: BookingWorkspaceRow[] = [
@@ -42,10 +42,16 @@ describe("bookings workspace", () => {
   });
 
   it("summarizes operational response and payment pressure", () => {
-    const summary = bookingSummary(rows);
-    expect(summary.needsResponse.count).toBeGreaterThan(0);
-    expect(summary.awaitingPayment.count).toBeGreaterThan(0);
-    expect(summary.awaitingPayment.upcoming).toBe(true);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-18T00:00:00+08:00"));
+    try {
+      const summary = bookingSummary(rows);
+      expect(summary.needsResponse.count).toBeGreaterThan(0);
+      expect(summary.awaitingPayment.count).toBeGreaterThan(0);
+      expect(summary.awaitingPayment.upcoming).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("keeps filtered summary counts aligned with visible rows", () => {

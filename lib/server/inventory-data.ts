@@ -4,7 +4,7 @@ import { getSupabaseAdmin } from "./supabase-admin";
 export type EquipmentRow = {
   id: string;
   idTag: string;
-  serial: string;
+  serial: string | null;
   name: string;
   category: string;
   status: string;
@@ -34,7 +34,7 @@ export async function getEquipment(): Promise<EquipmentRow[]> {
     const { data: equipment, error } = await admin
       .from("equipment")
       .select("id, id_tag, serial, name, category, status, note, location")
-      .order("name", { ascending: true });
+      .order("id_tag", { ascending: true });
 
     if (error) throw error;
 
@@ -102,7 +102,7 @@ export async function getCheckouts(): Promise<CheckoutRow[]> {
     return (data ?? []).map((c: any) => ({
       id: c.id,
       equipmentId: c.equipment_id,
-      equipmentSerial: c.equipment?.serial ?? "",
+      equipmentSerial: c.equipment?.serial ?? "NA",
       equipmentName: c.equipment?.name ?? "",
       purpose: c.purpose,
       checkedOutAt: c.checked_out_at,

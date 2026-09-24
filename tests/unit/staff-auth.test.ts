@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { authenticationDisabled, staffEmailAuthorized } from "@/lib/server/staff-auth";
+import { authenticationDisabled, staffEmailAuthorized, staffRoleForEmail } from "@/lib/server/staff-auth";
 import { POST as changePassword } from "@/app/api/staff/password-reset/route";
 
 describe("staff email authorization", () => {
@@ -22,6 +22,17 @@ describe("staff email authorization", () => {
 
   it("rejects unrelated domains", () => {
     expect(staffEmailAuthorized("person@example.com")).toBe(false);
+  });
+
+  it("assigns Joanne the admin role", () => {
+    expect(staffRoleForEmail("joanne.kahelstudio@gmail.com", ["owner@example.com", "operations@example.com"])).toBe("admin");
+  });
+
+  it("preserves configured owner and admin role assignment", () => {
+    const emails = ["owner@example.com", "operations@example.com", "staff@example.com"];
+    expect(staffRoleForEmail("owner@example.com", emails)).toBe("super_admin");
+    expect(staffRoleForEmail("operations@example.com", emails)).toBe("admin");
+    expect(staffRoleForEmail("staff@example.com", emails)).toBe("staff");
   });
 
   it("never disables authentication in production", () => {

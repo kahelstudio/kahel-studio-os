@@ -274,7 +274,6 @@ export default function LoginPage() {
                 <button type="button" onClick={continueWithGoogle} className="flex h-13 w-full items-center justify-center gap-3 rounded-[10px] border border-[#d8d4cf] bg-[#faf9f7] font-display text-sm font-semibold transition hover:border-[#aaa49e] hover:bg-white focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-[#e5e1dd]"><GoogleMark />Continue with Google</button>
               </div></>
             )}
-            <p className="mt-8 text-center text-xs leading-5 text-[#8a847e]">Need staff access? Contact your Kahel Studio administrator.</p>
           </div>
         </div>
       </section>

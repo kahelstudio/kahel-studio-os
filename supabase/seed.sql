@@ -39,12 +39,12 @@ insert into public.bookings (
   subtotal_amount_php, total_amount_php, paid_amount_php, status, payment_status,
   completed_at, attendance, created_at
 ) values
-  ('d2000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', 'd1000000-0000-4000-8000-000000000001', 'demo-booking-001', repeat('1', 64), 'DEMO-BKG-001', 'Solo', (select id from public.services where code = 'solo-session'), current_date + 40, '09:00', 'Kahel Studio, Quezon City', 'deposit', 650000, 650000, 325000, 'confirmed', 'partially_paid', null, 'expected', now() - interval '12 days'),
-  ('d2000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000002', 'd1000000-0000-4000-8000-000000000003', 'demo-booking-002', repeat('2', 64), 'DEMO-BKG-002', 'Group', (select id from public.services where code = 'group-session'), current_date + 40, '14:30', 'Northstar Flagship, Makati', 'full', 1800000, 1800000, 1800000, 'confirmed', 'paid', null, 'expected', now() - interval '20 days'),
-  ('d2000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000003', 'd1000000-0000-4000-8000-000000000004', 'demo-booking-003', repeat('3', 64), 'DEMO-BKG-003', 'Theme', (select id from public.services where code = 'theme-session'), current_date + 5, '11:00', 'Kahel Studio, Quezon City', 'deposit', 950000, 950000, 475000, 'quoted', 'partially_paid', null, 'expected', now() - interval '3 days'),
+  ('d2000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', 'd1000000-0000-4000-8000-000000000001', 'demo-booking-001', repeat('1', 64), 'DEMO-BKG-001', 'Solo', (select id from public.services where code = 'solo-session'), current_date + 14 + ((8 - extract(isodow from current_date)::integer) % 7), '09:00', 'Kahel Studio, Quezon City', 'deposit', 650000, 650000, 325000, 'confirmed', 'partially_paid', null, 'expected', now() - interval '12 days'),
+  ('d2000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000002', 'd1000000-0000-4000-8000-000000000003', 'demo-booking-002', repeat('2', 64), 'DEMO-BKG-002', 'Group', (select id from public.services where code = 'group-session'), current_date + 14 + ((8 - extract(isodow from current_date)::integer) % 7), '14:30', 'Northstar Flagship, Makati', 'full', 1800000, 1800000, 1800000, 'confirmed', 'paid', null, 'expected', now() - interval '20 days'),
+  ('d2000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000003', 'd1000000-0000-4000-8000-000000000004', 'demo-booking-003', repeat('3', 64), 'DEMO-BKG-003', 'Theme', (select id from public.services where code = 'theme-session'), current_date + 7 + ((9 - extract(isodow from current_date)::integer) % 7), '11:00', 'Kahel Studio, Quezon City', 'deposit', 950000, 950000, 475000, 'quoted', 'partially_paid', null, 'expected', now() - interval '3 days'),
   ('d2000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000001', 'd1000000-0000-4000-8000-000000000001', 'demo-booking-004', repeat('4', 64), 'DEMO-BKG-004', 'Anniversary Celebration', (select id from public.services where code = 'anniversary-celebration'), current_date - 16, '16:00', 'The Glass Garden, Pasig', 'full', 2850000, 2850000, 2850000, 'completed', 'paid', (current_date - 16)::timestamp + time '19:00', 'attended', now() - interval '40 days'),
-  ('d2000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000002', 'd1000000-0000-4000-8000-000000000003', 'demo-booking-005', repeat('5', 64), 'DEMO-BKG-005', 'Express', (select id from public.services where code = 'express-session'), current_date + 40, '10:00', 'Kahel Studio, Quezon City', 'full', 450000, 450000, 0, 'progress', 'unpaid', null, 'expected', now() - interval '8 days'),
-  ('d2000000-0000-4000-8000-000000000006', 'd0000000-0000-4000-8000-000000000003', 'd1000000-0000-4000-8000-000000000004', 'demo-booking-006', repeat('6', 64), 'DEMO-BKG-006', 'Birthday', (select id from public.services where code = 'birthday'), current_date + 21, '15:00', 'Blue Leaf Cosmopolitan, Quezon City', 'deposit', 2200000, 2200000, 0, 'inquiry', 'unpaid', null, 'expected', now() - interval '1 day')
+  ('d2000000-0000-4000-8000-000000000005', 'd0000000-0000-4000-8000-000000000002', 'd1000000-0000-4000-8000-000000000003', 'demo-booking-005', repeat('5', 64), 'DEMO-BKG-005', 'Express', (select id from public.services where code = 'express-session'), current_date + 14 + ((10 - extract(isodow from current_date)::integer) % 7), '10:00', 'Kahel Studio, Quezon City', 'full', 450000, 450000, 0, 'progress', 'unpaid', null, 'expected', now() - interval '8 days'),
+  ('d2000000-0000-4000-8000-000000000006', 'd0000000-0000-4000-8000-000000000003', 'd1000000-0000-4000-8000-000000000004', 'demo-booking-006', repeat('6', 64), 'DEMO-BKG-006', 'Birthday', (select id from public.services where code = 'birthday'), current_date + 21 + ((13 - extract(isodow from current_date)::integer) % 7), '15:00', 'Blue Leaf Cosmopolitan, Quezon City', 'deposit', 2200000, 2200000, 0, 'inquiry', 'unpaid', null, 'expected', now() - interval '1 day')
 on conflict (id) do update set
   service_date = excluded.service_date, service_time = excluded.service_time, location = excluded.location,
   subtotal_amount_php = excluded.subtotal_amount_php, total_amount_php = excluded.total_amount_php,
@@ -53,10 +53,10 @@ on conflict (id) do update set
   attendance = excluded.attendance, updated_at = now();
 
 insert into public.projects (id, client_id, booking_id, reference, title, description, status, starts_at, completed_at, created_at) values
-  ('d3000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', 'd2000000-0000-4000-8000-000000000001', 'DEMO-PRJ-001', 'Santos family portraits', 'Warm studio portraits with two wardrobe sets.', 'active', (current_date + 40)::timestamp + time '09:00', null, now() - interval '12 days'),
-  ('d3000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000002', 'd2000000-0000-4000-8000-000000000002', 'DEMO-PRJ-002', 'Northstar seasonal campaign', 'Product and team imagery for the rainy-season menu.', 'active', (current_date + 40)::timestamp + time '14:30', null, now() - interval '20 days'),
+  ('d3000000-0000-4000-8000-000000000001', 'd0000000-0000-4000-8000-000000000001', 'd2000000-0000-4000-8000-000000000001', 'DEMO-PRJ-001', 'Santos family portraits', 'Warm studio portraits with two wardrobe sets.', 'active', (current_date + 14 + ((8 - extract(isodow from current_date)::integer) % 7))::timestamp + time '09:00', null, now() - interval '12 days'),
+  ('d3000000-0000-4000-8000-000000000002', 'd0000000-0000-4000-8000-000000000002', 'd2000000-0000-4000-8000-000000000002', 'DEMO-PRJ-002', 'Northstar seasonal campaign', 'Product and team imagery for the rainy-season menu.', 'active', (current_date + 14 + ((8 - extract(isodow from current_date)::integer) % 7))::timestamp + time '14:30', null, now() - interval '20 days'),
   ('d3000000-0000-4000-8000-000000000003', 'd0000000-0000-4000-8000-000000000001', 'd2000000-0000-4000-8000-000000000004', 'DEMO-PRJ-003', 'Santos anniversary story', 'Event coverage and a 30-page keepsake album.', 'completed', (current_date - 16)::timestamp + time '16:00', (current_date - 10)::timestamp, now() - interval '40 days'),
-  ('d3000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000003', 'd2000000-0000-4000-8000-000000000003', 'DEMO-PRJ-004', 'Arielle editorial portraits', 'Concept development and mood-board review.', 'planned', (current_date + 5)::timestamp + time '11:00', null, now() - interval '3 days')
+  ('d3000000-0000-4000-8000-000000000004', 'd0000000-0000-4000-8000-000000000003', 'd2000000-0000-4000-8000-000000000003', 'DEMO-PRJ-004', 'Arielle editorial portraits', 'Concept development and mood-board review.', 'planned', (current_date + 7 + ((9 - extract(isodow from current_date)::integer) % 7))::timestamp + time '11:00', null, now() - interval '3 days')
 on conflict (id) do update set
   title = excluded.title, description = excluded.description, status = excluded.status,
   starts_at = excluded.starts_at, completed_at = excluded.completed_at, updated_at = now();
@@ -171,10 +171,10 @@ insert into public.pos_sale_items (id, sale_id, product_id, description, unit_pr
 on conflict (id) do update set quantity = excluded.quantity, total_price = excluded.total_price;
 
 insert into public.equipment (id, id_tag, serial, name, category, status, note, location) values
-  ('d7000000-0000-4000-8000-000000000001', 'DEMO-CAM-001', 'DEMO-CAM-001', 'Canon EOS R5', 'Camera', 'out', 'Primary event body', 'Checked out'),
-  ('d7000000-0000-4000-8000-000000000002', 'DEMO-LNS-001', 'DEMO-LNS-001', 'RF 24-70mm f/2.8L', 'Lens', 'available', 'Recently calibrated', 'Equipment cabinet A'),
-  ('d7000000-0000-4000-8000-000000000003', 'DEMO-LGT-001', 'DEMO-LGT-001', 'Profoto B10X Plus', 'Lighting', 'maint', 'Battery inspection due', 'Repair shelf'),
-  ('d7000000-0000-4000-8000-000000000004', 'DEMO-AUD-001', 'DEMO-AUD-001', 'Rode Wireless PRO', 'Audio', 'available', null, 'Equipment cabinet B')
+  ('d7000000-0000-4000-8000-000000000001', 'KAHL-001', 'CN-R5-001', 'Canon EOS R5', 'Camera', 'out', 'Primary event body', 'Checked out'),
+  ('d7000000-0000-4000-8000-000000000002', 'KAHL-002', 'RF2470-001', 'RF 24-70mm f/2.8L', 'Lens', 'available', 'Recently calibrated', 'Equipment cabinet A'),
+  ('d7000000-0000-4000-8000-000000000003', 'KAHL-003', 'B10X-001', 'Profoto B10X Plus', 'Lighting', 'maint', 'Battery inspection due', 'Repair shelf'),
+  ('d7000000-0000-4000-8000-000000000004', 'KAHL-004', null, 'Rode Wireless PRO', 'Audio', 'available', null, 'Equipment cabinet B')
 on conflict (id) do update set id_tag = excluded.id_tag, serial = excluded.serial, status = excluded.status, note = excluded.note, location = excluded.location, updated_at = now();
 
 insert into public.equipment_checkouts (id, equipment_id, purpose, checked_out_at, expected_return_at) values
@@ -182,8 +182,8 @@ insert into public.equipment_checkouts (id, equipment_id, purpose, checked_out_a
 on conflict (id) do update set purpose = excluded.purpose, checked_out_at = excluded.checked_out_at, expected_return_at = excluded.expected_return_at;
 
 insert into public.maintenance_records (id, task, asset_label, maintenance_type, issue, assignee, next_due, recurrence, estimated_cost, warranty, status) values
-  ('d7200000-0000-4000-8000-000000000001', 'Inspect battery contacts and run full discharge test', 'DEMO-LGT-001', 'Inspection', 'Battery reports inconsistent charge level', 'Paolo Cruz', current_date + 2, 'Quarterly', 1800, 'Covered through Dec 2026', 'scheduled'),
-  ('d7200000-0000-4000-8000-000000000002', 'Clean camera sensors and verify autofocus', 'DEMO-CAM-001', 'Cleaning', null, 'Inez Flores', current_date + 30, 'Monthly', 1200, null, 'reported')
+  ('d7200000-0000-4000-8000-000000000001', 'Inspect battery contacts and run full discharge test', 'KAHL-003', 'Inspection', 'Battery reports inconsistent charge level', 'Paolo Cruz', current_date + 2, 'Quarterly', 1800, 'Covered through Dec 2026', 'scheduled'),
+  ('d7200000-0000-4000-8000-000000000002', 'Clean camera sensors and verify autofocus', 'KAHL-001', 'Cleaning', null, 'Inez Flores', current_date + 30, 'Monthly', 1200, null, 'reported')
 on conflict (id) do update set next_due = excluded.next_due, estimated_cost = excluded.estimated_cost, status = excluded.status, updated_at = now();
 
 insert into public.marketing_campaigns (id, name, channel, spend, bookings_attributed, status, starts_at, ends_at) values

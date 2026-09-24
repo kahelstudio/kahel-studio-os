@@ -10,6 +10,7 @@ const COOKIE_NAME = "kahel_staff_access_token";
 const REFRESH_COOKIE_NAME = "kahel_staff_refresh_token";
 
 const REMEMBER_ME_MAX_AGE = 60 * 60 * 24 * 30;
+const ADMIN_STAFF_EMAILS = new Set(["joanne.kahelstudio@gmail.com"]);
 
 export const IS_PRODUCTION = (process.env.APP_ENV as string) === "production" || process.env.NODE_ENV === "production";
 
@@ -57,6 +58,14 @@ function isStaffEmail(email: string | undefined, settings: AuthConfig) {
   return isAllowedStaffEmail(normalized);
 }
 
+export function staffRoleForEmail(email: string, configuredEmails: Iterable<string>): StaffPrincipal["role"] {
+  const normalizedEmail = email.trim().toLowerCase();
+  const emails = [...configuredEmails].map((item) => item.trim().toLowerCase());
+  if (normalizedEmail === emails[0]) return "super_admin";
+  if (normalizedEmail === emails[1] || ADMIN_STAFF_EMAILS.has(normalizedEmail)) return "admin";
+  return "staff";
+}
+
 export function staffEmailAuthorized(email: string | undefined) {
   const settings = config();
   return Boolean(settings && isStaffEmail(email, settings));
@@ -96,12 +105,7 @@ export async function getStaffPrincipal(request: Request): Promise<StaffPrincipa
   if (profileError) return null;
   if (!profile) {
     const configuredEmails = [...settings.emails];
-    const firstConfiguredEmail = configuredEmails[0];
-    const secondConfiguredEmail = configuredEmails[1];
-    const normalizedEmail = user.email.trim().toLowerCase();
-    const role = normalizedEmail === firstConfiguredEmail ? "super_admin" as const
-      : normalizedEmail === secondConfiguredEmail ? "admin" as const
-      : "staff" as const;
+    const role = staffRoleForEmail(user.email, configuredEmails);
     const hasAllPermissions = role !== "staff";
     const created = await admin.from("staff_profiles").insert({
       user_id: user.id,
@@ -118,11 +122,12 @@ export async function getStaffPrincipal(request: Request): Promise<StaffPrincipa
     profileError = created.error;
   }
   if (profileError || !profile?.active) return null;
-  const configuredEmails = [...settings.emails];
-  const normalizedEmail = user.email.trim().toLowerCase();
-  if (profile.role === "staff" && normalizedEmail === configuredEmails[1]) {
+  const configuredRole = staffRoleForEmail(user.email, settings.emails);
+  const shouldUpgrade = configuredRole === "super_admin" && profile.role !== "super_admin"
+    || configuredRole === "admin" && profile.role === "staff";
+  if (shouldUpgrade) {
     const { data: upgraded, error: upgradeError } = await admin.from("staff_profiles").update({
-      role: "admin",
+      role: configuredRole,
       can_manage_bookings: true,
       can_manage_loyalty: true,
       can_manage_rewards: true,

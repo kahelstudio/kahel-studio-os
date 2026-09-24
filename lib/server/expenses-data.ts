@@ -145,7 +145,7 @@ export async function getExpenseWorkspace(principal: StaffPrincipal): Promise<Ex
     categories: (categoriesResult.data ?? []).map((category) => ({ id: category.id, name: category.name, requiresProject: category.requires_project, receiptThreshold: category.receipt_threshold_centavos })),
     paymentSources: (sourcesResult.data ?? []).map((source) => ({ id: source.id, name: source.name, method: source.method, sourceType: source.source_type })),
     projects: (projectsResult.data ?? []).map((project) => ({ id: project.id, reference: project.reference, title: project.title, bookingId: project.booking_id })),
-    equipment: principal.role === "staff" ? [] : (equipmentResult.data ?? []).map((item) => ({ id: item.id, label: `${item.serial} · ${item.name}` })),
+    equipment: principal.role === "staff" ? [] : (equipmentResult.data ?? []).map((item) => ({ id: item.id, label: `${item.serial ?? "NA"} · ${item.name}` })),
     maintenance: principal.role === "staff" ? [] : (maintenanceResult.data ?? []).map((item) => ({ id: item.id, label: `${item.asset_label} · ${item.task}` })),
     staff: (staffResult.data ?? []).filter((person) => principal.role !== "staff" || person.user_id === principal.userId).map((person) => ({ id: person.user_id, name: person.display_name, role: person.role })),
     recurring: principal.role === "staff" ? [] : (recurringResult.data ?? []).map((template) => ({ id: template.id, vendor: template.vendor_name_snapshot, amount: template.expected_amount_centavos, frequency: template.frequency, nextDue: template.next_due_date, state: template.state })),
