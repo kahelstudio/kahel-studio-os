@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { mkdirSync, writeFileSync } from "node:fs";
-import { at, bookingState, concurrently, db, ensureFixtures, freshDay, isConflictError, overlappingActivePairs, record, report, reschedule, rpc, setStatus, staffBooking } from "./harness";
+import { at, bookingState, lit, pg, concurrently, ensureFixtures, freshDay, isConflictError, overlappingActivePairs, record, report, reschedule, rpc, setStatus, staffBooking } from "./harness";
 
 describe("Phase 4A — rescheduling and cancellation/release concurrency", () => {
   afterAll(() => {
@@ -72,7 +72,7 @@ describe("Phase 4A — rescheduling and cancellation/release concurrency", () =>
     const b = await staffBooking(f.services.m60, day, "16:00");
     const c1 = await setStatus(b.data!.reference, "cancelled"); const c2 = await setStatus(b.data!.reference, "cancelled");
     const s = await bookingState(b.data!.id);
-    const events = await db().from("booking_reservation_events").select("event_type").eq("booking_id", b.data!.id);
+    const events = { data: pg<{ event_type: string }>(`select event_type from public.booking_reservation_events where booking_id = ${lit(b.data!.id)} order by id`) };
     record("double cancel", { first: c1.error?.code ?? "ok", second: c2.error?.code ?? "ok", state: s, reservationEvents: events.data?.map((e) => (e as { event_type: string }).event_type) });
     expect(s.reservation?.status).toBe("released");
   });

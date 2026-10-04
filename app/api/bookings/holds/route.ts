@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resolveBookableService, sha256 } from "@/lib/server/booking-availability";
+import { parseResourceSelections, resolveBookableService, sha256 } from "@/lib/server/booking-availability";
 import { bookingConflictMessage, isBookingSlotConflict } from "@/lib/server/booking-slots";
 import { auditCustomerEvent, consumeCustomerRateLimit, hasTrustedOrigin } from "@/lib/server/customer-auth";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
@@ -13,6 +13,7 @@ type HoldRequest = {
   idempotencyKey?: unknown;
   resourceId?: unknown;
   durationMinutes?: unknown;
+  resourceSelections?: unknown;
 };
 
 export async function POST(request: Request) {
@@ -27,6 +28,8 @@ export async function POST(request: Request) {
       (input.resourceId != null && (typeof input.resourceId !== "string" || !/^[0-9a-f-]{36}$/i.test(input.resourceId)))) {
     return NextResponse.json({ error: "Invalid hold request." }, { status: 400 });
   }
+  const selections = parseResourceSelections(input.resourceSelections);
+  if (selections === "invalid") return NextResponse.json({ error: "Invalid hold request." }, { status: 400 });
   try {
     if (!await consumeCustomerRateLimit(request, "booking_hold", input.ownerKey, 12, "1 hour")) {
       await auditCustomerEvent({ action: "booking_hold_rate_limited", actorType: "system", entityType: "booking_reservation" });
@@ -35,8 +38,23 @@ export async function POST(request: Request) {
     const service = await resolveBookableService(input.service);
     if (!service) return NextResponse.json({ error: "This service is unavailable." }, { status: 404 });
     const ownerTokenHash = await sha256(input.ownerKey);
-    const fingerprint = await sha256(JSON.stringify({ serviceId: service.id, startsAt: input.startsAt, resourceId: input.resourceId ?? null, durationMinutes: input.durationMinutes ?? null, ownerTokenHash }));
-    const result = await getSupabaseAdmin().rpc("acquire_booking_hold", {
+    const fingerprint = await sha256(JSON.stringify({ serviceId: service.id, startsAt: input.startsAt, resourceId: input.resourceId ?? null, durationMinutes: input.durationMinutes ?? null, ownerTokenHash, ...(selections ? { selections } : {}) }));
+    const admin = getSupabaseAdmin();
+    // Multi-resource selections (e.g. a chosen photographer) go through the resource-aware RPC; every other hold keeps
+    // the original RPC call unchanged.
+    const result = selections
+      ? await (admin.rpc.bind(admin) as unknown as (name: string, args: Record<string, unknown>) => ReturnType<typeof admin.rpc>)("acquire_booking_hold_with_resources", {
+        requested_service_id: service.id,
+        requested_starts_at: input.startsAt,
+        requested_idempotency_key: input.idempotencyKey,
+        requested_fingerprint: fingerprint,
+        requested_owner_token_hash: ownerTokenHash,
+        requested_resource_id: input.resourceId ?? null,
+        requested_hold_minutes: null,
+        requested_duration_minutes: input.durationMinutes == null ? null : Number(input.durationMinutes),
+        requested_resource_selections: selections,
+      })
+      : await admin.rpc("acquire_booking_hold", {
       requested_service_id: service.id,
       requested_starts_at: input.startsAt,
       requested_idempotency_key: input.idempotencyKey,
@@ -47,7 +65,7 @@ export async function POST(request: Request) {
       requested_duration_minutes: input.durationMinutes == null ? null : Number(input.durationMinutes),
     });
     if (result.error) throw result.error;
-    const hold = result.data as unknown as { reservation_id: string; status: string; starts_at: string; ends_at: string; expires_at: string; server_time: string; idempotent_replay: boolean };
+    const hold = result.data as unknown as { reservation_id: string; status: string; starts_at: string; ends_at: string; expires_at: string; server_time: string; idempotent_replay: boolean; assignments?: Array<{ position: number; resource_id: string }> };
     if (hold.status !== "held" || Date.parse(hold.expires_at) <= Date.parse(hold.server_time)) {
       return NextResponse.json({ error: "This reservation hold expired. Choose the time again.", conflict: true }, { status: 409 });
     }
@@ -60,11 +78,15 @@ export async function POST(request: Request) {
       expiresAt: hold.expires_at,
       serverTime: hold.server_time,
       idempotentReplay: hold.idempotent_replay,
+      ...(selections ? { assignments: hold.assignments ?? [] } : {}),
     }, { status: hold.idempotent_replay ? 200 : 201, headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (isBookingSlotConflict(error)) {
       await auditCustomerEvent({ action: "booking_conflict_rejected", actorType: "system", entityType: "booking_reservation" });
       return NextResponse.json({ error: bookingConflictMessage(), conflict: true }, { status: 409 });
+    }
+    if ((error as { code?: string; message?: string })?.code === "22023" && /resource selection|resource selections/.test((error as { message?: string }).message ?? "")) {
+      return NextResponse.json({ error: "That staff member or resource can't be selected for this service." }, { status: 400 });
     }
     console.error("Booking hold failed:", error);
     return NextResponse.json({ error: "Unable to reserve this time. Refresh availability and try again." }, { status: 503 });

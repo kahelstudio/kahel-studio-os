@@ -9,6 +9,18 @@ export type BookingAvailabilitySlot = {
   endsAt: string;
   time: string;
   available: boolean;
+  /** Customer-selectable resources that are free at this time, per requirement position (multi-resource services). */
+  options?: Array<{ position: number; resources: Array<{ id: string; name: string }> }>;
+};
+
+/** A resource requirement of a multi-resource service (empty for legacy single-resource services). */
+export type BookingRequirement = {
+  position: number;
+  mode: "fixed" | "any_available";
+  type: string;
+  typeName: string;
+  customerSelectable: boolean;
+  resource: { id: string; name: string } | null;
 };
 
 export type BookingAvailability = {
@@ -21,6 +33,7 @@ export type BookingAvailability = {
   cleanupBufferMinutes: number;
   serverTime: string;
   refreshAfterSeconds: number;
+  requirements: BookingRequirement[];
   slots: BookingAvailabilitySlot[];
 };
 
@@ -34,8 +47,24 @@ type AvailabilityRpc = {
   cleanup_buffer_minutes: number;
   server_time: string;
   refresh_after_seconds: number;
-  slots: Array<{ starts_at: string; ends_at: string; available: boolean }>;
+  requirements?: Array<{ position: number; mode: "fixed" | "any_available"; type: string; type_name: string; customer_selectable: boolean; resource: { id: string; name: string } | null }>;
+  slots: Array<{ starts_at: string; ends_at: string; available: boolean; options?: Array<{ position: number; resources: Array<{ id: string; name: string }> }> | null }>;
 };
+
+/** `{ "<requirement position>": "<resource id>" }` as sent by the booking form. */
+export type ResourceSelections = Record<string, string>;
+export function parseResourceSelections(value: unknown): ResourceSelections | null | "invalid" {
+  if (value == null) return null;
+  if (typeof value !== "object" || Array.isArray(value)) return "invalid";
+  const entries = Object.entries(value as Record<string, unknown>);
+  if (entries.length > 20) return "invalid";
+  const result: ResourceSelections = {};
+  for (const [position, id] of entries) {
+    if (!/^(?:[1-9]|1\d|20)$/.test(position) || typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)) return "invalid";
+    result[position] = id;
+  }
+  return Object.keys(result).length ? result : null;
+}
 
 export async function resolveBookableService(service: string) {
   const admin = getSupabaseAdmin();
@@ -55,16 +84,16 @@ export async function resolveBookableService(service: string) {
   return byName.data;
 }
 
-export async function getBookingAvailability(serviceId: string, date: string, resourceId?: string | null, durationMinutes?: number | null): Promise<BookingAvailability> {
+export async function getBookingAvailability(serviceId: string, date: string, resourceId?: string | null, durationMinutes?: number | null, selections?: ResourceSelections | null): Promise<BookingAvailability> {
   const admin = getSupabaseAdmin();
   const expired = await admin.rpc("expire_booking_holds", { requested_limit: 500 });
   if (expired.error) throw expired.error;
-  const result = await admin.rpc("get_booking_availability", {
-    requested_service_id: serviceId,
-    requested_date: date,
-    requested_resource_id: resourceId ?? null,
-    requested_duration_minutes: durationMinutes ?? null,
-  });
+  // Explicit resource override keeps the legacy single-resource RPC; otherwise the service-level RPC answers
+  // "is the SERVICE bookable" (it delegates to the legacy RPC for services without resource requirements).
+  const rpc = admin.rpc.bind(admin) as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+  const result = resourceId
+    ? await rpc("get_booking_availability", { requested_service_id: serviceId, requested_date: date, requested_resource_id: resourceId, requested_duration_minutes: durationMinutes ?? null })
+    : await rpc("get_public_service_availability", { requested_service_id: serviceId, requested_date: date, requested_duration_minutes: durationMinutes ?? null, requested_selections: selections ?? null });
   if (result.error) throw result.error;
   const data = result.data as unknown as AvailabilityRpc;
   const timeFormatter = new Intl.DateTimeFormat("en-CA", {
@@ -83,11 +112,20 @@ export async function getBookingAvailability(serviceId: string, date: string, re
     cleanupBufferMinutes: data.cleanup_buffer_minutes,
     serverTime: data.server_time,
     refreshAfterSeconds: data.refresh_after_seconds,
+    requirements: (data.requirements ?? []).map((requirement) => ({
+      position: requirement.position,
+      mode: requirement.mode,
+      type: requirement.type,
+      typeName: requirement.type_name,
+      customerSelectable: requirement.customer_selectable,
+      resource: requirement.resource,
+    })),
     slots: data.slots.map((slot) => ({
       startsAt: slot.starts_at,
       endsAt: slot.ends_at,
       time: timeFormatter.format(new Date(slot.starts_at)),
       available: slot.available,
+      ...(slot.options && slot.options.length ? { options: slot.options } : {}),
     })),
   };
 }

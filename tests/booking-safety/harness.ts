@@ -1,6 +1,7 @@
 // Phase 4 booking-safety harness (local only). Exercises the REAL route handlers and RPCs against the local
 // Supabase database, in parallel, and always inspects the database afterwards instead of trusting responses.
 import { createHash, createHmac, randomUUID } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
 
 export const PREFIX = "SAFETY-TEST-";
@@ -42,6 +43,20 @@ export async function rpc<T = any>(name: string, args: Record<string, unknown>):
   return client.rpc(name, args);
 }
 
+/** Direct SQL as the local postgres superuser (docker exec psql). Used ONLY for test setup and for inspecting tables
+ *  the application deliberately cannot touch (booking_* reservation tables, webhook inbox): keeps their RPC-only grants. */
+const DB_CONTAINER = process.env.BOOKING_SAFETY_DB_CONTAINER ?? "supabase_db_kahelstudio-os";
+export function pg<T = Record<string, unknown>>(query: string): T[] {
+  const modifying = /^\s*(insert|update|delete)\b/i.test(query);
+  const wrapped = modifying ? `with t as (${query}) select coalesce(json_agg(t), '[]'::json) from t` : `select coalesce(json_agg(t), '[]'::json) from (${query}) t`;
+  const out = execFileSync("docker", ["exec", DB_CONTAINER, "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-tAc", wrapped], { encoding: "utf8" });
+  return JSON.parse(out.trim() || "[]") as T[];
+}
+export function pgExec(statement: string) {
+  execFileSync("docker", ["exec", DB_CONTAINER, "psql", "-U", "postgres", "-d", "postgres", "-v", "ON_ERROR_STOP=1", "-qtAc", statement], { encoding: "utf8" });
+}
+export const lit = (value: string) => `'${value.replace(/'/g, "''")}'`;
+
 // ── time helpers ────────────────────────────────────────────────────────────────────────────────────────────
 /** A Manila calendar date `daysAhead` from today (skips Sundays for Main Studio hours). */
 export function manilaDate(daysAhead: number, avoidSunday = true) {
@@ -69,15 +84,10 @@ export async function ensureFixtures(): Promise<Fixtures> {
   if (fixtures) return fixtures;
   const resources: string[] = [];
   for (const code of ["safety-test-resource-a", "safety-test-resource-b"]) {
-    const existing = await db().from("booking_resources").select("id").eq("code", code).maybeSingle<{ id: string }>();
-    let id = existing.data?.id;
+    let id = pg<{ id: string }>(`select id from public.booking_resources where code = ${lit(code)}`)[0]?.id;
     if (!id) {
-      const inserted = await db().from("booking_resources").insert({ code, name: `${PREFIX}${code}`, type: "space" } as never).select("id").single<{ id: string }>();
-      if (inserted.error) throw inserted.error;
-      id = inserted.data.id;
-      const hours = [1, 2, 3, 4, 5, 6, 7].map((day) => ({ resource_id: id, iso_day_of_week: day, opens_at: "06:00", closes_at: "22:00" }));
-      const h = await db().from("booking_resource_weekly_hours").insert(hours as never);
-      if (h.error) throw h.error;
+      id = pg<{ id: string }>(`insert into public.booking_resources (code, name, type) values (${lit(code)}, ${lit(PREFIX + code)}, 'space') returning id`)[0].id;
+      pgExec(`insert into public.booking_resource_weekly_hours (resource_id, iso_day_of_week, opens_at, closes_at) select ${lit(id)}, d, '06:00', '22:00' from generate_series(1, 7) d`);
     }
     resources.push(id);
   }
@@ -98,9 +108,8 @@ export async function ensureFixtures(): Promise<Fixtures> {
   const cancelled = await db().from("bookings").update({ status: "cancelled", cancellation_reason: `${PREFIX}harness cleanup` } as never)
     .in("resource_id", resources).neq("status", "cancelled").like("reference", `${PREFIX}%`);
   if (cancelled.error) throw cancelled.error;
-  const cleared = await db().from("booking_reservations").update({ status: "released", released_at: new Date().toISOString(), updated_at: new Date().toISOString() } as never)
-    .in("resource_id", resources).in("status", ["held", "booked"]).is("booking_id", null);
-  if (cleared.error) throw cleared.error;
+  pgExec(`update public.booking_reservations set status = 'released', released_at = now(), updated_at = now()
+    where resource_id in (${resources.map(lit).join(",")}) and status in ('held', 'booked') and booking_id is null and (to_jsonb(booking_reservations)->>'parent_reservation_id') is null`);
   fixtures = { resourceA: resources[0], resourceB: resources[1], services: services as Fixtures["services"] };
   return fixtures;
 }
@@ -200,22 +209,15 @@ export async function sendWebhook(event: unknown) {
 
 // ── database state assertions ───────────────────────────────────────────────────────────────────────────────
 export async function activeReservations(resourceId: string, fromIso: string, toIso: string) {
-  const r = await db().from("booking_reservations").select("id,status,type,starts_at,ends_at,booking_id,expires_at")
-    .eq("resource_id", resourceId).in("status", ["held", "booked"]).lt("blocked_starts_at", toIso).gt("blocked_ends_at", fromIso);
-  if (r.error) throw r.error;
-  return r.data as Array<{ id: string; status: string; type: string; starts_at: string; ends_at: string; booking_id: string | null; expires_at: string | null }>;
+  return pg<{ id: string; status: string; type: string; starts_at: string; ends_at: string; booking_id: string | null; expires_at: string | null }>(
+    `select id, status, type, starts_at, ends_at, booking_id, expires_at from public.booking_reservations
+     where resource_id = ${lit(resourceId)} and status in ('held', 'booked') and blocked_range && tstzrange(${lit(fromIso)}, ${lit(toIso)}, '[)')`);
 }
 /** Invariant B1 checker: no two active reservations on one resource overlap anywhere. */
 export async function overlappingActivePairs(resourceIds: string[]) {
-  const r = await db().from("booking_reservations").select("id,resource_id,blocked_starts_at,blocked_ends_at").in("resource_id", resourceIds).in("status", ["held", "booked"]);
-  if (r.error) throw r.error;
-  const rows = r.data as Array<{ id: string; resource_id: string; blocked_starts_at: string; blocked_ends_at: string }>;
-  let pairs = 0;
-  for (let i = 0; i < rows.length; i++) for (let j = i + 1; j < rows.length; j++) {
-    const a = rows[i]; const b = rows[j];
-    if (a.resource_id === b.resource_id && Date.parse(a.blocked_starts_at) < Date.parse(b.blocked_ends_at) && Date.parse(b.blocked_starts_at) < Date.parse(a.blocked_ends_at)) pairs++;
-  }
-  return pairs;
+  return pg<{ n: number }>(`select count(*)::int n from public.booking_reservations a join public.booking_reservations b
+    on a.id < b.id and a.resource_id = b.resource_id and a.blocked_range && b.blocked_range
+    where a.status in ('held', 'booked') and b.status in ('held', 'booked') and a.resource_id in (${resourceIds.map(lit).join(",")})`)[0].n;
 }
 
 export const report: Record<string, unknown> = {};
@@ -249,9 +251,9 @@ export async function setStatus(reference: string, status: string) {
 export async function bookingState(id: string) {
   const [b, r] = await Promise.all([
     db().from("bookings").select("reference,status,payment_status,starts_at,service_time").eq("id", id).single<{ reference: string; status: string; payment_status: string; starts_at: string; service_time: string }>(),
-    db().from("booking_reservations").select("status,type,starts_at").eq("booking_id", id).maybeSingle<{ status: string; type: string; starts_at: string }>(),
+    Promise.resolve(pg<{ status: string; type: string; starts_at: string }>(`select status, type, starts_at from public.booking_reservations where booking_id = ${lit(id)}`)[0] ?? null),
   ]);
-  return { booking: b.data, reservation: r.data };
+  return { booking: b.data, reservation: r };
 }
 
 /** Cancel SAFETY-TEST website bookings on the real Main Studio so no real slot stays blocked after a run. */
@@ -260,7 +262,6 @@ export async function cancelSafetyTestCheckoutBookings() {
     .eq("location", `${PREFIX}location`).neq("status", "cancelled");
   if (r.error) throw r.error;
   // loose holds created by the harness (idempotency keys carry the prefix) — never anyone else's holds
-  const h = await db().from("booking_reservations").update({ status: "released", released_at: new Date().toISOString(), updated_at: new Date().toISOString() } as never)
-    .eq("status", "held").is("booking_id", null).like("idempotency_key", `${PREFIX}%`);
-  if (h.error) throw h.error;
+  pgExec(`update public.booking_reservations set status = 'released', released_at = now(), updated_at = now()
+    where status = 'held' and booking_id is null and (to_jsonb(booking_reservations)->>'parent_reservation_id') is null and idempotency_key like ${lit(PREFIX + "%")}`);
 }

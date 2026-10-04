@@ -1,0 +1,60 @@
+/* Customer-facing resource choice (e.g. photographer). Uses the marketing site's CSS variables and the time-slot look. */
+.choice {
+  margin-top: 26px;
+  border: 0;
+  padding: 0;
+}
+.choice legend {
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.options label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.options label:hover {
+  border-color: var(--text);
+}
+.options label[data-selected="true"] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+.options label {
+  position: relative;
+  justify-content: center;
+  text-align: center;
+  text-transform: none;
+  letter-spacing: normal;
+}
+/* the whole tile is the control (like the time slots); the native radio stays accessible but invisible */
+.options input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.options label:has(input:focus-visible) {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.hint {
+  margin-top: 8px;
+  color: var(--text3);
+  font-size: 13px;
+}

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { sendPaymentReceipt } from "@/lib/server/payment-receipt-email";
-import { at, cancelSafetyTestCheckoutBookings, checkoutViaRoute, concurrently, db, freshDay, holdViaRoute, payMongo, payMongoEvent, record, report, rpc, sendWebhook, setStatus } from "./harness";
+import { at, cancelSafetyTestCheckoutBookings, checkoutViaRoute, concurrently, db, freshDay, holdViaRoute, payMongo, payMongoEvent, pg, pgExec, lit, record, report, rpc, sendWebhook, setStatus } from "./harness";
 
 // Website checkout runs on the real "Solo" service / Main Studio (the route hard-codes package names), on far-future
 // run-unique dates. Every customer, e-mail and location carries the SAFETY-TEST- prefix.
@@ -17,7 +17,7 @@ async function bookingByReference(reference: string) {
 async function state(bookingId: string) {
   const [b, res, pay, proj, rec, alloc, evts] = await Promise.all([
     db().from("bookings").select("status,payment_status,paid_amount_php").eq("id", bookingId).single<{ status: string; payment_status: string; paid_amount_php: number }>(),
-    db().from("booking_reservations").select("status,type").eq("booking_id", bookingId).maybeSingle<{ status: string; type: string }>(),
+    Promise.resolve({ data: pg<{ status: string; type: string }>(`select status, type from public.booking_reservations where booking_id = ${lit(bookingId)}`)[0] ?? null }),
     db().from("payments").select("id,status,amount_centavos,provider_checkout_session_id").eq("booking_id", bookingId),
     db().from("projects").select("id").eq("booking_id", bookingId),
     db().from("receipts").select("id").eq("booking_id", bookingId),
@@ -133,7 +133,7 @@ describe("Phase 4A — payment safety (real checkout + webhook routes, mocked Pa
     const w1 = await sendWebhook(paidEvent(c1));
     await flush();
     const s1 = await state(c1.booking.id);
-    const inbox1 = await db().from("provider_webhook_inbox").select("status").eq("safe_payload->>booking_id", c1.booking.id);
+    const inbox1 = { data: pg(`select status from public.provider_webhook_inbox where safe_payload->>'booking_id' = ${lit(c1.booking.id)}`) };
     record("Case D1 receipt e-mail down", { webhook: w1.status, booking: s1.booking, projects: s1.projects, receipts: s1.receipts, inbox: inbox1.data });
     expect(s1.booking?.status).toBe("confirmed");
 
@@ -145,7 +145,7 @@ describe("Phase 4A — payment safety (real checkout + webhook routes, mocked Pa
     try { w2 = await sendWebhook(event2); }
     finally { await rpc("safety_test_set_project_failure", { enabled: false }); }
     const s2 = await state(c2.booking.id);
-    const inbox2 = await db().from("provider_webhook_inbox").select("event_id,status,attempts,last_error").eq("safe_payload->>booking_id", c2.booking.id);
+    const inbox2 = { data: pg(`select event_id, status, attempts, last_error from public.provider_webhook_inbox where safe_payload->>'booking_id' = ${lit(c2.booking.id)}`) };
     // PayMongo retries: the same event later succeeds once the downstream is back
     const retry = await sendWebhook(event2);
     const s2b = await state(c2.booking.id);
@@ -197,11 +197,11 @@ describe("Phase 4A — payment safety (real checkout + webhook routes, mocked Pa
     payMongo.expiresInSeconds = 3600;
     await new Promise((r) => setTimeout(r, 4500));
     await rpc("expire_booking_holds", { requested_limit: 500 });
-    const reservation = await db().from("booking_reservations").select("status,type,expires_at").eq("booking_id", c.booking.id).single();
+    const reservation = { data: pg(`select status, type, expires_at from public.booking_reservations where booking_id = ${lit(c.booking.id)}`)[0] };
     const again = await holdViaRoute(SESSION, c.startsAt);
     const noExpiry = (() => { payMongo.expiresInSeconds = null; return securedCheckout("13:00"); })();
     const c2 = await noExpiry; payMongo.expiresInSeconds = 3600;
-    const r2 = await db().from("booking_reservations").select("status,expires_at").eq("booking_id", c2.booking.id).single<{ status: string; expires_at: string }>();
+    const r2 = { data: pg<{ status: string; expires_at: string }>(`select status, expires_at from public.booking_reservations where booking_id = ${lit(c2.booking.id)}`)[0] };
     record("Case G abandoned checkout", { afterCheckoutExpiry: reservation.data, newCustomerHoldAfterExpiry: again.status,
       checkoutWithoutProviderExpiry: { reservation: r2.data?.status, blockedUntilDays: Math.round((Date.parse(r2.data!.expires_at) - Date.now()) / 86_400_000) } });
   });
@@ -225,13 +225,13 @@ describe("Phase 4A — payment safety (real checkout + webhook routes, mocked Pa
       const day = freshDay(); const time = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00"][i % 8]; const startsAt = at(day, time);
       const hold = await holdViaRoute(SESSION, startsAt);
       // make the hold expire ~during the checkout request (checkout takes ~70–150 ms locally)
-      await db().from("booking_reservations").update({ expires_at: new Date(Date.now() + 20 + (i % 10) * 20).toISOString() } as never).eq("id", String(hold.body.holdId));
+      pgExec(`update public.booking_reservations set expires_at = clock_timestamp() + interval '${20 + (i % 10) * 20} milliseconds' where id = ${lit(String(hold.body.holdId))}`);
       const before = payMongo.checkoutsCreated;
       const [co] = await Promise.all([
         checkoutViaRoute({ session: SESSION, date: day, time, startsAt, holdId: String(hold.body.holdId), holdOwnerKey: hold.ownerKey }),
         (async () => { for (let k = 0; k < 8; k++) { await new Promise((r) => setTimeout(r, 25)); await rpc("expire_booking_holds", { requested_limit: 500 }); } })(),
       ]);
-      const reservation = await db().from("booking_reservations").select("status,booking_id").eq("id", String(hold.body.holdId)).single<{ status: string; booking_id: string | null }>();
+      const reservation = { data: pg<{ status: string; booking_id: string | null }>(`select status, booking_id from public.booking_reservations where id = ${lit(String(hold.body.holdId))}`)[0] };
       const created = payMongo.checkoutsCreated - before;
       const key = `checkout HTTP ${co.status}, providerCheckouts ${created} → reservation ${reservation.data?.status}${reservation.data?.booking_id ? " (linked)" : ""}`;
       outcomes[key] = (outcomes[key] ?? 0) + 1;
@@ -250,7 +250,7 @@ describe("Phase 4A — payment safety (real checkout + webhook routes, mocked Pa
     const other = await holdViaRoute(SESSION, c.startsAt);
     const late = await sendWebhook(paidEvent(c));
     const s = await state(c.booking.id);
-    const inbox = await db().from("provider_webhook_inbox").select("event_type,status,attempts,last_error").eq("safe_payload->>booking_id", c.booking.id);
+    const inbox = { data: pg(`select event_type, status, attempts, last_error from public.provider_webhook_inbox where safe_payload->>'booking_id' = ${lit(c.booking.id)} order by received_at`) };
     record("Case F2 late payment after slot re-sold", { expiredWebhook: expired.status, otherCustomerHold: other.status, latePaidWebhook: late.status, booking: s.booking, reservation: s.reservation, payments: s.payments, projects: s.projects, inbox: inbox.data });
   });
 });

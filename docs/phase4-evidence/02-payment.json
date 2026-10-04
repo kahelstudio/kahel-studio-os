@@ -32,10 +32,10 @@
   "conflict": 9,
   "error": 0,
   "errors": [],
-  "p50": 70,
-  "p95": 79,
-  "max": 79,
-  "wallMs": 79,
+  "p50": 49,
+  "p95": 56,
+  "max": 56,
+  "wallMs": 56,
   "checkoutsCreated": 1,
   "bookingsAtSlot": 1
  },
@@ -99,7 +99,7 @@
   },
   "inbox": [
    {
-    "event_id": "evt_safety_test_742c65f515b046ca",
+    "event_id": "evt_safety_test_90528e004cdd405f",
     "status": "failed",
     "attempts": 1,
     "last_error": "Processing returned HTTP 503"
@@ -134,10 +134,10 @@
    "conflict": 0,
    "error": 0,
    "errors": [],
-   "p50": 37,
-   "p95": 42,
-   "max": 42,
-   "wallMs": 42,
+   "p50": 28,
+   "p95": 31,
+   "max": 31,
+   "wallMs": 31,
    "paid": 1,
    "receipts": 1,
    "allocations": 1,
@@ -152,7 +152,7 @@
   "afterCheckoutExpiry": {
    "status": "booked",
    "type": "booking",
-   "expires_at": "2026-10-04T08:03:29+00:00"
+   "expires_at": "2026-10-04T08:31:56+00:00"
   },
   "newCustomerHoldAfterExpiry": 409,
   "checkoutWithoutProviderExpiry": {
@@ -164,8 +164,9 @@
   "cancel:ok paid:200 → booking cancelled/paid, reservation released, payments [\"paid\"]": 10
  },
  "Case F3 hold expiry vs checkout (20 rounds)": {
-  "checkout HTTP 200, providerCheckouts 1 → reservation booked (linked)": 19,
-  "checkout HTTP 409, providerCheckouts 1 → reservation expired (linked)": 1
+  "checkout HTTP 409, providerCheckouts 0 → reservation expired": 2,
+  "checkout HTTP 409, providerCheckouts 1 → reservation expired (linked)": 1,
+  "checkout HTTP 200, providerCheckouts 1 → reservation booked (linked)": 17
  },
  "Case F2 late payment after slot re-sold": {
   "expiredWebhook": 200,

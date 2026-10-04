@@ -1,0 +1,215 @@
+{
+ "photographer availability (UTC times; Manila = +8)": {
+  "wednesdayLuiz": [],
+  "leaveDayLuiz": [],
+  "partialDayLuiz": [
+   "05:00",
+   "06:00",
+   "07:00",
+   "08:00",
+   "09:00"
+  ],
+  "friAll": [
+   {
+    "t": "01:00",
+    "names": [
+     "Photographer B"
+    ]
+   },
+   {
+    "t": "02:00",
+    "names": [
+     "Photographer B"
+    ]
+   },
+   {
+    "t": "03:00",
+    "names": [
+     "Photographer B"
+    ]
+   },
+   {
+    "t": "04:00",
+    "names": [
+     "Photographer B"
+    ]
+   },
+   {
+    "t": "05:00",
+    "names": [
+     "Luiz",
+     "Photographer B"
+    ]
+   },
+   {
+    "t": "06:00",
+    "names": [
+     "Luiz",
+     "Photographer B"
+    ]
+   },
+   {
+    "t": "07:00",
+    "names": [
+     "Luiz"
+    ]
+   },
+   {
+    "t": "08:00",
+    "names": [
+     "Luiz",
+     "Photographer B"
+    ]
+   },
+   {
+    "t": "09:00",
+    "names": [
+     "Luiz",
+     "Photographer B"
+    ]
+   }
+  ],
+  "publicSelectableNamesOnly": [
+   "RESOURCE-TEST-Photographer B",
+   "RESOURCE-TEST-Luiz"
+  ],
+  "leaveProjectionIdempotent": true
+ },
+ "same photographer n=30": {
+  "attempts": 30,
+  "ok": 1,
+  "conflict": 29,
+  "error": 0,
+  "errors": [],
+  "p50": 30,
+  "p95": 32,
+  "max": 33,
+  "wallMs": 33,
+  "luizActiveReservations": 1
+ },
+ "different photographers same time": {
+  "luiz": "ok",
+  "photographerB": "ok"
+ },
+ "shared studio n=20 (10 Luiz + 10 B)": {
+  "attempts": 20,
+  "ok": 1,
+  "conflict": 19,
+  "error": 0,
+  "errors": [],
+  "p50": 12,
+  "p95": 15,
+  "max": 15,
+  "wallMs": 16,
+  "studioRows": 1,
+  "photographerRows": 1
+ },
+ "multi-resource n=30 (Studio+Luiz+FX3)": {
+  "attempts": 30,
+  "ok": 1,
+  "conflict": 29,
+  "error": 0,
+  "errors": [],
+  "p50": 17,
+  "p95": 21,
+  "max": 21,
+  "wallMs": 21,
+  "studio": 1,
+  "luiz": 1,
+  "fx3": 1,
+  "distinctFamilies": 1
+ },
+ "contention 60 mixed combos": {
+  "attempts": 60,
+  "ok": 3,
+  "conflict": 57,
+  "error": 0,
+  "errors": [],
+  "p50": 39,
+  "p95": 52,
+  "max": 54,
+  "wallMs": 54,
+  "deadlocks": 0,
+  "overlappingPairs": 0,
+  "studio": 1,
+  "luiz": 1,
+  "fx3": 1
+ },
+ "deterministic ANY assignment, 4 sequential at one time": [
+  "Luiz",
+  "B",
+  "Freelancer",
+  "conflict(required resource unavailable: reserved)"
+ ],
+ "hold expiry/release": {
+  "afterExpiry": [
+   0,
+   0,
+   0
+  ],
+  "reacquiredAfterExpiry": true,
+  "release": "ok",
+  "afterRelease": [
+   0,
+   0,
+   0
+  ]
+ },
+ "staff booking + reschedule": {
+  "assignedFirst": [
+   "RESOURCE-TEST-Luiz"
+  ],
+  "rescheduleAnchorBusy": "23P01 booking schedule conflicts with an existing reservation",
+  "stateAfter": {
+   "booking": {
+    "reference": "SAFETY-TEST-E28BC7C3",
+    "status": "inquiry",
+    "payment_status": "unpaid",
+    "starts_at": "2027-02-04T01:00:00+00:00",
+    "service_time": "09:00:00"
+   },
+   "reservation": {
+    "status": "booked",
+    "type": "booking",
+    "starts_at": "2027-02-04T01:00:00+00:00"
+   }
+  },
+  "assignedAfter": [
+   "RESOURCE-TEST-Luiz"
+  ],
+  "corporate": {
+   "created": "ok",
+   "moved": "ok",
+   "assignments": [
+    "1:RESOURCE-TEST-Luiz",
+    "2:RESOURCE-TEST-Videographer V",
+    "3:RESOURCE-TEST-FX3",
+    "4:RESOURCE-TEST-Audio Kit"
+   ],
+   "rowsAtNewTime": 4
+  }
+ },
+ "component auto-swap on reschedule": {
+  "rescheduleWithBusyAutoPhotographer": "ok",
+  "swapped": true,
+  "customerChoiceLocked": true
+ },
+ "staff reassignment": {
+  "swap": "ok",
+  "swapBackToBusy": "23P01 resource is unavailable: reserved",
+  "photographerAfter": "kept swapped photographer"
+ },
+ "cancel releases components": {
+  "remainingActive": [
+   0,
+   0
+  ],
+  "slotReusable": true
+ },
+ "backward compatibility": {
+  "servicesWithoutRequirements": 26,
+  "componentRowsOnLegacyServices": 0,
+  "legacyHoldViaOldRpc": "ok"
+ },
+ "B1 overlapping active pairs (RESOURCE-TEST)": 0
+}

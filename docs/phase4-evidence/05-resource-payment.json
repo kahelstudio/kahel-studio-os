@@ -1,0 +1,86 @@
+{
+ "multi A": {
+  "hold": 201,
+  "assignments": [
+   {
+    "position": 1,
+    "resource_id": "51000000-0000-4000-8000-000000000001"
+   },
+   {
+    "position": 2,
+    "resource_id": "0f53a7f4-56c3-408b-b52b-0fd5865cf0f2"
+   }
+  ],
+  "checkoutsCreated": 1,
+  "beforePaid": [
+   {
+    "resource_id": "51000000-0000-4000-8000-000000000001",
+    "status": "booked"
+   },
+   {
+    "resource_id": "0f53a7f4-56c3-408b-b52b-0fd5865cf0f2",
+    "status": "booked"
+   }
+  ],
+  "webhook": 200,
+  "booking": {
+   "status": "confirmed",
+   "payment_status": "paid"
+  },
+  "after": [
+   {
+    "resource_id": "51000000-0000-4000-8000-000000000001",
+    "status": "booked"
+   },
+   {
+    "resource_id": "0f53a7f4-56c3-408b-b52b-0fd5865cf0f2",
+    "status": "booked"
+   }
+  ]
+ },
+ "multi B": {
+  "otherCustomer": 201,
+  "holdWithBusyPhotographer": 409,
+  "checkoutsCreated": 0,
+  "studioLeftReserved": 0,
+  "nonPublicSelection": 400
+ },
+ "multi route race n=30": {
+  "attempts": 30,
+  "ok": 1,
+  "conflict": 29,
+  "error": 0,
+  "errors": [],
+  "p50": 77,
+  "p95": 83,
+  "max": 83,
+  "wallMs": 83,
+  "studio": 1,
+  "luiz": 1
+ },
+ "multi C/E/cancel": {
+  "failedWebhook": 200,
+  "afterFail": [
+   "released",
+   "released"
+  ],
+  "duplicates": {
+   "attempts": 10,
+   "ok": 10,
+   "conflict": 0,
+   "error": 0,
+   "errors": [],
+   "p50": 26,
+   "p95": 30,
+   "max": 30,
+   "wallMs": 30,
+   "payments": 1,
+   "paid": 1,
+   "projects": 1
+  },
+  "afterCancel": [
+   "released",
+   "released"
+  ]
+ }
+}

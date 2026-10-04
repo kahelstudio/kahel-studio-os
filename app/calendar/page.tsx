@@ -2,6 +2,9 @@ export const dynamic = "force-dynamic";
 
 import { getCalendarEvents, getCalendarEventsByDate, type CalendarEvent } from "@/lib/server/bookings-data";
 import { CalendarGrid } from "./calendar-grid";
+import Link from "next/link";
+import { RESOURCE_FILTERS, ResourceSchedule } from "@/components/calendar/resource-schedule";
+import { getResourceCalendar } from "@/lib/server/resource-scheduling";
 
 export type CalendarView = "month" | "week";
 type CalendarCell = { key: string; day: number | null; today: boolean; past: boolean; inMonth: boolean; events: CalendarEvent[]; holiday?: string };
@@ -57,10 +60,11 @@ function philippineHolidays(year: number): Record<string, string> {
   };
 }
 
-export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ date?: string | string[]; view?: string | string[] }> }) {
+export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ date?: string | string[]; view?: string | string[]; filter?: string | string[]; resource?: string | string[] }> }) {
   const query = await searchParams;
   const todayIso = manilaToday();
   const selectedIso = typeof query.date === "string" && validDate(query.date) ? query.date : todayIso;
+  if (query.view === "resources") return <ResourceCalendarPage query={query} selectedIso={selectedIso} />;
   const view: CalendarView = query.view === "week" ? "week" : "month";
   const selected = fromIso(selectedIso);
   const period = view === "month" ? await monthPeriod(selected, todayIso) : await weekPeriod(selected, todayIso);
@@ -72,6 +76,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
       <div className="mb-8">
         <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">Calendar</h1>
         <p className="mt-1.5 text-[15px] text-[var(--color-text-secondary)]">View schedules, shoots, deadlines, and team availability.</p>
+        <CalendarModeSwitch active="calendar" date={selectedIso} />
       </div>
       <CalendarGrid
         cells={period.cells}
@@ -81,6 +86,39 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         nextHref={calendarHref(next, view)}
         selectedIso={selectedIso}
       />
+    </div>
+  );
+}
+
+function CalendarModeSwitch({ active, date }: { active: "calendar" | "resources"; date: string }) {
+  const tab = (id: "calendar" | "resources", label: string, href: string) => (
+    <Link href={href} className={`rounded-pill px-3.5 py-1.5 text-[13px] font-semibold ${active === id ? "bg-[var(--color-text-primary)] text-white" : "border border-[var(--color-border)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"}`}>{label}</Link>
+  );
+  return <div className="mt-4 flex gap-1.5">{tab("calendar", "Calendar", `/calendar?date=${date}`)}{tab("resources", "By resource", `/calendar?view=resources&date=${date}`)}</div>;
+}
+
+async function ResourceCalendarPage({ query, selectedIso }: { query: { filter?: string | string[]; resource?: string | string[] }; selectedIso: string }) {
+  const filter = typeof query.filter === "string" && RESOURCE_FILTERS.some((f) => f.id === query.filter) ? query.filter : "all";
+  const resourceId = typeof query.resource === "string" && /^[0-9a-f-]{36}$/i.test(query.resource) ? query.resource : null;
+  const dayStart = new Date(`${selectedIso}T00:00:00+08:00`).toISOString();
+  const dayEnd = new Date(`${selectedIso}T23:59:59+08:00`).toISOString();
+  const data = await getResourceCalendar(dayStart, dayEnd, null);
+  const href = (date: string, patch: { filter?: string; resource?: string | null } = {}) => {
+    const params = new URLSearchParams({ view: "resources", date, filter: patch.filter ?? filter });
+    const resource = patch.resource === undefined ? resourceId : patch.resource;
+    if (resource) params.set("resource", resource);
+    return `/calendar?${params}`;
+  };
+  return (
+    <div className="app-page p-5 pt-6 sm:p-10 sm:pt-8">
+      <div className="mb-8">
+        <h1 className="font-display text-[clamp(1.8rem,4vw,2.25rem)] font-semibold leading-11 tracking-[-0.025em] text-[var(--color-text-primary)]">Calendar</h1>
+        <p className="mt-1.5 text-[15px] text-[var(--color-text-secondary)]">Who and what is booked: studio, photographers, videographers and equipment.</p>
+        <CalendarModeSwitch active="resources" date={selectedIso} />
+      </div>
+      <ResourceSchedule date={selectedIso} filter={filter} resourceId={resourceId} resources={data.resources} items={data.items}
+        prevHref={href(addPeriod(fromIso(selectedIso), -1, "week"))} nextHref={href(addPeriod(fromIso(selectedIso), 1, "week"))}
+        hrefFor={(patch) => href(selectedIso, patch)} />
     </div>
   );
 }

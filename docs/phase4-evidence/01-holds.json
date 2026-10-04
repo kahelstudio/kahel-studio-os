@@ -8,7 +8,7 @@
   "p50": 4,
   "p95": 4,
   "max": 4,
-  "wallMs": 5,
+  "wallMs": 4,
   "dbActiveReservations": 1
  },
  "same-slot rpc n=10": {
@@ -20,7 +20,7 @@
   "p50": 8,
   "p95": 9,
   "max": 9,
-  "wallMs": 10,
+  "wallMs": 9,
   "dbActiveReservations": 1
  },
  "same-slot rpc n=30": {
@@ -29,10 +29,10 @@
   "conflict": 29,
   "error": 0,
   "errors": [],
-  "p50": 14,
-  "p95": 18,
-  "max": 19,
-  "wallMs": 19,
+  "p50": 16,
+  "p95": 19,
+  "max": 20,
+  "wallMs": 20,
   "dbActiveReservations": 1
  },
  "same-slot rpc n=50": {
@@ -41,10 +41,10 @@
   "conflict": 49,
   "error": 0,
   "errors": [],
-  "p50": 33,
-  "p95": 39,
-  "max": 41,
-  "wallMs": 42,
+  "p50": 25,
+  "p95": 34,
+  "max": 35,
+  "wallMs": 35,
   "dbActiveReservations": 1
  },
  "same-slot route n=2": {
@@ -53,10 +53,10 @@
   "conflict": 1,
   "error": 0,
   "errors": [],
-  "p50": 95,
-  "p95": 95,
-  "max": 95,
-  "wallMs": 95,
+  "p50": 41,
+  "p95": 41,
+  "max": 41,
+  "wallMs": 41,
   "dbActiveReservations": 1
  },
  "same-slot route n=10": {
@@ -65,10 +65,10 @@
   "conflict": 9,
   "error": 0,
   "errors": [],
-  "p50": 34,
-  "p95": 35,
-  "max": 35,
-  "wallMs": 35,
+  "p50": 21,
+  "p95": 22,
+  "max": 22,
+  "wallMs": 22,
   "dbActiveReservations": 1
  },
  "same-slot route n=30": {
@@ -77,10 +77,10 @@
   "conflict": 29,
   "error": 0,
   "errors": [],
-  "p50": 70,
-  "p95": 85,
-  "max": 85,
-  "wallMs": 85,
+  "p50": 63,
+  "p95": 68,
+  "max": 68,
+  "wallMs": 68,
   "dbActiveReservations": 1
  },
  "same-slot route n=50": {
@@ -89,10 +89,10 @@
   "conflict": 49,
   "error": 0,
   "errors": [],
-  "p50": 150,
-  "p95": 157,
-  "max": 158,
-  "wallMs": 158,
+  "p50": 163,
+  "p95": 171,
+  "max": 172,
+  "wallMs": 172,
   "dbActiveReservations": 1
  },
  "overlap matrix (base 10:00)": {
@@ -129,10 +129,10 @@
   "conflict": 18,
   "error": 0,
   "errors": [],
-  "p50": 6,
-  "p95": 9,
-  "max": 9,
-  "wallMs": 9
+  "p50": 9,
+  "p95": 11,
+  "max": 11,
+  "wallMs": 12
  },
  "B1 overlapping active pairs (resource A/B)": 0
 }

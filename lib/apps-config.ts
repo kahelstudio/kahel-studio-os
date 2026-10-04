@@ -476,6 +476,7 @@ export const APPS: AppDef[] = [
     launcherGroup: "system",
     nav: [
       { id: "general", label: "General", href: "/settings/general" },
+      { id: "resources", label: "Booking resources", href: "/settings/resources" },
       { id: "emails", label: "Email templates", href: "/settings/emails" },
       { id: "legal", label: "Legal and policies", href: "/settings/legal/booking-terms" },
       { id: "team", label: "Team & roles", href: "/settings/team" },

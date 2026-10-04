@@ -7,7 +7,11 @@ Final run: **22/22 harness tests pass** (run twice, repeatable); unit suite **28
 
 ## Safety note: working tree and local environment
 - The branch was created on top of **84 pre-existing uncommitted changes** (other work, including two untracked booking migrations already applied to the local DB). Nothing was reset, stashed or overwritten; Phase 4 commits stage only Phase 4 files (see final report).
-- **F-ENV-1 (local environment):** this local database (newer Supabase CLI) grants API roles only `Dxtm` on tables created by migrations, so the app's **service-role key could not read `services` or `booking_resources`, nor insert `bookings`**: 109 of 138 public tables lacked DML. The website booking flow was therefore broken locally. To test the real code paths, `scripts/local/grant-service-role-legacy-defaults.sql` (local only, idempotent) mirrors the legacy hosted default for `service_role`; `scripts/local/restore-service-role-acl-pre-phase4.sql` restores the exact previous ACLs. Staging/production grants were **not** inspected (no access). **Recommendation:** add explicit `grant … to service_role` in migrations instead of relying on platform defaults.
+- **F-ENV-1 (local environment):** this local database (newer Supabase CLI) grants API roles only `Dxtm` on tables created by migrations, so the app's **service-role key could not read `services` or insert `bookings`**. 109 of 138 public tables lacked DML, and the website booking flow was broken locally.
+  - A first blanket local grant was replaced by a **targeted** one. `scripts/local/grant-service-role-legacy-defaults.sql` (local only, idempotent) restores the legacy hosted default **only** for tables that lack it *and* are not deliberately revoked from `service_role` by a migration. The `booking_*` reservation tables, payment ledger, webhook inbox, legal/agreement records, cash registers and promo codes stay RPC-only, as designed (pgTAP assertion 121 "service role has no direct reservation mutation grant" passes).
+  - `scripts/local/restore-service-role-acl-pre-phase4.sql` restores the exact previous ACLs.
+  - The harness reads protected tables through `psql`, not through the app's key.
+  - Staging/production grants were **not** inspected (no access). **Recommendation:** add explicit `grant … to service_role` statements in migrations for the tables the app reads/writes directly, instead of relying on platform defaults.
 - Local-only test helpers: `scripts/local/booking-safety-test-helpers.sql` (a SAFETY-TEST staff actor/client, plus a flag-controlled trigger used to simulate a project-service outage). Not a migration.
 
 ## Invariants
@@ -64,4 +68,27 @@ Intervals are half-open `[start − prep, end + cleanup)`, as designed. The publ
 - H-1, H-2, H-3 are reported for owner decision; they don't block resource scheduling, but **H-1 interacts with availability** (abandoned checkouts consume capacity), and **B-1 should be deployed independently and urgently** after owner review.
 
 ## Post-implementation results (Phase 4B)
-See the "Phase 4B results" section appended below.
+Design: [phase4-resource-scheduling.md](phase4-resource-scheduling.md). Evidence: `docs/phase4-evidence/04-resources.json`, `05-resource-payment.json`, `06-performance.json`.
+**Full suite after Phase 4B: 41/41 harness tests (6 files), 288/288 unit tests, 122/122 pgTAP, 0 type errors.** The 22 Phase 4A tests were re-run unchanged with the migration applied (backward compatibility).
+
+| Test | Result |
+|---|---|
+| Migration on existing data | 1,307 bookings and 1,683 reservations **byte-identical** before/after (hash fingerprint); no renumbering, no backfill |
+| Same photographer: 30 × Luiz 10:00 | **1 winner**, 29 conflicts, 0 errors; 1 DB row |
+| Different photographers, same time, no shared resource | both succeed (B8) |
+| Shared studio: 20 × (Studio + Luiz / Studio + B) | **1 winner**; 1 studio row, 1 photographer row |
+| Multi-resource: 30 × (Studio + Luiz + FX3) | **1 complete winner**; studio 1, Luiz 1, FX3 1, all in **one** reservation family (never partial; B7) |
+| Contention: 60 concurrent, 6 different resource combinations | **0 deadlocks**, 0 errors, 0 overlapping pairs (sorted lock order) |
+| Deterministic ANY assignment | Luiz → B → Freelancer → clean 23P01 "required resource unavailable: reserved" |
+| Photographer availability | Wednesday off → no Luiz slots; full-day leave → none; partial day → from 13:00 only; other photographer still offered; non-public freelancer hidden from customers; leave projection idempotent |
+| Hold expiry / customer release | every component released; slot re-holdable |
+| Staff booking (no hold) | components auto-reserved; Corporate Interview (4 resources) rescheduled as a unit (4 rows at the new time) |
+| Reschedule with busy auto-assigned photographer | component swapped automatically; customer-chosen photographer is `selection_locked` |
+| Reschedule with busy anchor | 23P01, booking unchanged (B6) |
+| Staff reassignment | swap OK; swap to a busy photographer refused, original kept |
+| Cancellation | all components released, slot reusable |
+| Legacy services | no active components on any service without requirements; legacy `acquire_booking_hold` unchanged |
+| **Payment retest through real routes** (Solo temporarily = Studio + selectable photographer) | A: both resources secured before checkout, both `booked` after payment, booking confirmed. B: photographer busy → hold 409, **0 checkouts**, studio not left reserved; non-public selection → 400. Route race 30 → 1 hold. Failed payment → both released. 10 duplicate webhooks → 1 payment, 1 project. Cancel → both released |
+| Performance | availability 5–15 ms, hold 3–6 ms, confirmation 8–10 ms, reschedule 46–55 ms for 1–100 resources (see design doc) |
+
+**Invariants after Phase 4B:** B1, B2 (holds), B3, B4, B5 (schedule), B6, B7 and B8 hold under load; all are DATABASE_GUARDED (B3 TRANSACTION_GUARDED). The open HIGH items (H-1 abandoned checkouts, H-2 paid + cancelled, H-3 late payment after re-sale) are unchanged by Phase 4B and still need owner decisions.

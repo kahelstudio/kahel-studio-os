@@ -9,6 +9,7 @@ import { applyPromoDiscount } from "@/lib/promo-code";
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, ChevronDown, ChevronLeft, ChevronRight, Menu, X } from "lucide-react";
 import styles from "./marketing-site.module.css";
+import { ResourceChoice } from "@/components/booking/resource-choice";
 import PaymentMethodSelector, { type PaymentOption } from "./PaymentMethodSelector";
 
 type Page = "home" | "portfolio" | "services" | "about" | "book" | "privacy" | "terms" | "health-safety";
@@ -1069,7 +1070,7 @@ function HealthSafety() {
 }
 
 type BookingAddon = { name: string; quantity: number };
-type AvailabilitySlot = { startsAt: string; endsAt: string; time: string; available: boolean };
+type AvailabilitySlot = { startsAt: string; endsAt: string; time: string; available: boolean; options?: Array<{ position: number; resources: Array<{ id: string; name: string }> }> };
 type BookingAvailability = {
   serviceId: string;
   resource: { id: string; code: string; name: string };
@@ -1080,6 +1081,7 @@ type BookingAvailability = {
   cleanupBufferMinutes: number;
   serverTime: string;
   refreshAfterSeconds: number;
+  requirements?: Array<{ position: number; customerSelectable: boolean; typeName: string }>;
   slots: AvailabilitySlot[];
 };
 type BookingHold = {
@@ -1232,6 +1234,7 @@ function BookingSchedule({ dateValue, timeValue, endTimeValue, eventSelected, ev
 function Booking({ goHome }: { goHome: () => void }) {
   const [form, setForm] = useState(emptyBooking);
   const [status, setStatus] = useState<"idle" | "creating-hold" | "hold-active" | "booking-processing" | "done">("idle");
+  const [resourceChoice, setResourceChoice] = useState<Record<string, string>>({});
   const [waitlistOpen, setWaitlistOpen] = useState(false);
   const [reference, setReference] = useState("");
   const [availability, setAvailability] = useState<BookingAvailability | null>(null);
@@ -1429,7 +1432,7 @@ function Booking({ goHome }: { goHome: () => void }) {
       const holdResponse = await fetch("/api/bookings/holds", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ service: form.session, startsAt: effectiveStartsAt, durationMinutes: requestedDurationMinutes, ownerKey, idempotencyKey: `${requestId}:hold` }),
+        body: JSON.stringify({ service: form.session, startsAt: effectiveStartsAt, durationMinutes: requestedDurationMinutes, ownerKey, idempotencyKey: `${requestId}:hold`, ...(Object.keys(resourceChoice).length ? { resourceSelections: resourceChoice } : {}) }),
       });
       const holdResult = await holdResponse.json() as { holdId?: string; startsAt?: string; endsAt?: string; expiresAt?: string; serverTime?: string; error?: string };
       if (holdResponse.status === 409) {
@@ -1571,7 +1574,8 @@ function Booking({ goHome }: { goHome: () => void }) {
               </fieldset>
               <fieldset className={`${styles.fullField} ${styles.scheduleField}`}>
                 <legend>Preferred date and time</legend>
-                <BookingSchedule dateValue={form.date} timeValue={form.time} endTimeValue={form.endTime} eventSelected={eventSelected} eventDurationMinutes={eventDurationMinutes} eventMinimumMinutes={baseDurationMinutes} eventCoverageMinutes={eventCoverageMinutes} eventRangeValid={eventRangeValid} serviceSelected={Boolean(selected)} minimumDate={serverDate || todayIso()} availability={availability} availabilityStatus={availabilityStatus} availabilityError={availabilityError} availabilityAnnouncement={availabilityAnnouncement} disabled={status === "creating-hold" || status === "booking-processing"} timeAreaRef={scheduleTimeAreaRef} onDateChange={(value) => update("date", value)} onTimeChange={(slot) => { setSelectedStartsAt(slot.startsAt); setSubmitError(""); update("time", slot.time); }} onEventTimeChange={updateEventTime} onRefresh={() => setAvailabilityRefresh((current) => current + 1)} onWaitlist={() => setWaitlistOpen(true)} />
+                <BookingSchedule dateValue={form.date} timeValue={form.time} endTimeValue={form.endTime} eventSelected={eventSelected} eventDurationMinutes={eventDurationMinutes} eventMinimumMinutes={baseDurationMinutes} eventCoverageMinutes={eventCoverageMinutes} eventRangeValid={eventRangeValid} serviceSelected={Boolean(selected)} minimumDate={serverDate || todayIso()} availability={availability} availabilityStatus={availabilityStatus} availabilityError={availabilityError} availabilityAnnouncement={availabilityAnnouncement} disabled={status === "creating-hold" || status === "booking-processing"} timeAreaRef={scheduleTimeAreaRef} onDateChange={(value) => update("date", value)} onTimeChange={(slot) => { setSelectedStartsAt(slot.startsAt); setSubmitError(""); setResourceChoice({}); update("time", slot.time); }} onEventTimeChange={updateEventTime} onRefresh={() => setAvailabilityRefresh((current) => current + 1)} onWaitlist={() => setWaitlistOpen(true)} />
+                <ResourceChoice requirements={availability?.requirements} options={availability?.slots.find((slot) => slot.startsAt === selectedStartsAt)?.options} value={resourceChoice} disabled={status === "creating-hold" || status === "booking-processing"} onChange={setResourceChoice} />
                 {(status === "creating-hold" || status === "booking-processing" || hold) && (
                   <p className={styles.bookingFlowStatus}>
                     {status === "creating-hold" ? "Creating a temporary hold..." : hold ? `Hold active for ${Math.floor(holdRemainingSeconds / 60)}:${pad(holdRemainingSeconds % 60)}.${status === "booking-processing" ? " Booking is processing..." : ""}` : "Booking is processing..."}

@@ -1,0 +1,26 @@
+{
+ "performance (local, ms; includes PostgREST round trip)": {
+  "1 resource (legacy Main Studio)": {
+   "availabilityMedianMs": 2,
+   "holdMs": 3
+  },
+  "5 photographers": {
+   "availabilityMedianMs": 3,
+   "holdWorstCaseMs": 2,
+   "staffBookingConfirmMs": 3,
+   "rescheduleMs": 36
+  },
+  "20 photographers": {
+   "availabilityMedianMs": 6,
+   "holdWorstCaseMs": 2,
+   "staffBookingConfirmMs": 3,
+   "rescheduleMs": 39
+  },
+  "100 photographers": {
+   "availabilityMedianMs": 13,
+   "holdWorstCaseMs": 4,
+   "staffBookingConfirmMs": 3,
+   "rescheduleMs": 51
+  }
+ }
+}
