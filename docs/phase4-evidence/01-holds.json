@@ -1,0 +1,138 @@
+{
+ "same-slot rpc n=2": {
+  "attempts": 2,
+  "ok": 1,
+  "conflict": 1,
+  "error": 0,
+  "errors": [],
+  "p50": 4,
+  "p95": 4,
+  "max": 4,
+  "wallMs": 5,
+  "dbActiveReservations": 1
+ },
+ "same-slot rpc n=10": {
+  "attempts": 10,
+  "ok": 1,
+  "conflict": 9,
+  "error": 0,
+  "errors": [],
+  "p50": 8,
+  "p95": 9,
+  "max": 9,
+  "wallMs": 10,
+  "dbActiveReservations": 1
+ },
+ "same-slot rpc n=30": {
+  "attempts": 30,
+  "ok": 1,
+  "conflict": 29,
+  "error": 0,
+  "errors": [],
+  "p50": 14,
+  "p95": 18,
+  "max": 19,
+  "wallMs": 19,
+  "dbActiveReservations": 1
+ },
+ "same-slot rpc n=50": {
+  "attempts": 50,
+  "ok": 1,
+  "conflict": 49,
+  "error": 0,
+  "errors": [],
+  "p50": 33,
+  "p95": 39,
+  "max": 41,
+  "wallMs": 42,
+  "dbActiveReservations": 1
+ },
+ "same-slot route n=2": {
+  "attempts": 2,
+  "ok": 1,
+  "conflict": 1,
+  "error": 0,
+  "errors": [],
+  "p50": 95,
+  "p95": 95,
+  "max": 95,
+  "wallMs": 95,
+  "dbActiveReservations": 1
+ },
+ "same-slot route n=10": {
+  "attempts": 10,
+  "ok": 1,
+  "conflict": 9,
+  "error": 0,
+  "errors": [],
+  "p50": 34,
+  "p95": 35,
+  "max": 35,
+  "wallMs": 35,
+  "dbActiveReservations": 1
+ },
+ "same-slot route n=30": {
+  "attempts": 30,
+  "ok": 1,
+  "conflict": 29,
+  "error": 0,
+  "errors": [],
+  "p50": 70,
+  "p95": 85,
+  "max": 85,
+  "wallMs": 85,
+  "dbActiveReservations": 1
+ },
+ "same-slot route n=50": {
+  "attempts": 50,
+  "ok": 1,
+  "conflict": 49,
+  "error": 0,
+  "errors": [],
+  "p50": 150,
+  "p95": 157,
+  "max": 158,
+  "wallMs": 158,
+  "dbActiveReservations": 1
+ },
+ "overlap matrix (base 10:00)": {
+  "m60": {
+   "09:30 vs 10:00": "conflict",
+   "10:00 vs 10:00": "conflict",
+   "10:30 vs 10:00": "conflict",
+   "11:00 vs 10:00": "ok",
+   "09:00 vs 10:00": "ok"
+  },
+  "m30": {
+   "09:30 vs 10:00": "ok",
+   "09:45 vs 10:00": "conflict",
+   "10:00 vs 10:00": "conflict",
+   "10:15 vs 10:00": "conflict",
+   "10:30 vs 10:00": "ok"
+  },
+  "m120": {
+   "08:00 vs 10:00": "ok",
+   "09:30 vs 10:00": "conflict",
+   "11:30 vs 10:00": "conflict",
+   "12:00 vs 10:00": "ok"
+  },
+  "buffered": {
+   "08:30 vs 10:00": "ok",
+   "08:45 vs 10:00": "conflict",
+   "11:15 vs 10:00": "conflict",
+   "11:30 vs 10:00": "ok"
+  }
+ },
+ "two independent slots on one resource, 10+10 concurrent": {
+  "attempts": 20,
+  "ok": 2,
+  "conflict": 18,
+  "error": 0,
+  "errors": [],
+  "p50": 6,
+  "p95": 9,
+  "max": 9,
+  "wallMs": 9
+ },
+ "B1 overlapping active pairs (resource A/B)": 0
+}

@@ -199,7 +199,8 @@ function acknowledge() {
 
 async function processLedgerEvent(event: ParsedEvent) {
   const admin = getSupabaseAdmin();
-  const rpc = admin.rpc as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+  // Bind to the client: supabase-js `rpc` reads `this.rest`, so a detached reference throws on every call.
+  const rpc = admin.rpc.bind(admin) as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
   if (event.eventType === PAID_EVENT) {
     if (!event.paymentId || !event.paidAt || event.amount === null || event.currency !== "PHP") {
       return NextResponse.json({ error: "Invalid paid event." }, { status: 400 });

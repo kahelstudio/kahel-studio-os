@@ -1,0 +1,141 @@
+{
+ "Case A": {
+  "webhook": 503,
+  "booking": {
+   "status": "inquiry",
+   "payment_status": "pending",
+   "paid_amount_php": 0
+  },
+  "reservation": {
+   "status": "booked",
+   "type": "booking"
+  },
+  "payments": [
+   "pending"
+  ],
+  "paidPayments": 0,
+  "projects": 0,
+  "receipts": 0,
+  "allocations": 0,
+  "receiptEmails": 0
+ },
+ "Case B": {
+  "loserHold": 409,
+  "stolenHoldCheckout": 409,
+  "forgedHoldCheckout": 409,
+  "checkoutsCreated": 0,
+  "bookingsAtSlot": 0
+ },
+ "Case B2": {
+  "attempts": 10,
+  "ok": 1,
+  "conflict": 1,
+  "error": 8,
+  "errors": [
+   "503 {\"error\":\"Unable to submit the booking right now.\"}"
+  ],
+  "p50": 71,
+  "p95": 79,
+  "max": 79,
+  "wallMs": 79,
+  "checkoutsCreated": 1,
+  "bookingsAtSlot": 1
+ },
+ "Case C checkout_session.payment.failed": {
+  "webhook": 503,
+  "booking": {
+   "status": "inquiry",
+   "payment_status": "pending",
+   "paid_amount_php": 0
+  },
+  "reservation": {
+   "status": "booked",
+   "type": "booking"
+  },
+  "payments": [
+   "pending"
+  ],
+  "slotReheld": 409
+ },
+ "Case D1 receipt e-mail down": {
+  "webhook": 503,
+  "booking": {
+   "status": "inquiry",
+   "payment_status": "pending",
+   "paid_amount_php": 0
+  },
+  "projects": 0,
+  "receipts": 0,
+  "inbox": [
+   {
+    "status": "pending"
+   }
+  ]
+ },
+ "Case E": {
+  "sequential": {
+   "statuses": [
+    503,
+    503
+   ],
+   "paid": 0,
+   "receipts": 0,
+   "allocations": 0,
+   "projects": 0,
+   "receiptEmails": 0
+  },
+  "concurrent10": {
+   "attempts": 10,
+   "ok": 0,
+   "conflict": 0,
+   "error": 10,
+   "errors": [
+    "503 {\"error\":\"Webhook persistence failed.\"}"
+   ],
+   "p50": 10,
+   "p95": 13,
+   "max": 13,
+   "wallMs": 13,
+   "paid": 0,
+   "receipts": 0,
+   "allocations": 0,
+   "projects": 0,
+   "receiptEmails": 0
+  }
+ },
+ "Case F1 (20 rounds)": {
+  "paid:503 expired:503 → booking inquiry/pending, reservation booked, paidPayments 0, projects 0": 20
+ },
+ "Case F2 late payment after slot re-sold": {
+  "expiredWebhook": 503,
+  "otherCustomerHold": 409,
+  "latePaidWebhook": 503,
+  "booking": {
+   "status": "inquiry",
+   "payment_status": "pending",
+   "paid_amount_php": 0
+  },
+  "reservation": {
+   "status": "booked",
+   "type": "booking"
+  },
+  "payments": [
+   "pending"
+  ],
+  "projects": 0,
+  "inbox": [
+   {
+    "event_type": "checkout_session.expired",
+    "status": "pending",
+    "attempts": 0,
+    "last_error": null
+   },
+   {
+    "event_type": "checkout_session.payment.paid",
+    "status": "pending",
+    "attempts": 0,
+    "last_error": null
+   }
+  ]
+ }
+}

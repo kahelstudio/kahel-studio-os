@@ -1,0 +1,107 @@
+{
+ "B6 reschedule into occupied": {
+  "exact": "23P01",
+  "partial": "23P01",
+  "aAfter": {
+   "booking": {
+    "reference": "SAFETY-TEST-3A919217",
+    "status": "inquiry",
+    "payment_status": "unpaid",
+    "starts_at": "2026-12-21T02:00:00+00:00",
+    "service_time": "10:00:00"
+   },
+   "reservation": {
+    "status": "booked",
+    "type": "booking",
+    "starts_at": "2026-12-21T02:00:00+00:00"
+   }
+  }
+ },
+ "concurrent reschedule n=2": {
+  "attempts": 2,
+  "ok": 1,
+  "conflict": 1,
+  "error": 0,
+  "errors": [],
+  "p50": 4,
+  "p95": 4,
+  "max": 4,
+  "wallMs": 4,
+  "movedInDb": 1,
+  "intactAtOriginal": 1
+ },
+ "concurrent reschedule n=10": {
+  "attempts": 10,
+  "ok": 1,
+  "conflict": 9,
+  "error": 0,
+  "errors": [],
+  "p50": 8,
+  "p95": 8,
+  "max": 8,
+  "wallMs": 9,
+  "movedInDb": 1,
+  "intactAtOriginal": 9
+ },
+ "concurrent reschedule n=30": {
+  "attempts": 30,
+  "ok": 1,
+  "conflict": 29,
+  "error": 0,
+  "errors": [],
+  "p50": 14,
+  "p95": 18,
+  "max": 18,
+  "wallMs": 18,
+  "movedInDb": 1,
+  "intactAtOriginal": 29
+ },
+ "cancel/reschedule/confirm race (20 rounds)": {
+  "cancel:ok move:ok confirm:ok → cancelled/released consistent=true": 13,
+  "slot reusable after cancel: 10:00 yes, 15:00 yes": 13,
+  "cancel:ok move:ok confirm:ok → confirmed/booked consistent=true": 7
+ },
+ "double cancel": {
+  "first": "ok",
+  "second": "ok",
+  "state": {
+   "booking": {
+    "reference": "SAFETY-TEST-870A077C",
+    "status": "cancelled",
+    "payment_status": "unpaid",
+    "starts_at": "2027-03-08T08:00:00+00:00",
+    "service_time": "16:00:00"
+   },
+   "reservation": {
+    "status": "released",
+    "type": "booking",
+    "starts_at": "2027-03-08T08:00:00+00:00"
+   }
+  },
+  "reservationEvents": [
+   "reservation.created",
+   "reservation.released",
+   "reservation.updated"
+  ]
+ },
+ "reactivate cancelled booking after slot reused": {
+  "secondBooking": "ok",
+  "reactivate": "23P01 booking schedule conflicts with an existing reservation",
+  "overlappingPairs": 0,
+  "a": {
+   "booking": {
+    "reference": "SAFETY-TEST-ED39E515",
+    "status": "cancelled",
+    "payment_status": "unpaid",
+    "starts_at": "2027-03-09T03:00:00+00:00",
+    "service_time": "11:00:00"
+   },
+   "reservation": {
+    "status": "released",
+    "type": "booking",
+    "starts_at": "2027-03-09T03:00:00+00:00"
+   }
+  }
+ },
+ "B1 overlapping active pairs after reschedule/cancel tests": 0
+}
