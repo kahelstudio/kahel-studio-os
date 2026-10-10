@@ -9,8 +9,8 @@ export default async function FailedPage({ searchParams }: { searchParams: Promi
   if (!principal) redirect("/login");
   const params = await searchParams;
   const filters = { ...parseMessageFilters(params), status: "all" as const };
-  const result = await getMessages(principal, { ...filters, status: "all" });
-  result.messages = result.messages.filter((message) => isFailedMessage(message));
-  result.summary = messageSummary(result.messages);
+  const base = await getMessages(principal, { ...filters, status: "all" });
+  const filteredMessages = base.messages.filter((message) => isFailedMessage(message));
+  const result = { ...base, messages: filteredMessages, summary: messageSummary(filteredMessages) };
   return <MessagesWorkspace result={result} filters={filters} failedView canRetry={["admin", "super_admin"].includes(principal.role)} />;
 }

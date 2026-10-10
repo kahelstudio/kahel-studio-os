@@ -30,7 +30,7 @@ export async function sendWaitlistConfirmation(input: {
 }) {
   const from = process.env.BOOKING_EMAIL_FROM;
   const replyTo = process.env.BOOKING_EMAIL_REPLY_TO;
-  if (!process.env.RESEND_API_KEY || !from || !replyTo) return false;
+  if (!from || !replyTo) return false;
   const s = {
     firstName: escapeHtml(input.firstName),
     serviceName: escapeHtml(input.serviceName),
@@ -73,7 +73,7 @@ export async function sendWaitlistAdminNotification(input: {
 }) {
   const from = process.env.BOOKING_EMAIL_FROM;
   const adminTo = process.env.ADMIN_NOTIFICATION_EMAIL ?? process.env.BOOKING_EMAIL_REPLY_TO;
-  if (!process.env.RESEND_API_KEY || !from || !adminTo) return false;
+  if (!from || !adminTo) return false;
   const s = {
     name: escapeHtml(input.name),
     email: escapeHtml(input.email),
@@ -116,7 +116,7 @@ export async function sendWaitlistSlotAvailable(input: {
 }) {
   const from = process.env.BOOKING_EMAIL_FROM;
   const replyTo = process.env.BOOKING_EMAIL_REPLY_TO;
-  if (!process.env.RESEND_API_KEY || !from || !replyTo) return false;
+  if (!from || !replyTo) return false;
   const s = {
     firstName: escapeHtml(input.firstName),
     serviceName: escapeHtml(input.serviceName),

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { parseResourceSelections, resolveBookableService, sha256 } from "@/lib/server/booking-availability";
+import { getBookingAvailability, parseResourceSelections, resolveBookableService, sha256, STUDIO_TIMEZONE } from "@/lib/server/booking-availability";
 import { bookingConflictMessage, isBookingSlotConflict } from "@/lib/server/booking-slots";
 import { auditCustomerEvent, consumeCustomerRateLimit, hasTrustedOrigin } from "@/lib/server/customer-auth";
 import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
@@ -37,6 +37,25 @@ export async function POST(request: Request) {
     }
     const service = await resolveBookableService(input.service);
     if (!service) return NextResponse.json({ error: "This service is unavailable." }, { status: 404 });
+    const requestedStart = new Date(input.startsAt);
+    const dateParts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: STUDIO_TIMEZONE,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(requestedStart);
+    const part = (type: Intl.DateTimeFormatPartTypes) => dateParts.find((item) => item.type === type)?.value ?? "";
+    const availability = await getBookingAvailability(
+      service.id,
+      `${part("year")}-${part("month")}-${part("day")}`,
+      typeof input.resourceId === "string" ? input.resourceId : null,
+      input.durationMinutes == null ? null : Number(input.durationMinutes),
+      selections,
+    );
+    const offeredSlot = availability.slots.find((slot) => Date.parse(slot.startsAt) === requestedStart.getTime());
+    if (!offeredSlot?.available) {
+      return NextResponse.json({ error: "This time is not an available start time. Choose one of the displayed times.", conflict: true }, { status: 409 });
+    }
     const ownerTokenHash = await sha256(input.ownerKey);
     const fingerprint = await sha256(JSON.stringify({ serviceId: service.id, startsAt: input.startsAt, resourceId: input.resourceId ?? null, durationMinutes: input.durationMinutes ?? null, ownerTokenHash, ...(selections ? { selections } : {}) }));
     const admin = getSupabaseAdmin();

@@ -27,10 +27,9 @@ export async function sendBookingConfirmation(input: {
   bookingId?: string;
 }) {
   try {
-    const apiKey = process.env.RESEND_API_KEY;
     const from = process.env.BOOKING_EMAIL_FROM;
     const replyTo = process.env.BOOKING_EMAIL_REPLY_TO;
-    if (!apiKey || !from || !replyTo) return false;
+    if (!from || !replyTo) return false;
     const safe = Object.fromEntries(
       Object.entries(input).map(([key, value]) => [key, typeof value === "string" ? escapeHtml(value) : value]),
     ) as Record<keyof typeof input, string>;
@@ -47,7 +46,7 @@ export async function sendBookingConfirmation(input: {
       : `View booking and accepted terms: ${input.portalUrl}`;
 
     return sendTransactionalEmail({
-      templateKey: "booking-confirmation",
+      templateKey: "booking-request-received",
       logicalIdempotencyKey: `booking-confirmation-${input.bookingId ?? input.reference}`,
       triggerKey: "booking.created",
       clientId: input.clientId,
@@ -96,7 +95,7 @@ export async function sendBookingTermsReviewRequest(input: {
   try {
     const from = process.env.BOOKING_EMAIL_FROM;
     const replyTo = process.env.BOOKING_EMAIL_REPLY_TO;
-    if (!process.env.RESEND_API_KEY || !from || !replyTo) return false;
+    if (!from || !replyTo) return false;
     const safe = Object.fromEntries(
       Object.entries(input).map(([key, value]) => [key, typeof value === "string" ? escapeHtml(value) : value]),
     ) as Record<keyof typeof input, string>;
@@ -109,7 +108,7 @@ export async function sendBookingTermsReviewRequest(input: {
       : `Review and accept: ${input.portalUrl}`;
 
     return sendTransactionalEmail({
-      templateKey: "booking-request-received",
+      templateKey: "booking-terms-review-request",
       logicalIdempotencyKey: `booking-terms-review-${input.bookingId}`,
       triggerKey: "booking.terms_review_requested",
       clientId: input.clientId,

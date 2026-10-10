@@ -99,3 +99,19 @@ describe("checkout reservation safety migration", () => {
     expect(safety).toContain("paymongo_checkout_url = null");
   });
 });
+
+describe("service booking slot intervals migration", () => {
+  const intervals = readFileSync(resolve("supabase/migrations/20260928000000_service_booking_slot_intervals.sql"), "utf8")
+    .replace(/--.*$/gm, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+  it("uses hourly starts by default and half-hour starts only for Mini Sessions", () => {
+    expect(intervals).toContain("slot_interval_minutes := case");
+    expect(intervals).toContain("lower(selected_service.code) in ('mini', 'mini-session')");
+    expect(intervals).toContain("or lower(selected_service.name) = 'mini session' then 30");
+    expect(intervals).toContain("else 60");
+    expect(intervals).toContain("make_interval(mins => slot_interval_minutes)");
+  });
+});

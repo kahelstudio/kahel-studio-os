@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getGalleryAccessState, type GalleryAccessState } from "@/lib/gallery-access";
-import { requireCustomerIdentity, type CustomerIdentity } from "./customer-auth";
+import { requireCustomerIdentity, getSupabaseCustomerClient, type CustomerIdentity } from "./customer-auth";
 import { getSupabaseAdmin } from "./supabase-admin";
 
 type QueryError = { code?: string; message?: string };
@@ -89,10 +89,6 @@ export type PortalGalleryDetail = PortalGallerySummary & {
   assets: PortalGalleryAsset[];
 };
 
-function db() {
-  return getSupabaseAdmin() as unknown as GalleryDatabase;
-}
-
 function rows<T>(data: unknown): T[] {
   return Array.isArray(data) ? data as T[] : [];
 }
@@ -105,9 +101,20 @@ function mediaUrl(mediaAssetId: string, variant: "gallery-grid" | "gallery-previ
   return `/media/${encodeURIComponent(mediaAssetId)}/${variant}`;
 }
 
-async function projectReferences(projectIds: string[]) {
+// media_assets has no customer RLS policy; service-role is required.
+function adminDb() {
+  return getSupabaseAdmin() as unknown as GalleryDatabase;
+}
+
+// All other gallery tables (galleries, gallery_assets, gallery_favorites, projects)
+// have customer RLS policies enforcing ownership via customer_owns_client().
+function customerDb(accessToken: string) {
+  return getSupabaseCustomerClient(accessToken) as unknown as GalleryDatabase;
+}
+
+async function projectReferences(accessToken: string, projectIds: string[]) {
   if (!projectIds.length) return new Map<string, string>();
-  const result = await db().from("projects").select("id,reference").in("id", projectIds);
+  const result = await customerDb(accessToken).from("projects").select("id,reference").in("id", projectIds);
   if (result.error) throw new Error("Unable to load gallery projects.");
   return new Map(rows<ProjectRow>(result.data).map((project) => [project.id, project.reference]));
 }
@@ -134,14 +141,15 @@ const ASSET_COLUMNS = "id,gallery_id,media_asset_id,sort_order,visibility,approv
 
 export async function getPortalGalleries(): Promise<PortalGallerySummary[]> {
   const identity = await requireCustomerIdentity("/portal/galleries");
-  const galleryResult = await db().from("galleries").select(GALLERY_COLUMNS).eq("client_id", identity.clientId).eq("status", "published").eq("published", true).order("session_date", { ascending: false, nullsFirst: false });
+  const cdb = customerDb(identity.accessToken);
+  const galleryResult = await cdb.from("galleries").select(GALLERY_COLUMNS).eq("status", "published").eq("published", true).order("session_date", { ascending: false, nullsFirst: false });
   if (galleryResult.error) throw new Error("Unable to load galleries.");
   const galleries = rows<GalleryRow>(galleryResult.data);
   if (!galleries.length) return [];
 
   const [assetResult, projects] = await Promise.all([
-    db().from("gallery_assets").select(ASSET_COLUMNS).in("gallery_id", galleries.map((gallery) => gallery.id)).eq("visibility", "gallery").eq("approval_status", "approved").order("sort_order", { ascending: true }),
-    projectReferences([...new Set(galleries.flatMap((gallery) => gallery.project_id ? [gallery.project_id] : []))]),
+    cdb.from("gallery_assets").select(ASSET_COLUMNS).in("gallery_id", galleries.map((gallery) => gallery.id)).eq("visibility", "gallery").eq("approval_status", "approved").order("sort_order", { ascending: true }),
+    projectReferences(identity.accessToken, [...new Set(galleries.flatMap((gallery) => gallery.project_id ? [gallery.project_id] : []))]),
   ]);
   if (assetResult.error) throw new Error("Unable to load gallery images.");
   const assets = rows<AssetRow>(assetResult.data);
@@ -153,27 +161,42 @@ export async function getPortalGallery(galleryId: string): Promise<PortalGallery
   return getPortalGalleryForIdentity(galleryId, identity);
 }
 
-export async function getPortalGalleryForIdentity(galleryId: string, identity: Pick<CustomerIdentity, "clientId" | "profileId">): Promise<PortalGalleryDetail | null> {
-  const galleryResult = await db().from("galleries").select(GALLERY_COLUMNS).eq("id", galleryId).eq("client_id", identity.clientId).maybeSingle();
+export async function getPortalGalleryForIdentity(galleryId: string, identity: Pick<CustomerIdentity, "clientId" | "profileId" | "accessToken">): Promise<PortalGalleryDetail | null> {
+  const cdb = customerDb(identity.accessToken);
+  const galleryResult = await cdb.from("galleries").select(GALLERY_COLUMNS).eq("id", galleryId).eq("client_id", identity.clientId).maybeSingle();
   if (galleryResult.error) throw new Error("Unable to load gallery.");
   const gallery = row<GalleryRow>(galleryResult.data);
   if (!gallery) return null;
 
   const state = getGalleryAccessState({ published: gallery.published, publishedAt: gallery.published_at, expiresAt: gallery.expires_at, status: gallery.status });
-  if (state !== "available") return null;
+
+  // For non-available galleries (expired, processing, disabled): return gallery
+  // metadata with empty assets so the page can show a graceful state message
+  // instead of a generic 404.
+  if (state !== "available") {
+    const projects = await projectReferences(identity.accessToken, gallery.project_id ? [gallery.project_id] : []);
+    return {
+      ...summary(gallery, [], projects),
+      state,
+      downloadsEnabled: false,
+      favoritesEnabled: false,
+      watermarkEnabled: gallery.watermark_enabled,
+      assets: [],
+    };
+  }
+
   const [assetResult, projects] = await Promise.all([
-    state === "available"
-      ? db().from("gallery_assets").select(ASSET_COLUMNS).eq("gallery_id", gallery.id).eq("visibility", "gallery").eq("approval_status", "approved").order("sort_order", { ascending: true })
-      : Promise.resolve({ data: [], error: null }),
-    projectReferences(gallery.project_id ? [gallery.project_id] : []),
+    cdb.from("gallery_assets").select(ASSET_COLUMNS).eq("gallery_id", gallery.id).eq("visibility", "gallery").eq("approval_status", "approved").order("sort_order", { ascending: true }),
+    projectReferences(identity.accessToken, gallery.project_id ? [gallery.project_id] : []),
   ]);
   if (assetResult.error) throw new Error("Unable to load gallery images.");
   const assets = rows<AssetRow>(assetResult.data);
   const mediaIds = assets.map((asset) => asset.media_asset_id);
   const [mediaResult, favoriteResult] = await Promise.all([
-    mediaIds.length ? db().from("media_assets").select("id,width,height,dominant_color").in("id", mediaIds).eq("client_id", identity.clientId) : Promise.resolve({ data: [], error: null }),
+    // media_assets has no customer RLS — must use service-role admin with explicit ownership filter
+    mediaIds.length ? adminDb().from("media_assets").select("id,width,height,dominant_color").in("id", mediaIds).eq("client_id", identity.clientId) : Promise.resolve({ data: [], error: null }),
     mediaIds.length && gallery.favorites_enabled
-      ? db().from("gallery_favorites").select("gallery_asset_id").eq("gallery_id", gallery.id).eq("client_id", identity.clientId).eq("client_profile_id", identity.profileId)
+      ? cdb.from("gallery_favorites").select("gallery_asset_id").eq("gallery_id", gallery.id).eq("client_id", identity.clientId).eq("client_profile_id", identity.profileId)
       : Promise.resolve({ data: [], error: null }),
   ]);
   if (mediaResult.error || favoriteResult.error) throw new Error("Unable to load gallery images.");
@@ -206,4 +229,4 @@ export async function getPortalGalleryForIdentity(galleryId: string, identity: P
   };
 }
 
-export { db as getCustomerGalleryDatabase };
+export { adminDb as getCustomerGalleryDatabase };

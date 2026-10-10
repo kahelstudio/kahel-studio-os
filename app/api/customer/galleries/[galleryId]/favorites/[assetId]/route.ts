@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { canFavoriteGalleryAsset, getGalleryAccessState } from "@/lib/gallery-access";
-import { getCustomerIdentityFromRequest, hasTrustedOrigin } from "@/lib/server/customer-auth";
-import { getCustomerGalleryDatabase } from "@/lib/server/customer-gallery-data";
+import { getCustomerIdentityFromRequest, getSupabaseCustomerClient, hasTrustedOrigin } from "@/lib/server/customer-auth";
 
 export const runtime = "nodejs";
 
@@ -15,7 +14,8 @@ async function mutateFavorite(request: Request, context: FavoriteRouteContext, m
   const identity = await getCustomerIdentityFromRequest(request);
   if (!identity) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
   const { galleryId, assetId } = await context.params;
-  const db = getCustomerGalleryDatabase();
+  // Use the customer-scoped client so gallery_favorites RLS enforces ownership.
+  const db = getSupabaseCustomerClient(identity.accessToken);
   const [galleryResult, assetResult] = await Promise.all([
     db.from("galleries").select("id,published,published_at,expires_at,status,favorites_enabled").eq("id", galleryId).eq("client_id", identity.clientId).maybeSingle(),
     db.from("gallery_assets").select("id,visibility,approval_status").eq("id", assetId).eq("gallery_id", galleryId).maybeSingle(),
@@ -27,14 +27,13 @@ async function mutateFavorite(request: Request, context: FavoriteRouteContext, m
     return NextResponse.json({ error: "Gallery image not found." }, { status: 404 });
   }
 
-  const scope = db.from("gallery_favorites");
   if (method === "DELETE") {
-    const result = await scope.delete().eq("gallery_id", galleryId).eq("gallery_asset_id", assetId).eq("client_id", identity.clientId).eq("client_profile_id", identity.profileId);
+    const result = await db.from("gallery_favorites").delete().eq("gallery_id", galleryId).eq("gallery_asset_id", assetId).eq("client_id", identity.clientId).eq("client_profile_id", identity.profileId);
     if (result.error) return NextResponse.json({ error: "Unable to update favorite." }, { status: 500 });
     return new NextResponse(null, { status: 204 });
   }
 
-  const existing = await scope.select("gallery_asset_id").eq("gallery_id", galleryId).eq("gallery_asset_id", assetId).eq("client_id", identity.clientId).eq("client_profile_id", identity.profileId).maybeSingle();
+  const existing = await db.from("gallery_favorites").select("gallery_asset_id").eq("gallery_id", galleryId).eq("gallery_asset_id", assetId).eq("client_id", identity.clientId).eq("client_profile_id", identity.profileId).maybeSingle();
   if (existing.error) return NextResponse.json({ error: "Unable to update favorite." }, { status: 500 });
   if (existing.data) return new NextResponse(null, { status: 204 });
   const result = await db.from("gallery_favorites").insert({ gallery_id: galleryId, gallery_asset_id: assetId, client_id: identity.clientId, client_profile_id: identity.profileId });

@@ -1192,8 +1192,8 @@ function BookingSchedule({ dateValue, timeValue, endTimeValue, eventSelected, ev
         ) : eventSelected ? (
           <div className={styles.eventTimePicker}>
             <div className={styles.eventTimeRange}>
-              <label><span>From</span><input type="time" step="1800" value={timeValue} disabled={disabled} onChange={(event) => onEventTimeChange("time", event.target.value)} /></label>
-              <label><span>To</span><input type="time" step="1800" value={endTimeValue} disabled={disabled} onChange={(event) => onEventTimeChange("endTime", event.target.value)} /></label>
+              <label><span>From</span><input type="time" step="3600" value={timeValue} disabled={disabled} onChange={(event) => onEventTimeChange("time", event.target.value)} /></label>
+              <label><span>To</span><input type="time" step="3600" value={endTimeValue} disabled={disabled} onChange={(event) => onEventTimeChange("endTime", event.target.value)} /></label>
             </div>
             <p className={styles.eventTimeHint}>This package includes up to {eventCoverageMinutes / 60} hours of coverage.</p>
             {timeValue && endTimeValue && !eventRangeValid ? <p className={styles.eventTimeError}>Choose a range between {eventMinimumMinutes / 60} and {eventCoverageMinutes / 60} hours.</p>

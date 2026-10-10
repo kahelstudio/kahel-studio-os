@@ -93,6 +93,28 @@ function estimateTimeFromY(element: HTMLElement, clientY: number): string {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
+export function isElapsedCalendarSlot(date: string, time: string, now = new Date()) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  const timeMatch = /^(\d{2}):(\d{2})$/.exec(time);
+  if (!match || !timeMatch) return true;
+  const [, year, month, day] = match;
+  const [, hour, minute] = timeMatch;
+  const timestamp = Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour) - 8, Number(minute));
+  return timestamp <= now.getTime();
+}
+
+function elapsedDayPercentage(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Manila",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const value = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find(part => part.type === type)?.value ?? 0);
+  const minutesSinceStart = value("hour") * 60 + value("minute") - 7 * 60;
+  return Math.max(0, Math.min(100, minutesSinceStart / ((20 - 7) * 60) * 100));
+}
+
 export function CalendarGrid({
   cells,
   view,
@@ -121,7 +143,11 @@ export function CalendarGrid({
     : cells.map(cell => ({ ...cell, events: cell.events.filter(e => e.category === activeFilter) }));
 
   function handleDragOver(e: React.DragEvent, cellKey: string, cellPast: boolean) {
-    if (cellPast || cellKey.startsWith("blank-")) return;
+    const time = expanded ? estimateTimeFromY(e.currentTarget as HTMLElement, e.clientY) : dragRef.current?.sourceTime;
+    if (cellPast || cellKey.startsWith("blank-") || !time || isElapsedCalendarSlot(cellKey, time)) {
+      setDropTarget(null);
+      return;
+    }
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (dragRef.current && (expanded || cellKey !== dragRef.current.sourceDate)) setDropTarget(cellKey);
@@ -134,6 +160,12 @@ export function CalendarGrid({
     setDropTarget(null);
     if (!dragRef.current || (!expanded && cellKey === dragRef.current.sourceDate) || cellKey.startsWith("blank-") || cellPast) return;
     const time = expanded ? estimateTimeFromY(e.currentTarget as HTMLElement, e.clientY) : dragRef.current.sourceTime;
+    if (isElapsedCalendarSlot(cellKey, time)) {
+      dragRef.current = null;
+      setStatus("error");
+      setErrorMessage("Choose a future time when rescheduling a booking.");
+      return;
+    }
     const { ref } = dragRef.current;
     dragRef.current = null;
     setStatus("saving");
@@ -202,12 +234,15 @@ export function CalendarGrid({
               const dayColor = !cell.inMonth ? "var(--color-text-muted)" : cell.today ? "var(--color-kahel-700)" : "var(--color-text-primary)";
               const isDropTarget = dropTarget === cell.key;
               const visible = expanded ? cell.events : cell.events.slice(0, 3);
+              const background = expanded && cell.today
+                ? `linear-gradient(to bottom, color-mix(in srgb, var(--color-canvas) 82%, transparent) 0 ${elapsedDayPercentage()}%, transparent ${elapsedDayPercentage()}% 100%), ${bg}`
+                : bg;
 
               return (
                 <div
                   key={cell.key}
                   className={`overflow-hidden border-b border-r border-[var(--color-border)] p-2 transition-colors ${isDropTarget ? "ring-2 ring-inset ring-[var(--color-kahel-400)]" : ""}`}
-                  style={{ background: bg }}
+                  style={{ background }}
                   onDragOver={e => handleDragOver(e, cell.key, cell.past && !cell.today)}
                   onDragLeave={handleDragLeave}
                   onDrop={e => handleDrop(e, cell.key, cell.past && !cell.today)}

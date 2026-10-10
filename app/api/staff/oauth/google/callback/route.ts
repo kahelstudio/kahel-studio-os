@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { IS_PRODUCTION, REMEMBER_ME_MAX_AGE, staffEmailAuthorized, STAFF_REFRESH_COOKIE, STAFF_SESSION_COOKIE } from "@/lib/server/staff-auth";
+import { IS_PRODUCTION, REMEMBER_ME_MAX_AGE, isApprovedStaffUser, STAFF_REFRESH_COOKIE, STAFF_SESSION_COOKIE } from "@/lib/server/staff-auth";
 import { createStaffOAuthStorage, oauthVerifierFromRequest, STAFF_OAUTH_VERIFIER_COOKIE } from "@/lib/server/staff-oauth";
 
 export const runtime = "nodejs";
@@ -36,9 +36,9 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent("Unable to complete Google sign-in.")}`, siteOrigin));
   }
 
-  if (!staffEmailAuthorized(data.user.email)) {
+  if (!await isApprovedStaffUser(data.user.id)) {
     await supabase.auth.signOut({ scope: "local" });
-    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent("This Google account is not authorized for staff access.")}`, siteOrigin));
+    return NextResponse.json({ error: "This Google account is not authorized for staff access." }, { status: 403 });
   }
 
   const mfaRequired = data.user.factors?.some((factor) => factor.factor_type === "totp" && factor.status === "verified") ?? false;

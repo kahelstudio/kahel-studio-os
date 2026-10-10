@@ -231,7 +231,6 @@ export function SetPasswordForm({ enabled }: { enabled: boolean }) {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState("");
-  const [complete, setComplete] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -264,15 +263,6 @@ export function SetPasswordForm({ enabled }: { enabled: boolean }) {
 
   if (!enabled) {
     return <div><FormMessage error="This password link is invalid, expired, or has already been used." /><Link className={styles.submit} href="/forgot-password" style={{ display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>Request a new link</Link></div>;
-  }
-
-  if (complete) {
-    return (
-      <div>
-        <FormMessage success="Your password has been updated." />
-        <Link className={styles.submit} href="/portal" style={{ display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>Continue to Client Portal</Link>
-      </div>
-    );
   }
 
   return (

@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { hasStaffSession, tryRefreshStaffSession, STAFF_SESSION_COOKIE, STAFF_REFRESH_COOKIE, REMEMBER_ME_MAX_AGE, IS_PRODUCTION } from "@/lib/server/staff-auth";
+import { hasAuthenticatedStaffIdentity, hasStaffSession, tryRefreshStaffSession, STAFF_SESSION_COOKIE, STAFF_REFRESH_COOKIE, REMEMBER_ME_MAX_AGE, IS_PRODUCTION } from "@/lib/server/staff-auth";
 
 // /api/publish is "public" only so Bearer-authenticated calls reach the route; it verifies the staff JWT itself.
-const PUBLIC_PATHS = ["/", "/book", "/terms", "/booking-terms", "/privacy", "/health-safety", "/offline", "/login", "/reset-password", "/sign-in", "/sign-up", "/forgot-password", "/set-password", "/auth", "/portal", "/media", "/images", "/api/customer", "/api/bookings/holds", "/api/paymongo", "/api/legal/booking-terms", "/api/waitlist", "/api/publish", "/api/staff/session", "/api/staff/password-reset", "/api/staff/oauth", "/client-portal"];
+const PUBLIC_PATHS = ["/", "/book", "/terms", "/booking-terms", "/privacy", "/health-safety", "/offline", "/login", "/reset-password", "/sign-in", "/sign-up", "/forgot-password", "/set-password", "/auth", "/portal", "/media", "/images", "/api/customer", "/api/bookings/holds", "/api/paymongo", "/api/legal/booking-terms", "/api/waitlist", "/api/publish", "/api/staff/session", "/api/staff/password-reset", "/api/staff/oauth"];
 const CUSTOMER_ACCESS_COOKIE = "kahel_customer_access_token";
 const CUSTOMER_REFRESH_COOKIE = "kahel_customer_refresh_token";
 
@@ -20,11 +20,11 @@ async function checkAuth(request: NextRequest) {
 
 function isPublicPath(pathname: string) {
   if (PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))) return true;
-  return pathname === "/api/loyalty/redeem" || pathname === "/api/resend/webhook" || pathname === "/api/email/queue/process" || pathname === "/api/email/test" || /^\/api\/client-portals\/[^/]+\/(access|activity|loyalty)$/.test(pathname);
+  return pathname === "/api/loyalty/redeem" || pathname === "/api/resend/webhook" || pathname === "/api/email/queue/process" || pathname === "/api/email/test";
 }
 
 // OpenNext Cloudflare 1.20.2 does not support the Node.js runtime used by Next.js Proxy.
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   if (process.env.APP_ENV && request.nextUrl.protocol === "http:") {
     const secureUrl = request.nextUrl.clone();
     secureUrl.protocol = "https:";
@@ -61,6 +61,10 @@ export async function middleware(request: NextRequest) {
     if (accessToken) res.cookies.set(STAFF_SESSION_COOKIE, accessToken, cookieOptions);
     if (refreshToken) res.cookies.set(STAFF_REFRESH_COOKIE, refreshToken, cookieOptions);
     return res;
+  }
+
+  if (await hasAuthenticatedStaffIdentity(request)) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 
   const login = new URL("/login", request.url);

@@ -73,7 +73,7 @@ export function LoyaltyDashboard({ summary }: LoyaltyDashboardProps) {
   const progressMaximum = Math.max(1, summary.threshold);
   const progressNow = Math.min(progressMaximum, Math.max(0, summary.cycleProgress));
   const progressWidth = `${(progressNow / progressMaximum) * 100}%`;
-  const termsHref = summary.termsUrl || "/client-portal/loyalty/terms";
+  const termsHref = summary.termsUrl || "/portal/loyalty/terms";
 
   return (
     <section aria-labelledby="loyalty-title" className="text-[var(--color-text-primary)]">

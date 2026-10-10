@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { authenticationDisabled, staffEmailAuthorized, staffRoleForEmail } from "@/lib/server/staff-auth";
+import { authenticationDisabled } from "@/lib/server/staff-auth";
 import { POST as changePassword } from "@/app/api/staff/password-reset/route";
 
-describe("staff email authorization", () => {
+describe("staff authentication", () => {
   beforeEach(() => {
     process.env.KAHEL_STAFF_EMAILS = "owner@example.com";
     process.env.SUPABASE_URL = "https://example.supabase.co";
@@ -10,29 +10,6 @@ describe("staff email authorization", () => {
     process.env.AUTH_REDIRECT_URL = "https://kahelstudio.com/reset-password";
     process.env.KAHEL_AUTH_DISABLED = "false";
     (process.env.APP_ENV as string) = "test";
-  });
-
-  it("authorizes the Kahel Studio work domain", () => {
-    expect(staffEmailAuthorized("eusebio.barrun@kahelstudio.com")).toBe(true);
-  });
-
-  it("still authorizes explicitly configured addresses", () => {
-    expect(staffEmailAuthorized("owner@example.com")).toBe(true);
-  });
-
-  it("rejects unrelated domains", () => {
-    expect(staffEmailAuthorized("person@example.com")).toBe(false);
-  });
-
-  it("assigns Joanne the admin role", () => {
-    expect(staffRoleForEmail("joanne.kahelstudio@gmail.com", ["owner@example.com", "operations@example.com"])).toBe("admin");
-  });
-
-  it("preserves configured owner and admin role assignment", () => {
-    const emails = ["owner@example.com", "operations@example.com", "staff@example.com"];
-    expect(staffRoleForEmail("owner@example.com", emails)).toBe("super_admin");
-    expect(staffRoleForEmail("operations@example.com", emails)).toBe("admin");
-    expect(staffRoleForEmail("staff@example.com", emails)).toBe("staff");
   });
 
   it("never disables authentication in production", () => {

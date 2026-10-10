@@ -29,7 +29,14 @@ type MessageRow = {
   logical_idempotency_key: string; contains_secure_content: boolean; status: string;
 };
 
-const EXTRA_TEMPLATES: Record<string, { name: string; subject: string; secure?: boolean }> = {
+export class TransactionalEmailIssue extends Error {
+  constructor(readonly code: string, readonly safeMessage: string, readonly retryable: boolean) {
+    super(safeMessage);
+    this.name = "TransactionalEmailIssue";
+  }
+}
+
+const EXTRA_TEMPLATES: Record<string, { name: string; subject: string; secure?: boolean; audience?: "customer" | "internal" }> = {
   "payment-receipt": { name: "Payment receipt", subject: "Kahel Studio payment receipt" },
   "loyalty-reward-earned": { name: "Loyalty reward earned", subject: "You earned a complimentary Solo Session" },
   "gallery-ready": { name: "Gallery ready", subject: "Your Kahel Studio gallery is ready" },
@@ -38,7 +45,7 @@ const EXTRA_TEMPLATES: Record<string, { name: string; subject: string; secure?: 
   "supabase-auth-invitation": { name: "Customer account invitation", subject: "Customer account invitation", secure: true },
   "supabase-auth-password-setup": { name: "Customer password setup", subject: "Customer password setup", secure: true },
   "supabase-auth-password-reset": { name: "Password reset request", subject: "Password reset request", secure: true },
-  "delivery-test": { name: "Transactional email delivery test", subject: "Kahel Studio transactional email test" },
+  "delivery-test": { name: "Transactional email delivery test", subject: "Kahel Studio transactional email test", audience: "internal" },
 };
 
 function environment(): Environment {
@@ -46,26 +53,82 @@ function environment(): Environment {
   return value === "production" || value === "staging" ? value : "development";
 }
 
-function address(value: string) {
+function address(value: string, kind: "recipient" | "sender" | "reply-to" = "recipient") {
   const match = value.trim().match(/^(.*?)\s*<([^<>]+)>$/);
-  return { email: (match?.[2] ?? value).trim().toLowerCase(), name: match?.[1]?.trim().replace(/^"|"$/g, "") || null };
+  const email = (match?.[2] ?? value).trim().toLowerCase();
+  if (!/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)) {
+    const label = kind === "reply-to" ? "reply-to address" : `${kind} email`;
+    throw new TransactionalEmailIssue(`invalid_${kind.replace("-", "_")}`, `The ${label} is missing or invalid.`, false);
+  }
+  return { email, name: match?.[1]?.trim().replace(/^"|"$/g, "") || null };
 }
 
 function definition(templateKey: string) {
   const catalogue = TRANSACTIONAL_EMAILS.find((item) => item.id === templateKey);
-  if (catalogue) return { name: catalogue.name, subject: catalogue.subject, secure: false, fields: catalogue.fields };
+  if (catalogue) return { name: catalogue.name, subject: catalogue.subject, secure: false, fields: catalogue.fields, audience: catalogue.audience === "Internal" ? "internal" as const : "customer" as const };
   const extra = EXTRA_TEMPLATES[templateKey];
-  if (!extra) throw new Error(`Transactional email template is not approved: ${templateKey}`);
-  return { ...extra, secure: Boolean(extra.secure), fields: [] as string[] };
+  if (!extra) throw new TransactionalEmailIssue("no_active_template_version", "No active email template version is available.", false);
+  return { ...extra, secure: Boolean(extra.secure), fields: [] as string[], audience: extra.audience ?? "customer" as const };
+}
+
+export function validateRenderedTransactionalEmail(templateKey: string, message: RenderedEmail) {
+  const approved = definition(templateKey);
+  const recipients = Array.isArray(message.to) ? message.to : [message.to];
+  if (recipients.length !== 1) throw new TransactionalEmailIssue("invalid_recipient", "Transactional emails require exactly one valid recipient.", false);
+  address(recipients[0], "recipient");
+  address(message.from, "sender");
+  if (message.replyTo) address(message.replyTo, "reply-to");
+  if (!message.subject.trim() || (!message.html.trim() && !message.text.trim())) {
+    throw new TransactionalEmailIssue("empty_email_content", "The email subject and content are required.", false);
+  }
+  const rendered = `${message.subject}\n${message.html}\n${message.text}`;
+  const unresolved = [...rendered.matchAll(/{{\s*([a-zA-Z0-9_.-]+)\s*}}/g)].map((match) => match[1]);
+  if (unresolved.length) {
+    const unique = [...new Set(unresolved)];
+    const unsupported = unique.filter((field) => !approved.fields.includes(field));
+    const fields = unsupported.length ? unsupported : unique;
+    throw new TransactionalEmailIssue(
+      unsupported.length ? "unsupported_merge_field" : "missing_required_merge_field",
+      `${unsupported.length ? "Unsupported" : "Missing required"} merge field${fields.length === 1 ? "" : "s"}: ${fields.join(", ")}.`,
+      false,
+    );
+  }
+  return approved;
+}
+
+export function renderTransactionalTemplate(
+  templateKey: string,
+  templates: { subject: string; html: string | null; text: string | null },
+  context: Record<string, unknown>,
+) {
+  const approved = definition(templateKey);
+  const source = `${templates.subject}\n${templates.html ?? ""}\n${templates.text ?? ""}`;
+  const fields = [...new Set([...source.matchAll(/{{\s*([a-zA-Z0-9_.-]+)\s*}}/g)].map((match) => match[1]))];
+  const unsupported = fields.filter((field) => !approved.fields.includes(field));
+  if (unsupported.length) {
+    throw new TransactionalEmailIssue("unsupported_merge_field", `Unsupported merge field${unsupported.length === 1 ? "" : "s"}: ${unsupported.join(", ")}.`, false);
+  }
+  const missing = fields.filter((field) => context[field] === undefined || context[field] === null || String(context[field]).trim() === "");
+  if (missing.length) {
+    throw new TransactionalEmailIssue("missing_required_merge_field", `Missing required merge field${missing.length === 1 ? "" : "s"}: ${missing.join(", ")}.`, false);
+  }
+  const render = (value: string | null, html: boolean) => (value ?? "").replace(/{{\s*([a-zA-Z0-9_.-]+)\s*}}/g, (_placeholder, field: string) => {
+    const rendered = String(context[field]);
+    return html ? rendered.replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!) : rendered;
+  });
+  return { subject: render(templates.subject, false), html: render(templates.html, true), text: render(templates.text, false) };
 }
 
 async function ensureTemplateVersion(templateKey: string) {
   const admin = getSupabaseAdmin();
   const approved = definition(templateKey);
-  let template = await admin.from("email_templates" as never).select("id").eq("template_key", templateKey).maybeSingle<{ id: string }>();
+  let template = await admin.from("email_templates" as never).select("id,active").eq("template_key", templateKey).maybeSingle<{ id: string; active: boolean }>();
   if (template.error) throw template.error;
+  if (template.data && !template.data.active) {
+    throw new TransactionalEmailIssue("no_active_template_version", "No active email template version is available.", false);
+  }
   if (!template.data) {
-    const inserted = await admin.from("email_templates" as never).upsert({ template_key: templateKey, name: approved.name, audience: "customer", description: "Managed by the approved application renderer.", active: true } as never, { onConflict: "template_key" }).select("id").single<{ id: string }>();
+    const inserted = await admin.from("email_templates" as never).upsert({ template_key: templateKey, name: approved.name, audience: approved.audience, description: "Managed by the approved application renderer.", active: true } as never, { onConflict: "template_key" }).select("id,active").single<{ id: string; active: boolean }>();
     if (inserted.error) throw inserted.error;
     template = inserted;
   }
@@ -97,10 +160,11 @@ async function ensureTemplateVersion(templateKey: string) {
 }
 
 async function enqueueTransactionalEmailWithProvider(input: EnqueueEmailInput, provider: "resend" | "supabase_auth", externallyAccepted = false) {
+  const approved = validateRenderedTransactionalEmail(input.templateKey, input.message);
   const templateVersionId = await ensureTemplateVersion(input.templateKey);
-  const sender = address(input.message.from);
-  const recipient = address(Array.isArray(input.message.to) ? input.message.to[0] : input.message.to);
-  const secure = Boolean(input.secure || definition(input.templateKey).secure);
+  const sender = address(input.message.from, "sender");
+  const recipient = address(Array.isArray(input.message.to) ? input.message.to[0] : input.message.to, "recipient");
+  const secure = Boolean(input.secure || approved.secure);
   const redacted = "[secure content unavailable]";
   const admin = getSupabaseAdmin();
   const rpc = admin.rpc.bind(admin) as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: MessageRow | null; error: { message?: string } | null }>;
@@ -110,7 +174,7 @@ async function enqueueTransactionalEmailWithProvider(input: EnqueueEmailInput, p
     recipient_profile_id: input.recipientProfileId, recipient_user_id: input.recipientUserId,
     recipient_email: recipient.email, recipient_name: input.recipientName ?? recipient.name,
     recipient_snapshot: secure ? { preview: "unavailable" } : (input.recipientSnapshot ?? { name: input.recipientName ?? recipient.name }),
-    sender_email: sender.email, sender_name: sender.name, reply_to_email: input.message.replyTo ? address(input.message.replyTo).email : undefined,
+    sender_email: sender.email, sender_name: sender.name, reply_to_email: input.message.replyTo ? address(input.message.replyTo, "reply-to").email : undefined,
     trigger_key: input.triggerKey, source: input.source ?? "system", source_reference: input.sourceReference,
     booking_id: input.bookingId, invoice_id: input.invoiceId, payment_id: input.paymentId, project_id: input.projectId,
     gallery_id: input.galleryId, loyalty_reward_id: input.loyaltyRewardId, related_type: input.relatedType, related_id: input.relatedId,
@@ -161,16 +225,24 @@ export async function recordSupabaseAuthEmailRequest(input: {
 }
 
 export function classifyEmailError(error: unknown) {
+  if (error instanceof TransactionalEmailIssue) {
+    return { code: error.code, message: error.safeMessage, retryable: error.retryable };
+  }
   if (error instanceof ResendEmailError) {
     const retryable = error.status === 408 || error.status === 409 || error.status === 429 || error.status >= 500;
-    return { code: (error.code ?? `http_${error.status}`).slice(0, 120), message: `Resend request failed (${error.status}).`, retryable };
+    const providerCode = (error.code ?? `http_${error.status}`).slice(0, 120);
+    if (error.status === 401 || /api.?key|authentication|unauthorized/i.test(providerCode)) {
+      return { code: "provider_authentication_failed", message: "Email provider authentication failed.", retryable: false };
+    }
+    if (error.status === 403) return { code: "provider_sender_rejected", message: "Email provider rejected the configured sender.", retryable: false };
+    if (error.status === 422) return { code: providerCode, message: "Email provider rejected the message data.", retryable: false };
+    if (error.status === 429) return { code: providerCode, message: "Email provider rate limit reached.", retryable: true };
+    return { code: providerCode, message: `Email provider request failed (${error.status}).`, retryable };
   }
   return { code: "provider_unavailable", message: "Email provider request failed.", retryable: true };
 }
 
 export async function processTransactionalEmailQueue(options: { limit?: number; workerId?: string; messageId?: string; secureOverride?: { messageId: string; message: RenderedEmail } } = {}) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) throw new Error("Resend email is not configured.");
   const limit = Math.min(Math.max(options.limit ?? 10, 1), 50);
   const workerId = options.workerId ?? `app:${crypto.randomUUID()}`;
   const admin = getSupabaseAdmin();
@@ -184,6 +256,8 @@ export async function processTransactionalEmailQueue(options: { limit?: number; 
     const row = claim.data;
     const override = options.secureOverride?.messageId === row.id ? options.secureOverride.message : null;
     try {
+      const apiKey = process.env.RESEND_API_KEY;
+      if (!apiKey || apiKey === "re_replace_me") throw new TransactionalEmailIssue("provider_configuration_missing", "Email provider configuration is missing.", true);
       if (row.contains_secure_content && !override) throw new ResendEmailError("Secure content is no longer available.", 422, "secure_content_unavailable");
       const message = override ?? {
         to: row.recipient_email,
@@ -218,9 +292,13 @@ export async function sendTransactionalEmail(input: EnqueueEmailInput) {
   }
 }
 
-export async function recordResendProviderEvent(input: { eventId: string; type: string; providerMessageId: string; occurredAt: string }) {
+export function mapResendEventStatus(type: string) {
   const mapped: Record<string, string> = { "email.sent": "sent", "email.delivery_delayed": "deferred", "email.delivered": "delivered", "email.failed": "failed", "email.bounced": "bounced", "email.complained": "complained", "email.suppressed": "suppressed" };
-  const status = mapped[input.type];
+  return mapped[type] ?? null;
+}
+
+export async function recordResendProviderEvent(input: { eventId: string; type: string; providerMessageId: string; occurredAt: string }) {
+  const status = mapResendEventStatus(input.type);
   if (!status) return null;
   const admin = getSupabaseAdmin();
   const rpc = admin.rpc.bind(admin) as unknown as (name: string, args: Record<string, unknown>) => Promise<{ data: MessageRow | null; error: { code?: string; message?: string } | null }>;

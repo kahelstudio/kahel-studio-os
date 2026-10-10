@@ -1,11 +1,11 @@
 import "server-only";
 
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { Session, User } from "@supabase/supabase-js";
-import { getSupabaseAdmin, getSupabaseAuthClient } from "./supabase-admin";
+import { getSupabaseAdmin, getSupabaseAuthClient, getSupabaseCustomerClient } from "./supabase-admin";
 import type { Json } from "./supabase-database";
-import { recordSupabaseAuthEmailRequest } from "./transactional-email-service";
 
 export const CUSTOMER_ACCESS_COOKIE = "kahel_customer_access_token";
 export const CUSTOMER_REFRESH_COOKIE = "kahel_customer_refresh_token";
@@ -18,6 +18,7 @@ export type CustomerIdentity = {
   lastName: string;
   email: string;
   mobile: string | null;
+  accessToken: string;
 };
 
 type CustomerProfile = {
@@ -128,17 +129,27 @@ async function identityForToken(accessToken: string | undefined): Promise<Custom
     lastName: profile.last_name,
     email: profile.email,
     mobile: profile.mobile,
+    accessToken,
   };
 }
+
+// React request-scoped cache: deduplicates the Supabase Auth round-trip when
+// both the portal layout and each page's data function call getCustomerIdentity
+// within the same server render.
+const getCustomerIdentityFromCookies = cache(async (): Promise<CustomerIdentity | null> => {
+  const store = await cookies();
+  return identityForToken(store.get(CUSTOMER_ACCESS_COOKIE)?.value);
+});
 
 export async function getCustomerIdentityFromRequest(request: Request) {
   return identityForToken(cookieValue(request, CUSTOMER_ACCESS_COOKIE));
 }
 
 export async function getCustomerIdentity() {
-  const store = await cookies();
-  return identityForToken(store.get(CUSTOMER_ACCESS_COOKIE)?.value);
+  return getCustomerIdentityFromCookies();
 }
+
+export { getSupabaseCustomerClient };
 
 export async function requireCustomerIdentity(next = "/portal") {
   const identity = await getCustomerIdentity();

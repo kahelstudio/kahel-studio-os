@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSupabaseAuthClient } from "@/lib/server/supabase-admin";
-import { authenticationDisabled, IS_PRODUCTION, staffEmailAuthorized, STAFF_REFRESH_COOKIE, STAFF_SESSION_COOKIE } from "@/lib/server/staff-auth";
+import { authenticationDisabled, IS_PRODUCTION, isApprovedStaffUser, STAFF_REFRESH_COOKIE, STAFF_SESSION_COOKIE } from "@/lib/server/staff-auth";
 
 export const runtime = "nodejs";
 const MFA_REMEMBER_COOKIE = "kahel_staff_mfa_remember";
@@ -15,7 +15,7 @@ async function authenticatedClient(request: Request) {
   if (!token) return null;
   const client = getSupabaseAuthClient(token);
   const { data, error } = await client.auth.getUser();
-  return !error && staffEmailAuthorized(data.user?.email) ? client : null;
+  return !error && data.user?.id && await isApprovedStaffUser(data.user.id) ? client : null;
 }
 
 export async function GET(request: Request) {

@@ -8,9 +8,8 @@ const peso = (centavos: number) => new Intl.NumberFormat("en-PH", { style: "curr
 
 export async function sendPaymentReceipt(input: { to: string; receiptNumber: string; customerName: string; bookingReference: string; invoiceReference: string | null; method: string; amountCentavos: number; cashReceivedCentavos: number | null; changeCentavos: number | null; issuedAt: string; lines: ReceiptLine[]; clientId?: string; profileId?: string; bookingId?: string; invoiceId?: string; paymentId?: string; source?: "system" | "staff" }) {
   try {
-    const apiKey = process.env.RESEND_API_KEY;
     const from = process.env.BOOKING_EMAIL_FROM;
-    if (!apiKey || !from) return false;
+    if (!from) return false;
     const replyTo = process.env.BOOKING_EMAIL_REPLY_TO ?? from;
     const items = input.lines.map((line) => `<tr><td style="padding:8px 0;border-bottom:1px solid #e5e1dd">${line.quantity} x ${escapeHtml(line.description)}</td><td style="padding:8px 0;border-bottom:1px solid #e5e1dd;text-align:right">${escapeHtml(peso(line.totalCentavos))}</td></tr>`).join("");
     const cash = input.cashReceivedCentavos === null ? "" : `<p>Cash received: <strong>${escapeHtml(peso(input.cashReceivedCentavos))}</strong><br>Change: <strong>${escapeHtml(peso(input.changeCentavos ?? 0))}</strong></p>`;

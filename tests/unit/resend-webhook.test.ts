@@ -29,4 +29,16 @@ describe("Resend webhook", () => {
     expect(response.status).toBe(401);
     expect(mocks.record).not.toHaveBeenCalled();
   });
+
+  it.each(["email.failed", "email.bounced"])("forwards the normalized %s event", async (type) => {
+    const secret = `whsec_${Buffer.from("test webhook signing secret").toString("base64")}`;
+    vi.stubEnv("RESEND_WEBHOOK_SECRET", secret);
+    const body = JSON.stringify({ type, created_at: "2026-08-13T12:00:00Z", data: { email_id: "email_failed", to: ["private@example.com"] } });
+    const id = `msg_${type}`;
+    const timestamp = new Date();
+    const signature = new Webhook(secret).sign(id, timestamp, body);
+    const response = await POST(new Request("https://kahelstudio.com/api/resend/webhook", { method: "POST", body, headers: { "svix-id": id, "svix-timestamp": String(Math.floor(timestamp.getTime() / 1000)), "svix-signature": signature } }));
+    expect(response.status).toBe(200);
+    expect(mocks.record).toHaveBeenCalledWith({ eventId: id, type, providerMessageId: "email_failed", occurredAt: "2026-08-13T12:00:00.000Z" });
+  });
 });

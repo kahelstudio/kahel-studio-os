@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { Json } from "./supabase-database";
-import { getSupabaseAdmin } from "./supabase-admin";
+import { getSupabaseAdmin, getSupabaseCustomerClient } from "./supabase-admin";
 import { parseBookingTermsContent, type PublishedBookingTerms } from "@/lib/legal-documents";
 
 type VersionRow = {
@@ -64,16 +64,18 @@ export async function getBookingAgreement(bookingId: string, clientId?: string) 
   return version ? { acceptance: acceptance.data, version } : null;
 }
 
-export async function listClientAgreements(clientId: string) {
-  const result = await getSupabaseAdmin().from("agreement_acceptances")
+export async function listClientAgreements(clientId: string, accessToken?: string) {
+  const db = accessToken ? getSupabaseCustomerClient(accessToken) : getSupabaseAdmin();
+  const result = await db.from("agreement_acceptances")
     .select("id,booking_id,legal_document_version_id,version_number,document_hash,accepted_at,method,source,locale,booking_summary,booking_summary_hash")
     .eq("client_id", clientId).order("accepted_at", { ascending: false });
   if (result.error) throw result.error;
   return result.data ?? [];
 }
 
-export async function getClientAgreement(acceptanceId: string, clientId: string) {
-  const result = await getSupabaseAdmin().from("agreement_acceptances")
+export async function getClientAgreement(acceptanceId: string, clientId: string, accessToken?: string) {
+  const db = accessToken ? getSupabaseCustomerClient(accessToken) : getSupabaseAdmin();
+  const result = await db.from("agreement_acceptances")
     .select("id,booking_id,client_id,legal_document_version_id,version_number,document_hash,accepted_at,method,source,locale,booking_summary,booking_summary_hash")
     .eq("id", acceptanceId).eq("client_id", clientId).maybeSingle();
   if (result.error || !result.data) return null;

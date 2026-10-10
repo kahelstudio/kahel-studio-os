@@ -5,7 +5,7 @@ test.skip(Boolean(process.env.CI), "Requires local application data services");
 
 const routes = [
   "/", "/approvals", "/attendance/engagements", "/attendance/timesheets", "/booking/calendar",
-  "/booking/list", "/client-portal", "/compliance/dashboard", "/compliance/register", "/crm/accounts",
+  "/booking/list", "/portal", "/compliance/dashboard", "/compliance/register", "/crm/accounts",
   "/crm/queue", "/dashboard", "/docs", "/feedback/myreports", "/feedback/report", "/finance/expenses",
   "/finance/invoices", "/finance/payments", "/finance/reconciliation", "/finance/sales", "/payments", "/glitches", "/help", "/inventory/checkouts", "/inventory/equipment", "/login", "/logs",
   "/maintenance/history", "/maintenance/schedule", "/marketing/attribution", "/marketing/campaigns", "/os",

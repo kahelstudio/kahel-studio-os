@@ -56,7 +56,7 @@ function MessageList({ messages, failedView, canRetry, checked, toggle, onSelect
     <button type="button" onClick={() => onSelect(message)} className="min-h-11 min-w-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-kahel-500)]"><span className="block truncate text-sm font-semibold">{message.subject}</span><span className="mt-1 block truncate text-xs text-[var(--color-text-muted)]">{message.id}</span></button>
     <div className="mt-2 min-w-0 lg:mt-0"><span className="block truncate text-sm">{message.clientName ?? message.recipientName ?? "No client name"}</span><span className="block truncate text-xs text-[var(--color-text-muted)]">{message.recipient}</span></div>
     <div className="mt-2 text-xs lg:mt-0"><span className="block truncate font-semibold">{message.templateKey}{message.templateVersion ? ` v${message.templateVersion}` : ""}</span><span className="text-[var(--color-text-muted)]">{label(message.module)}</span></div>
-    <div className="mt-3 lg:mt-0"><Status value={message.status} /></div><span className="mt-2 block text-xs text-[var(--color-text-muted)] lg:mt-0">{formatDate(message.updatedAt)}</span>
+    <div className="mt-3 min-w-0 lg:mt-0"><Status value={message.status} />{message.lastError && ["failed", "bounced", "complained", "suppressed"].includes(message.status) && <span className="mt-1 block truncate text-xs text-[var(--color-danger-text)]" title={message.lastError}>{message.lastError}</span>}</div><span className="mt-2 block text-xs text-[var(--color-text-muted)] lg:mt-0">{formatDate(message.updatedAt)}</span>
   </article>; })}</section>;
 }
 
@@ -86,13 +86,17 @@ function Detail({ label: text, value }: { label: string; value: string | null })
 function Timeline({ message }: { message: TransactionalMessage }) { const rows = [...message.attempts.map((item) => ({ id: `a-${item.id}`, title: `Attempt ${item.number ?? ""}: ${label(item.status)}`, date: item.finishedAt ?? item.attemptedAt, detail: [item.actor, item.providerMessageId, item.errorCode, item.error].filter(Boolean).join(" · ") })), ...message.events.map((item) => ({ id: `e-${item.id}`, title: `${label(item.type)}${item.status ? ` · ${label(item.status)}` : ""}`, date: item.occurredAt, detail: [item.providerMessageId, item.detail].filter(Boolean).join(" · ") }))].sort((a, b) => b.date.localeCompare(a.date)); return <History title="Status timeline" empty="No attempt or provider event records are available." rows={rows} />; }
 function History({ title, empty, rows }: { title: string; empty: string; rows: { id: string; title: string; date: string; detail: string }[] }) { return <section><h3 className="font-display font-semibold">{title}</h3>{rows.length ? <ol className="mt-3 space-y-3 border-l border-[var(--color-border)] pl-4">{rows.map((row) => <li key={row.id}><p className="text-sm font-semibold">{row.title}</p><p className="mt-0.5 text-xs text-[var(--color-text-muted)]">{formatDate(row.date)}</p>{row.detail && <p className="mt-1 break-words text-xs text-[var(--color-text-secondary)]">{row.detail}</p>}</li>)}</ol> : <p className="mt-2 text-sm text-[var(--color-text-secondary)]">{empty}</p>}</section>; }
 
-const TEST_RECIPIENTS = ["hello@kahel.studio", "joanne.kahelstudio@gmail.com"];
+// Canonical test recipients match the standard project inboxes used across all email tests.
+const TEST_RECIPIENTS = ["eusebio.barrun@gmail.com", "joanne.kahelstudio@gmail.com", "luiz.kahelstudio@gmail.com"];
 
 function TestEmailDialog({ onClose }: { onClose: () => void }) {
-  const [recipients, setRecipients] = useState<string[]>(["hello@kahel.studio"]);
+  const [recipients, setRecipients] = useState<string[]>([TEST_RECIPIENTS[0]]);
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<Array<{ recipient: string; accepted: boolean; status?: string; errorCode?: string }> | null>(null);
   const [error, setError] = useState("");
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  useDialog(panelRef, closeRef, () => { if (!busy) onClose(); });
 
   function toggle(email: string) { setRecipients((current) => current.includes(email) ? current.filter((r) => r !== email) : [...current, email]); }
 
@@ -108,11 +112,11 @@ function TestEmailDialog({ onClose }: { onClose: () => void }) {
     finally { setBusy(false); }
   }
 
-  return <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="test-email-title" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
-    <form onSubmit={send} className="w-full max-w-md rounded-t-modal bg-[var(--color-surface)] p-5 shadow-[var(--shadow-dialog)] sm:rounded-modal">
+  return <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 sm:items-center sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
+    <form ref={panelRef as React.RefObject<HTMLFormElement>} onSubmit={send} role="dialog" aria-modal="true" aria-labelledby="test-email-title" className="w-full max-w-md rounded-t-modal bg-[var(--color-surface)] p-5 shadow-[var(--shadow-dialog)] sm:rounded-modal">
       <div className="flex items-start gap-3">
         <div className="flex-1"><h2 id="test-email-title" className="font-display text-xl font-semibold">Send test email</h2><p className="mt-1 text-sm text-[var(--color-text-secondary)]">Sends a delivery test through the live Resend pipeline. Use this to verify the email channel is working.</p></div>
-        <button type="button" disabled={busy} onClick={onClose} className="grid min-h-11 min-w-11 place-items-center rounded-control" aria-label="Close"><X className="h-5 w-5" /></button>
+        <button ref={closeRef} type="button" disabled={busy} onClick={onClose} className="grid min-h-11 min-w-11 place-items-center rounded-control" aria-label="Close"><X className="h-5 w-5" /></button>
       </div>
       <fieldset className="mt-5">
         <legend className="text-sm font-semibold">Recipients</legend>
@@ -125,7 +129,7 @@ function TestEmailDialog({ onClose }: { onClose: () => void }) {
       </fieldset>
       {results && <div className="mt-4 space-y-2">
         {results.map((result) => <div key={result.recipient} className={`rounded-control px-3 py-2.5 text-sm ${result.accepted ? "bg-[var(--color-success-bg)] text-[var(--color-success-text)]" : "bg-[var(--color-danger-bg)] text-[var(--color-danger-text)]"}`}>
-          <span className="font-semibold">{result.accepted ? "✓ Delivered" : "✗ Failed"}</span> — {result.recipient}
+          <span className="font-semibold">{result.accepted ? "✓ Provider accepted" : "✗ Failed"}</span> — {result.recipient}
           {result.errorCode && <span className="ml-2 font-mono text-xs">({result.errorCode}{result.status ? ` · ${result.status}` : ""})</span>}
         </div>)}
       </div>}
@@ -140,6 +144,9 @@ function TestEmailDialog({ onClose }: { onClose: () => void }) {
 
 function RetryDialog({ messages, onClose, onComplete }: { messages: TransactionalMessage[]; onClose: () => void; onComplete: () => void }) {
   const [reason, setReason] = useState(""), [busy, setBusy] = useState(false), [error, setError] = useState("");
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  useDialog(panelRef, closeRef, () => { if (!busy) onClose(); });
   async function submit(event: React.FormEvent) { event.preventDefault(); if (reason.trim().length < 5 || messages.length > 20) return; setBusy(true); setError(""); const batchKey = crypto.randomUUID(); for (const message of messages) { try { const response = await fetch(`/api/email/messages/${message.id}/resend`, { method: "POST", headers: { "Content-Type": "application/json", "Idempotency-Key": `${batchKey}:${message.id}` }, body: JSON.stringify({ reason: reason.trim() }) }); if (!response.ok) { const body = await response.json().catch(() => null) as { error?: string } | null; setError(`Stopped after a safe failure: ${body?.error ?? "Retry was not accepted."}`); setBusy(false); return; } } catch { setError("Stopped because the connection was interrupted. Completed requests remain idempotent."); setBusy(false); return; } } onComplete(); }
-  return <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="retry-title" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}><form onSubmit={submit} className="w-full max-w-lg rounded-t-modal bg-[var(--color-surface)] p-5 shadow-[var(--shadow-dialog)] sm:rounded-modal"><div className="flex items-start gap-4"><div><h2 id="retry-title" className="font-display text-xl font-semibold">Retry failed emails</h2><p className="mt-1 text-sm text-[var(--color-text-secondary)]">Retry {messages.length} eligible transient {messages.length === 1 ? "failure" : "failures"}, one at a time. Processing stops safely on the first error.</p></div><button type="button" disabled={busy} onClick={onClose} className="ml-auto grid min-h-11 min-w-11 place-items-center rounded-control" aria-label="Close retry dialog"><X className="h-5 w-5" /></button></div><label className="mt-5 block text-sm font-semibold">Reason<textarea autoFocus required minLength={5} maxLength={180} value={reason} onChange={(event) => setReason(event.target.value)} rows={3} placeholder="Why should these messages be retried?" className="mt-2 w-full rounded-control border border-[var(--color-border)] p-3 font-normal" /></label>{error && <p role="alert" className="mt-3 text-sm text-[var(--color-danger-text)]">{error}</p>}<div className="mt-5 flex justify-end gap-2"><button type="button" disabled={busy} onClick={onClose} className="min-h-11 rounded-control border border-[var(--color-border)] px-4 text-sm font-semibold">Cancel</button><button disabled={busy || reason.trim().length < 5 || !messages.length || messages.length > 20} className="min-h-11 rounded-control bg-[var(--color-text-primary)] px-4 text-sm font-semibold text-[var(--color-surface)] disabled:opacity-40">{busy ? "Retrying..." : "Confirm retry"}</button></div></form></div>;
+  return <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/40 sm:items-center sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}><form ref={panelRef as React.RefObject<HTMLFormElement>} onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="retry-title" className="w-full max-w-lg rounded-t-modal bg-[var(--color-surface)] p-5 shadow-[var(--shadow-dialog)] sm:rounded-modal"><div className="flex items-start gap-4"><div><h2 id="retry-title" className="font-display text-xl font-semibold">Retry failed emails</h2><p className="mt-1 text-sm text-[var(--color-text-secondary)]">Retry {messages.length} eligible transient {messages.length === 1 ? "failure" : "failures"}, one at a time. Processing stops safely on the first error.</p></div><button ref={closeRef} type="button" disabled={busy} onClick={onClose} className="ml-auto grid min-h-11 min-w-11 place-items-center rounded-control" aria-label="Close retry dialog"><X className="h-5 w-5" /></button></div><label className="mt-5 block text-sm font-semibold">Reason<textarea autoFocus required minLength={5} maxLength={180} value={reason} onChange={(event) => setReason(event.target.value)} rows={3} placeholder="Why should these messages be retried?" className="mt-2 w-full rounded-control border border-[var(--color-border)] p-3 font-normal" /></label>{error && <p role="alert" className="mt-3 text-sm text-[var(--color-danger-text)]">{error}</p>}<div className="mt-5 flex justify-end gap-2"><button type="button" disabled={busy} onClick={onClose} className="min-h-11 rounded-control border border-[var(--color-border)] px-4 text-sm font-semibold">Cancel</button><button disabled={busy || reason.trim().length < 5 || !messages.length || messages.length > 20} className="min-h-11 rounded-control bg-[var(--color-text-primary)] px-4 text-sm font-semibold text-[var(--color-surface)] disabled:opacity-40">{busy ? "Retrying..." : "Confirm retry"}</button></div></form></div>;
 }

@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(119);
+select plan(122);
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password, created_at, updated_at)
 values
@@ -362,6 +362,23 @@ select throws_ok(format($$insert into public.bookings (
   'Studio', 'cash', 10000, 10000, 'inquiry'
 )$$, ((now() at time zone 'Asia/Manila')::date + 3651)),
   '22023', 'booking schedule is not allowed', 'active booking beyond maximum advance is rejected');
+
+select throws_ok($$select public.reschedule_booking(
+  'RES-SOURCE', ((clock_timestamp() at time zone 'Asia/Manila')::date - 1), time '12:00',
+  '52500000-0000-4000-8000-000000000001', '52000000-0000-4000-8000-000000000001',
+  'Invalid past-date bypass attempt'
+)$$, '22023', 'booking cannot be rescheduled to an elapsed time', 'reschedule RPC rejects yesterday');
+select throws_ok($$select public.reschedule_booking(
+  'RES-SOURCE', (clock_timestamp() at time zone 'Asia/Manila')::date, time '00:00',
+  '52500000-0000-4000-8000-000000000001', '52000000-0000-4000-8000-000000000001',
+  'Invalid earlier-today bypass attempt'
+)$$, '22023', 'booking cannot be rescheduled to an elapsed time', 'reschedule RPC rejects an elapsed time today');
+select throws_ok($$select public.reschedule_booking(
+  'RES-SOURCE', (clock_timestamp() at time zone 'Asia/Manila')::date,
+  (clock_timestamp() at time zone 'Asia/Manila')::time,
+  '52500000-0000-4000-8000-000000000001', '52000000-0000-4000-8000-000000000001',
+  'Invalid current-time bypass attempt'
+)$$, '22023', 'booking cannot be rescheduled to an elapsed time', 'reschedule RPC rejects the current slot');
 
 select lives_ok($$select public.reschedule_booking(
   'RES-SOURCE', (select test_date + 1 from reservation_test_times), time '14:00',

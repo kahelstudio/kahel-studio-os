@@ -511,9 +511,9 @@ export const APPS: AppDef[] = [
     description: "External gallery, selects, invoices and feedback",
     accent: "orange",
     icon: Camera,
-    href: "/client-portal",
+    href: "/portal",
     nav: [
-      { id: "portal", label: "Client Portal", href: "/client-portal" },
+      { id: "portal", label: "Client Portal", href: "/portal" },
     ],
   },
 

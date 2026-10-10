@@ -290,6 +290,31 @@ export function PaymentsWorkspace({
             PayMongo settlements
           </TabButton>
         </div>
+        <label className="relative mb-3 block w-full md:w-72">
+          <span className="sr-only">Search payments</span>
+          <Search
+            className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-[var(--color-text-muted)]"
+            aria-hidden="true"
+          />
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className={`${inputClass} pl-9 pr-10`}
+            placeholder="Search payments..."
+            aria-label="Search payments"
+          />
+          {query ? (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-1.5 top-1.5 flex h-8 w-8 items-center justify-center rounded-control text-[var(--color-text-muted)] hover:bg-[var(--color-surface-muted)] hover:text-[var(--color-text-primary)]"
+              aria-label="Clear payment search"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          ) : null}
+        </label>
       </div>
 
       <section

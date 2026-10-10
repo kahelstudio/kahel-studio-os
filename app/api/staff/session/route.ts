@@ -31,7 +31,9 @@ export async function POST(request: Request) {
   if (!await verifyTurnstile(request, typeof turnstileToken === "string" ? turnstileToken : "")) {
     return NextResponse.json({ error: turnstileConfigured() ? "Security verification failed. Please try again." : "Security verification is not configured." }, { status: turnstileConfigured() ? 403 : 503 });
   }
-  const session = await signInStaff(email, password);
+  const signIn = await signInStaff(email, password);
+  if (signIn.forbidden) return NextResponse.json({ error: "This account is not authorized for staff access." }, { status: 403 });
+  const session = signIn.session;
   if (!session) return NextResponse.json({ error: staffAuthConfigured() ? "Invalid email or password." : "Staff authentication is not configured." }, { status: staffAuthConfigured() ? 401 : 503 });
   const mfaRequired = session.user.factors?.some((factor) => factor.factor_type === "totp" && factor.status === "verified") ?? false;
   const response = NextResponse.json({ authenticated: !mfaRequired, mfaRequired });

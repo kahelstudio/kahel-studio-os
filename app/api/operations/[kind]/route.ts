@@ -38,8 +38,17 @@ const initials = (name: string) => name.split(" ").filter(Boolean).map((part) =>
 const random = (prefix: string) => `${prefix}-${new Date().getFullYear()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
 const bad = (error: string) => NextResponse.json({ error }, { status: 400 });
 
-async function audit(principal: StaffPrincipal, kind: string, id: string) {
-  await getSupabaseAdmin().from("staff_audit_log").insert({ actor_id: principal.userId, actor_name: principal.email, event: `Created ${kind.replaceAll("-", " ")}`, event_type: financial.has(kind) ? "billing" : "data", entity_type: kind, entity_id: id });
+async function audit(principal: StaffPrincipal, action: "created" | "updated" | "deleted", kind: string, id: string, displayName?: string) {
+  const label = kind.replaceAll("-", " ");
+  await getSupabaseAdmin().from("staff_audit_log").insert({
+    actor_id: principal.userId,
+    actor_name: principal.email,
+    event: `${action[0].toUpperCase()}${action.slice(1)} ${label}`,
+    event_type: financial.has(kind) ? "billing" : "data",
+    entity_type: kind,
+    entity_id: id,
+    metadata: { action, entity_type: kind, entity_id: id, ...(displayName ? { display_name: displayName } : {}) },
+  });
 }
 
 async function employeeId(reference: string) {
@@ -138,7 +147,7 @@ async function createBooking(body: Body, principal: StaffPrincipal) {
   if (promoCodeId && discountCents > 0) {
     await admin.from("promo_code_usages").insert({ promo_code_id: promoCodeId, booking_id: booking.data.id, client_id: profile.client_id, discount_amount: discountCents });
   }
-  await audit(principal, "booking", booking.data.id);
+  await audit(principal, "created", "booking", booking.data.id);
   let termsEmailDelayed = false;
   const terms = await getCurrentBookingTerms();
   if (terms) {
@@ -259,7 +268,7 @@ export async function POST(request: Request, context: { params: Promise<{ kind: 
     default: return NextResponse.json({ error: "Unsupported create operation." }, { status: 404 });
   }
   if (result.error || !result.data) return NextResponse.json({ error: result.error?.code === "23505" ? kind === "equipment" ? "That equipment serial already exists." : "A record with that unique reference already exists." : "Unable to save this record." }, { status: result.error?.code === "23505" ? 409 : 500 });
-  await audit(principal, kind, result.data.id);
+  await audit(principal, "created", kind, result.data.id, kind === "equipment" ? text(body, "name", 255) : undefined);
   return NextResponse.json(result.data, { status: 201 });
 }
 
@@ -270,12 +279,13 @@ export async function DELETE(request: Request, context: { params: Promise<{ kind
   if (kind !== "equipment") return NextResponse.json({ error: "Unsupported delete operation." }, { status: 404 });
   const id = new URL(request.url).searchParams.get("id");
   if (!id || typeof id !== "string") return bad("Equipment id is required.");
-  const { error } = await getSupabaseAdmin().from("equipment").delete().eq("id", id);
+  const { data, error } = await getSupabaseAdmin().from("equipment").delete().eq("id", id).select("id,name").maybeSingle();
   if (error) {
     if (error.code === "23503") return NextResponse.json({ error: "This item has linked checkout records and cannot be deleted. Return it first." }, { status: 409 });
     return NextResponse.json({ error: "Unable to delete this equipment." }, { status: 500 });
   }
-  await audit(principal, "equipment", id);
+  if (!data) return NextResponse.json({ error: "Equipment not found." }, { status: 404 });
+  await audit(principal, "deleted", "equipment", data.id, data.name);
   return NextResponse.json({ ok: true });
 }
 
@@ -288,11 +298,12 @@ export async function PUT(request: Request, context: { params: Promise<{ kind: s
   if (!body || Array.isArray(body) || typeof body.id !== "string") return bad("Equipment id is required.");
   const serial = equipmentSerial(body), name = text(body, "name", 255), category = text(body, "category", 64), status = text(body, "status");
   if (!name || !category || !["available", "out", "maint"].includes(status)) return bad("Complete the name, category, and valid status fields.");
-  const { error } = await getSupabaseAdmin().from("equipment").update({ serial, name, category, status, location: optional(body, "location", 255), note: optional(body, "note") }).eq("id", body.id);
+  const { data, error } = await getSupabaseAdmin().from("equipment").update({ serial, name, category, status, location: optional(body, "location", 255), note: optional(body, "note") }).eq("id", body.id).select("id,name").maybeSingle();
   if (error) {
     if (error.code === "23505") return NextResponse.json({ error: "That equipment serial already exists." }, { status: 409 });
     return NextResponse.json({ error: "Unable to update this equipment." }, { status: 500 });
   }
-  await audit(principal, "equipment", body.id);
+  if (!data) return NextResponse.json({ error: "Equipment not found." }, { status: 404 });
+  await audit(principal, "updated", "equipment", data.id, data.name);
   return NextResponse.json({ ok: true });
 }

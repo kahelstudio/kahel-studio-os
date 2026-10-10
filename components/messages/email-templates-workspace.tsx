@@ -117,7 +117,7 @@ const TEST_RECIPIENTS = ["eusebio.barrun@gmail.com", "joanne.kahelstudio@gmail.c
 function SendTestDialog({ subtitle, postUrl, postBody, onClose }: { subtitle: string; postUrl: string; postBody: Record<string, unknown>; onClose: () => void }) {
   const [checked, setChecked] = useState(new Set([TEST_RECIPIENTS[0]]));
   const [custom, setCustom] = useState(""), [busy, setBusy] = useState(false), [error, setError] = useState(""), [sent, setSent] = useState(false);
-  function toggle(email: string) { setChecked((prev) => { const next = new Set(prev); next.has(email) ? next.delete(email) : next.add(email); return next; }); }
+  function toggle(email: string) { setChecked((prev) => { const next = new Set(prev); if (next.has(email)) next.delete(email); else next.add(email); return next; }); }
   async function send() {
     const recipients = [...checked, ...(custom.trim() ? [custom.trim()] : [])];
     if (!recipients.length) { setError("Select at least one recipient."); return; }

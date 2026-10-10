@@ -2,12 +2,11 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { RewardBookingForm } from "@/components/client-portal/reward-booking-form";
-import { requireCustomerIdentity } from "@/lib/server/customer-auth";
-import { getSupabaseAdmin } from "@/lib/server/supabase-admin";
+import { requireCustomerIdentity, getSupabaseCustomerClient } from "@/lib/server/customer-auth";
 
 export default async function RedeemLoyaltyRewardPage() {
   const identity = await requireCustomerIdentity("/portal/loyalty/redeem");
-  const { data, error } = await getSupabaseAdmin().from("loyalty_rewards").select("id,sequence")
+  const { data, error } = await getSupabaseCustomerClient(identity.accessToken).from("loyalty_rewards").select("id,sequence")
     .eq("client_id", identity.clientId).eq("status", "available").eq("review_required", false).order("sequence");
   if (error) throw new Error("Unable to load available rewards.");
   const rewards = (data ?? []).map((reward) => ({ id: reward.id, label: `Complimentary Solo Session #${reward.sequence}` }));

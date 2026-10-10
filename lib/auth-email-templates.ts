@@ -40,8 +40,6 @@ function makeEmailHtml(title: string, preheader: string, body: string): string {
 </html>`;
 }
 
-const HELP = `<p ${HELP_P}>Need help? <a href="mailto:support@kahelstudio.com" ${LINK}>support@kahelstudio.com</a></p>`;
-
 function fallbackLink(label: string, token: string) {
   return `<p ${HELP_P}>Button not working? <a href="${token}" ${LINK}>Click here to ${label}</a> instead.</p>`;
 }

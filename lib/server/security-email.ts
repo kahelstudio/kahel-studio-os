@@ -6,8 +6,6 @@ const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (character) => (
 
 async function sendSecurityEmail(input: { to: string; subject: string; html: string; text: string; templateKey: "security-recovery-code" | "security-password-reset"; operationId: string; recipientUserId?: string }) {
   try {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) return false;
     const from = process.env.BOOKING_EMAIL_FROM ?? "security@kahelstudio.com";
     const replyTo = process.env.BOOKING_EMAIL_REPLY_TO ?? from;
     return sendTransactionalEmail({ templateKey: input.templateKey, logicalIdempotencyKey: `${input.templateKey}:${input.operationId}`, triggerKey: input.templateKey, recipientUserId: input.recipientUserId, secure: true, maxAttempts: 1, message: { to: input.to, subject: input.subject, html: input.html, text: input.text, from, replyTo } });

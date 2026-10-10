@@ -2,7 +2,7 @@ import "server-only";
 
 import { sendTransactionalEmail } from "./transactional-email-service";
 
-import { getSupabaseAdmin, getSupabaseAuthClient } from "./supabase-admin";
+import { getSupabaseAdmin, getSupabaseAuthClient, getSupabaseCustomerClient } from "./supabase-admin";
 import type { StaffPrincipal } from "./staff-auth";
 
 const PROGRAM_CODE = "kahel-loyalty";
@@ -35,14 +35,17 @@ export async function resolveProjectClientId(projectRef: string) {
   return data?.client_id ?? null;
 }
 
-export async function getLoyaltySummary(clientId: string) {
+export async function getLoyaltySummary(clientId: string, accessToken?: string) {
   const p = await program();
-  const admin = getSupabaseAdmin();
+  // When called from the customer portal, use the customer-scoped client so
+  // loyalty_rewards/eligibility/events RLS enforces client ownership. When
+  // called from staff admin routes, fall back to service_role with explicit filters.
+  const db = accessToken ? getSupabaseCustomerClient(accessToken) : getSupabaseAdmin();
   const [eventsResult, rewardsResult, eligibilityResult, termsResult] = await Promise.all([
-    admin.from("loyalty_booking_events").select("delta").eq("client_id", clientId).eq("program_id", p.id),
-    admin.from("loyalty_rewards").select("id,sequence,status,issued_at,reserved_at,redeemed_at,voided_at,review_required,review_reason").eq("client_id", clientId).eq("program_id", p.id).order("sequence", { ascending: false }),
-    admin.from("loyalty_booking_eligibility").select("booking_id").eq("client_id", clientId).eq("program_id", p.id).eq("contribution", 1).order("evaluated_at", { ascending: false }),
-    admin.from("loyalty_terms_versions").select("version,effective_at").eq("program_id", p.id).order("version", { ascending: false }).limit(1).maybeSingle<{ version: number; effective_at: string }>(),
+    db.from("loyalty_booking_events").select("delta").eq("client_id", clientId).eq("program_id", p.id),
+    db.from("loyalty_rewards").select("id,sequence,status,issued_at,reserved_at,redeemed_at,voided_at,review_required,review_reason").eq("client_id", clientId).eq("program_id", p.id).order("sequence", { ascending: false }),
+    db.from("loyalty_booking_eligibility").select("booking_id").eq("client_id", clientId).eq("program_id", p.id).eq("contribution", 1).order("evaluated_at", { ascending: false }),
+    db.from("loyalty_terms_versions").select("version,effective_at").eq("program_id", p.id).order("version", { ascending: false }).limit(1).maybeSingle<{ version: number; effective_at: string }>(),
   ]);
   const error = eventsResult.error ?? rewardsResult.error ?? eligibilityResult.error ?? termsResult.error;
   if (error) throw error;
@@ -51,7 +54,7 @@ export async function getLoyaltySummary(clientId: string) {
   const bookingIds = (eligibilityResult.data ?? []).map((row) => row.booking_id);
   let bookings: BookingHistoryRow[] = [];
   if (bookingIds.length) {
-    const result = await admin.from("bookings").select("id,reference,service_type,completed_at,service_date").in("id", bookingIds).order("completed_at", { ascending: false });
+    const result = await db.from("bookings").select("id,reference,service_type,completed_at,service_date").in("id", bookingIds).order("completed_at", { ascending: false });
     if (result.error) throw result.error;
     bookings = result.data as BookingHistoryRow[];
   }
@@ -181,10 +184,9 @@ export async function processLoyaltyRewardEmail(outboxId?: string) {
       admin.from("loyalty_rewards").select("status,sequence").eq("id", claimed.reward_id).single<{ status: string; sequence: number }>(),
     ]);
     if (profileResult.error || rewardResult.error) throw profileResult.error ?? rewardResult.error;
-    const apiKey = process.env.RESEND_API_KEY;
     const from = process.env.LOYALTY_EMAIL_FROM ?? process.env.BOOKING_EMAIL_FROM;
     const siteUrl = process.env.PUBLIC_SITE_URL;
-    if (!apiKey || !from || !siteUrl) throw new Error("Resend loyalty email is not configured.");
+    if (!from || !siteUrl) throw new Error("Loyalty email is not configured.");
     const firstName = profileResult.data.first_name;
     const portalUrl = new URL("/portal/loyalty", siteUrl).toString();
     const termsUrl = new URL("/portal/loyalty/terms", siteUrl).toString();

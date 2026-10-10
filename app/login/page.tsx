@@ -211,7 +211,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-dvh bg-[#eeece8] p-3 text-[#171513] sm:p-6 lg:p-8">
+    <main className="min-h-dvh bg-[#eeece8] p-3 text-[#171513] [color-scheme:light] sm:p-6 lg:p-8">
       {config?.turnstileRequired && <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="afterInteractive" onLoad={() => setScriptReady(true)} />}
       <section className="mx-auto grid min-h-[calc(100dvh-24px)] w-full max-w-[1440px] overflow-hidden rounded-[20px] border border-black/8 bg-white shadow-[0_24px_80px_rgba(27,22,18,0.13)] sm:min-h-[calc(100dvh-48px)] lg:grid-cols-[minmax(380px,0.82fr)_minmax(560px,1.18fr)]">
         <aside className="relative hidden min-h-[720px] overflow-hidden bg-[#211c19] lg:block">
