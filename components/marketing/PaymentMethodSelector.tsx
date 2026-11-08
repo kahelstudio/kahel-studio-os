@@ -21,10 +21,13 @@ interface Props {
   value: PaymentOption;
   onChange: (value: PaymentOption) => void;
   showBnpl?: boolean;
+  depositOnly?: boolean;
 }
 
-export default function PaymentMethodSelector({ value, onChange, showBnpl = false }: Props) {
-  const methods = showBnpl ? BASE_METHODS : BASE_METHODS.filter((m) => m.id !== "bnpl");
+export default function PaymentMethodSelector({ value, onChange, showBnpl = false, depositOnly = false }: Props) {
+  const methods = depositOnly
+    ? BASE_METHODS.filter((m) => m.id === "deposit")
+    : showBnpl ? BASE_METHODS : BASE_METHODS.filter((m) => m.id !== "bnpl");
   return (
     <div className={styles.grid}>
       {methods.map((method) => (

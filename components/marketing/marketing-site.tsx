@@ -1370,7 +1370,7 @@ function Booking({ goHome }: { goHome: () => void }) {
     ? Boolean(effectiveStartsAt) && eventRangeValid
     : availability?.date === form.date && availability.slots.some((slot) => slot.startsAt === effectiveStartsAt && slot.available);
   const heldSelectedSlot = hold?.startsAt === effectiveStartsAt && holdRemainingSeconds > 0;
-  const valid = Boolean(form.name && form.email && form.mobile && form.session && form.date && form.time && (!eventSelected || (form.endTime && eventRangeValid)) && form.pay && effectiveStartsAt && form.date >= (serverDate || todayIso()) && (availabilityStatus === "ready" || heldSelectedSlot) && (selectedSlotAvailable || heldSelectedSlot));
+  const valid = Boolean(form.name && form.email && form.mobile && form.session && form.date && form.time && (!eventSelected || (form.endTime && eventRangeValid)) && form.pay && (!eventSelected || form.pay === "deposit") && effectiveStartsAt && form.date >= (serverDate || todayIso()) && (availabilityStatus === "ready" || heldSelectedSlot) && (selectedSlotAvailable || heldSelectedSlot));
   const update = <Key extends keyof BookingForm>(key: Key, value: BookingForm[Key]) => {
     if (key === "session") setAddonQuantities({});
     if (key === "session" || key === "date") {
@@ -1385,7 +1385,7 @@ function Booking({ goHome }: { goHome: () => void }) {
     setForm((current) => ({
       ...current,
       [key]: key === "mobile" ? String(value).replace(/\D/g, "").replace(/^0/, "").slice(0, 10) : value,
-      ...(key === "session" ? { time: "", endTime: "", addons: [] } : key === "date" ? { time: "", endTime: "" } : {}),
+      ...(key === "session" ? { time: "", endTime: "", addons: [], pay: eventPackages.some((item) => item.name === value) ? "deposit" : "full" } : key === "date" ? { time: "", endTime: "" } : {}),
     }));
   };
   const updateEventTime = (field: "time" | "endTime", value: string) => {
@@ -1607,7 +1607,9 @@ function Booking({ goHome }: { goHome: () => void }) {
                   value={(form.pay || "full") as PaymentOption}
                   onChange={(v) => update("pay", v)}
                   showBnpl={showBnpl}
+                  depositOnly={eventSelected}
                 />
+                {eventSelected && <p className={styles.eventTimeHint}>Events require a 50% downpayment online to secure your date.</p>}
               </fieldset>
             </div>
           </div>
