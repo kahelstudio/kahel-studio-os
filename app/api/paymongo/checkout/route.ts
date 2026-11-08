@@ -118,6 +118,7 @@ export async function POST(request: Request) {
   const eventCoverageMinutes = baseDuration + additionalHours * 60;
   let durationMinutes = eventCoverageMinutes;
   if (!studioDuration) {
+    if (input.pay !== "deposit") return NextResponse.json({ error: "Events require a 50% downpayment to book online." }, { status: 400 });
     if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(endTime)) return NextResponse.json({ error: "Enter both the event start and end time." }, { status: 400 });
     const [endHour, endMinute] = endTime.split(":").map(Number);
     durationMinutes = endHour * 60 + endMinute - startMinutes;
